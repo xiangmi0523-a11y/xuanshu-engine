@@ -14,7 +14,7 @@ export type YaoValue = 6 | 7 | 8 | 9;
  * 八卦三爻，键按 初→二→三 爻（自下而上）书写，1 = 阳。名称为通说：
  * 震仰盂（初爻阳）100、艮覆碗（上爻阳）001、兑上缺（上爻阴）110、巽下断（初爻阴）011。
  */
-const TRIGRAMS: Record<string, string> = {
+export const TRIGRAMS: Readonly<Record<string, string>> = {
   "111": "乾", "110": "兑", "101": "离", "100": "震", "011": "巽", "010": "坎", "001": "艮", "000": "坤",
 };
 
