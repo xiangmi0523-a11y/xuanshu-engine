@@ -44,7 +44,14 @@ export interface ZhuangguaResult {
   liushen_is_auxiliary_symbol: true;
   steps: string[];
   not_implemented: string[];
+  /** 契约未写、引擎暂按现状输出的约定（CLAUDE.md 第 4 条）；须用户裁决，界面在裁决前不得把它们当作规则展示 */
+  pending: string[];
 }
+
+export const ZHUANGGUA_PENDING = [
+  "【待定】变卦是否排六神：契约 P-B-05 未写，引擎暂不排（变卦各爻无 liushen）",
+  "【待定】变卦是否标世应：契约未写，引擎暂输出变卦本身在六十四卦表中的世应（bian.shi、bian.ying 及各爻 shi/ying）",
+] as const;
 
 function hexagram(bits: string, st: StaticTables, selfWuxing: string, liushen: string[] | null): ZhuangguaHexagram {
   const h = st.hexagrams.get(bits);
@@ -72,8 +79,8 @@ function hexagram(bits: string, st: StaticTables, selfWuxing: string, liushen: s
  */
 export function computeZhuanggua(yao: number[], dayGanzhi: string, st: StaticTables): ZhuangguaResult {
   const ly = computeLiuyao(yao);
-  if (dayGanzhi.length !== 2 || !STEMS.includes(dayGanzhi[0]!) || !BRANCHES.includes(dayGanzhi[1]!) || !st.xunkong.has(dayGanzhi)) {
-    throw new BlockedError("DAY_GANZHI_INVALID", "须给出占日的日辰干支（六十甲子之一）");
+  if (typeof dayGanzhi !== "string" || dayGanzhi.length !== 2 || !STEMS.includes(dayGanzhi[0]!) || !BRANCHES.includes(dayGanzhi[1]!) || !st.xunkong.has(dayGanzhi)) {
+    throw new BlockedError("DAY_GANZHI_INVALID", "[IN-ZG-02] 须给出占日的日辰干支（六十甲子之一）");
   }
   const benBits = ly.ben_lines.join("");
   const benPalace = st.hexagrams.get(benBits)?.palace;
@@ -92,5 +99,6 @@ export function computeZhuanggua(yao: number[], dayGanzhi: string, st: StaticTab
     liushen_is_auxiliary_symbol: true,
     steps: ["起卦", "寻宫", "纳甲", "安世应", "安六亲", "安六神", "排日辰", "判动变"],
     not_implemented: ["月建、月破（P-B-07）", "飞伏（P-B-09）", "断语与旺衰（须先选断卦体系）"],
+    pending: [...ZHUANGGUA_PENDING],
   };
 }

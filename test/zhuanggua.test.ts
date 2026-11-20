@@ -59,8 +59,7 @@ test("八字查表：示例 庚午 甲申 壬子 丁未 的十神与日主十二
   const d = baziDetail(V.bazi.pillars, st);
   assert.deepEqual(d.map((x) => x.stem_shishen), V.bazi.stem_shishen);
   assert.deepEqual(d.map((x) => x.day_master_changsheng), V.bazi.day_master_changsheng);
-  // 藏干十神：各支藏干逐个按日主壬查十神
-  for (const x of d) for (const h of x.hidden_stems) assert.equal(h.shishen, shishenOf("壬", h.stem, st));
+  // 藏干十神的独立核对见 test/oracle.test.ts X-08（原此处为引擎自比引擎的断言，E2-A 第 1 项审查删除）
 });
 
 test("八字查表：藏干集合与《渊海子平》〈又地支藏遁歌〉原文一致；本气为该支本五行之干", () => {

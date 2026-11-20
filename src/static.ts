@@ -3,7 +3,8 @@
  * 正本在 xuanshu-data/static/，由 gen_static_tables.py 从 Muse 查证原件生成；引擎只解析传入的 CSV 文本，
  * 不读文件、不改值。
  *
- * 解析即校验（运行时语义校验，与 check:data 的文件哈希校验相互独立）：
+ * 解析即校验（L2 运行时语义校验；与 L1 文件哈希、L3 独立基准相互独立，分层见 docs/static_semantics.md）。
+ * 每条校验的报错信息以约束编号 [SC-…] 开头，编号与 docs/static_semantics.md 的约束清单一一对应（test/semantics_catalog.test.ts 自动核对）：
  * 表头、行列数；每张表的键合法、不重复、齐全；每个取值合法；字段之间按契约一致。
  * 任何一项不合即抛 STATIC_TABLE_INVALID，不返回部分结果。
  * 校验只核对契约已写明的关系（P-B-01、03、05、06，R-39.10 第 4 项）及已准入原件给出的起点（六神起首、十干长生），不另立规则、不改表值。
@@ -75,9 +76,9 @@ const distinct = (xs: string[]) => new Set(xs).size === xs.length;
 
 function rows(name: string, text: string, header: string[], expected: number): string[][] {
   const lines = text.replace(/\r/g, "").split("\n").filter((l) => l.length > 0);
-  need(lines[0] === header.join(","), `${name} 表头不符`);
+  need(lines[0] === header.join(","), `[SC-GEN-01] ${name} 表头不符`);
   const body = lines.slice(1).map((l) => l.split(","));
-  need(body.length === expected && body.every((r) => r.length === header.length), `${name} 应为 ${expected} 行 × ${header.length} 列`);
+  need(body.length === expected && body.every((r) => r.length === header.length), `[SC-GEN-02] ${name} 应为 ${expected} 行 × ${header.length} 列`);
   return body;
 }
 
@@ -88,11 +89,11 @@ function keyed<T>(name: string, body: string[][], key: (r: string[]) => string, 
   const m = new Map<string, T>();
   for (const r of body) {
     const k = key(r);
-    need(want.has(k), `${name} 键非法：${k}`);
-    need(!m.has(k), `${name} 键重复：${k}`);
+    need(want.has(k), `[SC-GEN-03] ${name} 键非法：${k}`);
+    need(!m.has(k), `[SC-GEN-04] ${name} 键重复：${k}`);
     m.set(k, value(r, k));
   }
-  for (const k of domain) need(m.has(k), `${name} 缺键：${k}`);
+  for (const k of domain) need(m.has(k), `[SC-GEN-05] ${name} 缺键：${k}`);
   return m;
 }
 
@@ -105,78 +106,78 @@ export function parseStaticTables(csv: StaticCsv): StaticTables {
     rows("liuyao_hexagrams", csv.liuyao_hexagrams, ["bits_bottom_up", "lower", "upper", "name", "palace", "palace_position", "shi", "ying"], 64),
     (r) => r[0]!, ALL_BITS, ([bits, lower, upper, name, palace, pos, shi, ying]) => {
       const t = `卦 ${bits}（${name}）`;
-      need(one(TRIGRAM_NAMES, lower!) && one(TRIGRAM_NAMES, upper!), `${t} 上下卦非法`);
-      need(TRIGRAMS[bits!.slice(0, 3)] === lower && TRIGRAMS[bits!.slice(3)] === upper, `${t} 上下卦与卦画不一致`);
-      need(name!.length > 0 && !/\s/.test(name!), `${t} 卦名非法`);
-      need(!names.has(name!), `${t} 卦名重复`);
+      need(one(TRIGRAM_NAMES, lower!) && one(TRIGRAM_NAMES, upper!), `[SC-HEX-01] ${t} 上下卦非法`);
+      need(TRIGRAMS[bits!.slice(0, 3)] === lower && TRIGRAMS[bits!.slice(3)] === upper, `[SC-HEX-02] ${t} 上下卦与卦画不一致`);
+      need(name!.length > 0 && !/\s/.test(name!), `[SC-HEX-03] ${t} 卦名非法`);
+      need(!names.has(name!), `[SC-HEX-04] ${t} 卦名重复`);
       names.add(name!);
-      need(one(TRIGRAM_NAMES, palace!), `${t} 卦宫非法`);
-      need(one(PALACE_POSITIONS, pos!), `${t} 宫内位置非法`);
-      need(/^[1-6]$/.test(shi!) && /^[1-6]$/.test(ying!), `${t} 世应须为 1～6`);
-      need(Number(shi) === SHI_BY_POSITION[pos!], `${t} 世爻与宫内位置不合（P-B-03）`);
-      need(Number(ying) === yingOf(Number(shi)), `${t} 应 ≠ 世 + 3（P-B-03）`);
-      if (pos === "本宫") need(lower === palace && upper === palace, `${t} 本宫卦须为本宫纯卦`);
+      need(one(TRIGRAM_NAMES, palace!), `[SC-HEX-05] ${t} 卦宫非法`);
+      need(one(PALACE_POSITIONS, pos!), `[SC-HEX-06] ${t} 宫内位置非法`);
+      need(/^[1-6]$/.test(shi!) && /^[1-6]$/.test(ying!), `[SC-HEX-07] ${t} 世应须为 1～6`);
+      need(Number(shi) === SHI_BY_POSITION[pos!], `[SC-HEX-08] ${t} 世爻与宫内位置不合（P-B-03）`);
+      need(Number(ying) === yingOf(Number(shi)), `[SC-HEX-09] ${t} 应 ≠ 世 + 3（P-B-03）`);
+      if (pos === "本宫") need(lower === palace && upper === palace, `[SC-HEX-10] ${t} 本宫卦须为本宫纯卦`);
       return { bits: bits!, lower: lower!, upper: upper!, name: name!, palace: palace!, palace_position: pos!, shi: Number(shi), ying: Number(ying) };
     });
   for (const p of TRIGRAM_NAMES) {
     const members = [...hexagrams.values()].filter((h) => h.palace === p);
-    need(members.length === 8, `${p}宫 应有 8 卦，实有 ${members.length}`);
-    need(PALACE_POSITIONS.every((pos) => members.filter((h) => h.palace_position === pos).length === 1), `${p}宫 宫内位置须各一`);
+    need(members.length === 8, `[SC-HEX-11] ${p}宫 应有 8 卦，实有 ${members.length}`);
+    need(PALACE_POSITIONS.every((pos) => members.filter((h) => h.palace_position === pos).length === 1), `[SC-HEX-12] ${p}宫 宫内位置须各一`);
   }
 
   // 2. 八宫五行
   const palaceWuxing = keyed("liuyao_palace_wuxing", rows("liuyao_palace_wuxing", csv.liuyao_palace_wuxing, ["palace", "wuxing"], 8),
-    (r) => r[0]!, TRIGRAM_NAMES, ([, w], k) => { need(one(WUXING, w!), `${k}宫 五行非法：${w}`); return w!; });
+    (r) => r[0]!, TRIGRAM_NAMES, ([, w], k) => { need(one(WUXING, w!), `[SC-PWX-01] ${k}宫 五行非法：${w}`); return w!; });
 
   // 3. 纳甲（键：卦|爻位，爻位只能是 1～6）
   const najia = keyed("liuyao_najia", rows("liuyao_najia", csv.liuyao_najia, ["trigram", "line", "stem_branch"], 48),
     (r) => `${r[0]}|${r[1]}`, pairs(TRIGRAM_NAMES, ["1", "2", "3", "4", "5", "6"]),
-    ([, , gz], k) => { need(isGanzhi(gz!), `纳甲 ${k} 干支非法：${gz}`); return gz!; });
+    ([, , gz], k) => { need(isGanzhi(gz!), `[SC-NJ-01] 纳甲 ${k} 干支非法：${gz}`); return gz!; });
 
   // 4. 地支五行
   const branchWuxing = keyed("branch_wuxing", rows("branch_wuxing", csv.branch_wuxing, ["branch", "wuxing"], 12),
-    (r) => r[0]!, BRANCH_LIST, ([, w], k) => { need(one(WUXING, w!), `地支 ${k} 五行非法：${w}`); return w!; });
+    (r) => r[0]!, BRANCH_LIST, ([, w], k) => { need(one(WUXING, w!), `[SC-BWX-01] 地支 ${k} 五行非法：${w}`); return w!; });
 
   // 5. 六亲（我五行 × 爻五行）
   const liuqin = keyed("liuyao_liuqin", rows("liuyao_liuqin", csv.liuyao_liuqin, ["self_wuxing", "line_wuxing", "liuqin"], 25),
     (r) => `${r[0]}|${r[1]}`, pairs(WUXING, WUXING),
-    ([, , q], k) => { need(one(LIUQIN, q!), `六亲 ${k} 取值非法：${q}`); return q!; });
+    ([, , q], k) => { need(one(LIUQIN, q!), `[SC-LQ-01] 六亲 ${k} 取值非法：${q}`); return q!; });
 
   // 6. 六神（P-B-05：按日干起首，其后依固定次序）
   const liushen = keyed("liuyao_liushen",
     rows("liuyao_liushen", csv.liuyao_liushen, ["day_stem", "line1", "line2", "line3", "line4", "line5", "line6"], 10),
     (r) => r[0]!, STEM_LIST, ([, ...g], k) => {
-      need(g.length === 6 && g.every((x) => one(LIUSHEN, x)), `六神 ${k} 取值非法`);
-      need(distinct(g), `六神 ${k} 一行内重复`);
+      need(g.length === 6 && g.every((x) => one(LIUSHEN, x)), `[SC-LS-01] 六神 ${k} 取值非法`);
+      need(distinct(g), `[SC-LS-02] 六神 ${k} 一行内重复`);
       const start = LIUSHEN.indexOf(g[0] as (typeof LIUSHEN)[number]);
-      need(g.every((x, i) => x === LIUSHEN[(start + i) % 6]), `六神 ${k} 次序不合（P-B-05）`);
-      need(g[0] === LIUSHEN_START[k], `六神 ${k} 日起首应为 ${LIUSHEN_START[k]}，表中为 ${g[0]}（P-B-05）`);
+      need(g.every((x, i) => x === LIUSHEN[(start + i) % 6]), `[SC-LS-03] 六神 ${k} 次序不合（P-B-05）`);
+      need(g[0] === LIUSHEN_START[k], `[SC-LS-04] 六神 ${k} 日起首应为 ${LIUSHEN_START[k]}，表中为 ${g[0]}（P-B-05）`);
       return g;
     });
 
   // 7. 旬空（P-B-06：日辰所在之旬，旬首为该旬甲日，空亡为该旬十日未配到的两支）
   const xunkong = keyed("xunkong", rows("xunkong", csv.xunkong, ["ganzhi", "xun_head", "void1", "void2"], 60),
     (r) => r[0]!, JIAZI, ([, head, v1, v2], k) => {
-      need(isGanzhi(head!) && head![0] === "甲", `旬空 ${k} 旬首非法：${head}`);
-      need(isBranch(v1!) && isBranch(v2!) && v1 !== v2, `旬空 ${k} 空亡地支非法：${v1}${v2}`);
+      need(isGanzhi(head!) && head![0] === "甲", `[SC-XK-01] 旬空 ${k} 旬首非法：${head}`);
+      need(isBranch(v1!) && isBranch(v2!) && v1 !== v2, `[SC-XK-02] 旬空 ${k} 空亡地支非法：${v1}${v2}`);
       const h = JIAZI.indexOf(k) - (JIAZI.indexOf(k) % 10);
-      need(head === JIAZI[h], `旬空 ${k} 旬首应为 ${JIAZI[h]}，表中为 ${head}`);
-      need(v1 === BRANCHES[(h + 10) % 12] && v2 === BRANCHES[(h + 11) % 12], `旬空 ${k} 空亡与旬首不对应`);
+      need(head === JIAZI[h], `[SC-XK-03] 旬空 ${k} 旬首应为 ${JIAZI[h]}，表中为 ${head}`);
+      need(v1 === BRANCHES[(h + 10) % 12] && v2 === BRANCHES[(h + 11) % 12], `[SC-XK-04] 旬空 ${k} 空亡与旬首不对应`);
       return { xun_head: head!, void: [v1!, v2!] as [string, string] };
     });
 
   // 8. 十神（日干 × 他干）
   const shishen = keyed("bazi_shishen", rows("bazi_shishen", csv.bazi_shishen, ["day_stem", "other_stem", "shishen"], 100),
     (r) => `${r[0]}|${r[1]}`, pairs(STEM_LIST, STEM_LIST),
-    ([, , s], k) => { need(one(SHISHEN, s!), `十神 ${k} 取值非法：${s}`); return s!; });
+    ([, , s], k) => { need(one(SHISHEN, s!), `[SC-SS-01] 十神 ${k} 取值非法：${s}`); return s!; });
 
   // 9. 藏干（本气必有；中气、余气可空，但不得非法、不得重复；列次序不留空洞：无中气则无余气）
   const canggan = keyed("bazi_canggan", rows("bazi_canggan", csv.bazi_canggan, ["branch", "benqi", "zhongqi", "yuqi"], 12),
     (r) => r[0]!, BRANCH_LIST, ([, x, y, z], k) => {
-      need(isStem(x!), `藏干 ${k} 本气非法或为空：${x}`);
-      need((y === "" || isStem(y!)) && (z === "" || isStem(z!)), `藏干 ${k} 中气或余气非法`);
-      need(!(y === "" && z !== ""), `藏干 ${k} 无中气而有余气`);
-      need(distinct([x!, y!, z!].filter((s) => s !== "")), `藏干 ${k} 一支内藏干重复`);
+      need(isStem(x!), `[SC-CG-01] 藏干 ${k} 本气非法或为空：${x}`);
+      need((y === "" || isStem(y!)) && (z === "" || isStem(z!)), `[SC-CG-02] 藏干 ${k} 中气或余气非法`);
+      need(!(y === "" && z !== ""), `[SC-CG-03] 藏干 ${k} 无中气而有余气`);
+      need(distinct([x!, y!, z!].filter((s) => s !== "")), `[SC-CG-04] 藏干 ${k} 一支内藏干重复`);
       return { benqi: x!, zhongqi: y || null, yuqi: z || null };
     });
 
@@ -184,17 +185,17 @@ export function parseStaticTables(csv: StaticCsv): StaticTables {
   const changsheng = keyed("bazi_changsheng", rows("bazi_changsheng", csv.bazi_changsheng,
     ["stem", "changsheng", "muyu", "guandai", "linguan", "diwang", "shuai", "bing", "si", "mu", "jue", "tai", "yang"], 10),
     (r) => r[0]!, STEM_LIST, ([, ...b], k) => {
-      need(b.length === 12 && b.every(isBranch), `十二长生 ${k} 地支非法`);
-      need(distinct(b), `十二长生 ${k} 一行内地支重复`);
+      need(b.length === 12 && b.every(isBranch), `[SC-CS-01] 十二长生 ${k} 地支非法`);
+      need(distinct(b), `[SC-CS-02] 十二长生 ${k} 一行内地支重复`);
       const dir = STEMS.indexOf(k) % 2 === 0 ? 1 : -1;     // 阳干顺行，阴干逆行
       need(b.every((x, i) => i === 0 || BRANCHES.indexOf(x) === mod(BRANCHES.indexOf(b[i - 1]!) + dir, 12)),
-        `十二长生 ${k} 未按十二阶段次序${dir > 0 ? "顺" : "逆"}行`);
+        `[SC-CS-03] 十二长生 ${k} 未按十二阶段次序${dir > 0 ? "顺" : "逆"}行`);
       return b;
     });
   need(changsheng.get("戊")!.join() === changsheng.get("丙")!.join() && changsheng.get("己")!.join() === changsheng.get("丁")!.join(),
-    "十二长生 戊己须与丙丁同宫（火土同宫）");
+    "[SC-CS-04] 十二长生 戊己须与丙丁同宫（火土同宫）");
   for (const s of STEM_LIST) {
-    need(changsheng.get(s)![0] === CHANGSHENG_START[s], `十二长生 ${s} 长生应在 ${CHANGSHENG_START[s]}，表中为 ${changsheng.get(s)![0]}`);
+    need(changsheng.get(s)![0] === CHANGSHENG_START[s], `[SC-CS-05] 十二长生 ${s} 长生应在 ${CHANGSHENG_START[s]}，表中为 ${changsheng.get(s)![0]}`);
   }
 
   return { hexagrams, palaceWuxing, najia, branchWuxing, liuqin, liushen, xunkong, shishen, canggan, changsheng };

@@ -43,3 +43,12 @@ export function loadStatic(): StaticTables {
   }
   return cachedStatic;
 }
+
+/** 读取仓库内文本文件（供约束目录一致性测试读取 docs、src 原文） */
+export function readRepo(rel: string): string {
+  return readFileSync(new URL(rel, root), "utf8");
+}
+/** 文件的 sha256（十六进制） */
+export function sha256Of(rel: string): string {
+  return createHash("sha256").update(readFileSync(new URL(rel, root))).digest("hex");
+}

@@ -1,45 +1,91 @@
 {
-  "note": "静态表副本。正本在 xuanshu-data/static/（提交 79387b9，由 gen_static_tables.py 从 Muse 查证原件生成）；引擎只读，不得修改。",
+  "note": "静态表副本。正本在 xuanshu-data/static/（表内容自 27b8d60 起未变；来源与补强标记见该仓库 static/PROVENANCE.md），由 gen_static_tables.py 从 Muse 查证原件生成；引擎只读，不得修改。每表登记规则编号、裁决与正本路径，check:data 强制。",
   "files": {
     "bazi_canggan.csv": {
       "sha256": "1f4b6c00d5a61442d45fb7d65fddaec9f7f2cc61dbcdb6d6f20461303b1718a7",
-      "decision": "M1-R、M2-R"
+      "decision": "M1-R、M2-R",
+      "rule": "P-A-03",
+      "ruling": "M1-R；M2-R 第 3 项",
+      "source": "xuanshu-data:static/bazi_canggan.csv",
+      "provenance": "xuanshu-data:static/PROVENANCE.md"
     },
     "bazi_changsheng.csv": {
       "sha256": "643d349ef6aa40f543a9e52cce07d93802911da2d54886d4017577daa35bc87c",
-      "decision": "M1-R、M2-R"
+      "decision": "M1-R、M2-R",
+      "rule": "P-A-06",
+      "ruling": "M2-R 第 4 项",
+      "source": "xuanshu-data:static/bazi_changsheng.csv",
+      "provenance": "xuanshu-data:static/PROVENANCE.md"
     },
     "bazi_shishen.csv": {
       "sha256": "579805bcb8e01a70b019983b0ed9a5cdf491a9c13e63deb687785c5238455874",
-      "decision": "M1-R、M2-R"
+      "decision": "M1-R、M2-R",
+      "rule": "P-A-02",
+      "ruling": "M1-R",
+      "source": "xuanshu-data:static/bazi_shishen.csv",
+      "provenance": "xuanshu-data:static/PROVENANCE.md"
     },
     "branch_wuxing.csv": {
       "sha256": "6b5acd31d7301667a47b354148bd04e9992c0375e04fba43ef0725b6c5d8064e",
-      "decision": "M1-R、M2-R"
+      "decision": "M1-R、M2-R",
+      "rule": "P-B-04",
+      "ruling": "M1-R",
+      "source": "xuanshu-data:static/branch_wuxing.csv",
+      "provenance": "xuanshu-data:static/PROVENANCE.md"
     },
     "liuyao_hexagrams.csv": {
       "sha256": "30a7f3321aadad5c0e0d5c5007906fbbfe7adae57e1facb5f902065c59d25381",
-      "decision": "M1-R、M2-R"
+      "decision": "M1-R、M2-R",
+      "rule": "P-B-01、P-B-03",
+      "ruling": "M1-R；M2-R 第 1、6、8 项",
+      "source": "xuanshu-data:static/liuyao_hexagrams.csv",
+      "provenance": "xuanshu-data:static/PROVENANCE.md"
     },
     "liuyao_liuqin.csv": {
       "sha256": "1778ac843176dd45d030724c53497ce9bad80130b07a19498405854c4b140e8a",
-      "decision": "M1-R、M2-R"
+      "decision": "M1-R、M2-R",
+      "rule": "P-B-04",
+      "ruling": "M1-R",
+      "source": "xuanshu-data:static/liuyao_liuqin.csv",
+      "provenance": "xuanshu-data:static/PROVENANCE.md"
     },
     "liuyao_liushen.csv": {
       "sha256": "f3bd960d94c6f66a123105477398c097f6b364d17c7e47dbe180be8fc0cd64bb",
-      "decision": "M1-R、M2-R"
+      "decision": "M1-R、M2-R",
+      "rule": "P-B-05",
+      "ruling": "M1-R",
+      "source": "xuanshu-data:static/liuyao_liushen.csv",
+      "provenance": "xuanshu-data:static/PROVENANCE.md"
     },
     "liuyao_najia.csv": {
       "sha256": "2432ad2d7a593c3ad4dead84e77ae9893900a27cb9a78e531a71e5814deca21c",
-      "decision": "M1-R、M2-R"
+      "decision": "M1-R、M2-R",
+      "rule": "P-B-02",
+      "ruling": "M1-R；M2-R 第 7 项",
+      "source": "xuanshu-data:static/liuyao_najia.csv",
+      "provenance": "xuanshu-data:static/PROVENANCE.md"
     },
     "liuyao_palace_wuxing.csv": {
       "sha256": "4cc85b6d64f1834c9a74eb5f1f8530658b9981df2a9220bfa8023bb1e107b3f6",
-      "decision": "M1-R、M2-R"
+      "decision": "M1-R、M2-R",
+      "rule": "P-B-04",
+      "ruling": "M1-R",
+      "source": "xuanshu-data:static/liuyao_palace_wuxing.csv",
+      "provenance": "xuanshu-data:static/PROVENANCE.md"
     },
     "xunkong.csv": {
       "sha256": "b982a32bfe2ad9e390983aed0a90dbf237c537e05235b15dc366afefb52095e4",
-      "decision": "M1-R、M2-R"
+      "decision": "M1-R、M2-R",
+      "rule": "P-B-06",
+      "ruling": "M2-R 第 2 项",
+      "source": "xuanshu-data:static/xunkong.csv",
+      "provenance": "xuanshu-data:static/PROVENANCE.md"
     }
+  },
+  "oracle": {
+    "path": "vectors/static_oracle.json",
+    "sha256": "0e4e02c906a98617a901dd7b4bea1fb5f78d3916e3b262b0a3b1d62c2cb8c376",
+    "source": "xuanshu-data:crosscheck/oracle/static_oracle.json（e2a1-audit 分支 dd95974，由 crosscheck/oracle/gen_oracle.py 生成）",
+    "note": "L3 独立正确性基准；不读静态表 CSV、不读 Muse 已填表、不调用引擎"
   }
 }

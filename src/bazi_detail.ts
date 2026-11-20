@@ -6,14 +6,14 @@
  * 只查表，不判格局、旺衰强弱或吉凶。
  */
 import { BlockedError } from "./errors.js";
-import { STEMS, BRANCHES } from "./ganzhi.js";
+import { STEMS, BRANCHES, ganzhiName } from "./ganzhi.js";
 import { CHANGSHENG, type StaticTables } from "./static.js";
 
 export const CANGGAN_LAYER = "现代整理层（本气、中气、余气按通行整理次序；《渊海子平》歌诀只给所藏之干）";
 export const CHANGSHENG_LAYER = "术数传承层；阴干阳顺阴逆、戊己火土同宫；旺衰不等于吉凶";
 
-const stem = (s: string) => { if (s.length !== 1 || !STEMS.includes(s)) throw new BlockedError("STEM_INVALID", `不是天干：${s}`); };
-const branch = (b: string) => { if (b.length !== 1 || !BRANCHES.includes(b)) throw new BlockedError("BRANCH_INVALID", `不是地支：${b}`); };
+const stem = (s: string) => { if (typeof s !== "string" || s.length !== 1 || !STEMS.includes(s)) throw new BlockedError("STEM_INVALID", `[IN-BZ-03] 不是天干：${String(s)}`); };
+const branch = (b: string) => { if (typeof b !== "string" || b.length !== 1 || !BRANCHES.includes(b)) throw new BlockedError("BRANCH_INVALID", `[IN-BZ-03] 不是地支：${String(b)}`); };
 
 export function shishenOf(dayStem: string, other: string, st: StaticTables): string {
   stem(dayStem); stem(other);
@@ -33,9 +33,20 @@ export function changshengOf(s: string, b: string, st: StaticTables): { state: s
 }
 
 /** 四柱查表汇总：每柱天干的十神（日干标“日主”）、地支藏干及其十神、日干在该支的十二长生 */
-export function baziDetail(pillars: string[], st: StaticTables) {
-  const day = pillars[2]?.[0];
-  if (!day) throw new BlockedError("PILLARS_INVALID", "须给出年、月、日柱（时柱可缺）");
+const JIAZI: readonly string[] = Array.from({ length: 60 }, (_, i) => ganzhiName(i));
+
+/**
+ * 输入约束（docs/static_semantics.md IN-BZ-01、IN-BZ-02）：3 柱（时柱未知时不传）或 4 柱，每柱为六十甲子之一；
+ * 不合即 PILLARS_INVALID，不返回部分结果。E1 排盘结果中时柱为 { value: null } 时，调用方只传前三柱。
+ */
+export function baziDetail(pillars: readonly string[], st: StaticTables) {
+  if (!Array.isArray(pillars) || (pillars.length !== 3 && pillars.length !== 4)) {
+    throw new BlockedError("PILLARS_INVALID", "[IN-BZ-01] 须给出 3 柱（年、月、日；时柱未知时不传）或 4 柱");
+  }
+  pillars.forEach((p, i) => {
+    if (typeof p !== "string" || !JIAZI.includes(p)) throw new BlockedError("PILLARS_INVALID", `[IN-BZ-02] 第 ${i + 1} 柱不是六十甲子之一：${String(p)}`);
+  });
+  const day = pillars[2]![0]!;
   return pillars.map((p, i) => {
     const s = p[0]!, b = p[1]!;
     const cg = cangganOf(b, st);

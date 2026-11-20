@@ -14,7 +14,8 @@
     "check:isolation": "node scripts/check-isolation.mjs",
     "check:data": "node scripts/check-data.mjs",
     "ci": "npm run check:forbidden && npm run check:isolation && npm run check:data && npm run check:core && npm run build && npm test",
-    "check:core": "tsc -p tsconfig.core.json"
+    "check:core": "tsc -p tsconfig.core.json",
+    "mutate": "node scripts/mutate-static.mjs"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

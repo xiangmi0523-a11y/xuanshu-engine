@@ -4,7 +4,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { BlockedError, parseStaticTables, type StaticCsv } from "../src/index.js";
-import { readStatic } from "./helpers/load.js";
+import { readRepo, readStatic } from "./helpers/load.js";
 
 const NAMES = ["liuyao_hexagrams", "liuyao_palace_wuxing", "liuyao_najia", "branch_wuxing", "liuyao_liuqin",
   "liuyao_liushen", "xunkong", "bazi_shishen", "bazi_canggan", "bazi_changsheng"] as const;
@@ -21,12 +21,19 @@ const row = (g: Grid, pred: string | ((r: string[]) => boolean)): string[] => {
 };
 const drop = (g: Grid, first: string) => { g.splice(g.findIndex((r, i) => i > 0 && r[0] === first), 1); };
 
+/** 负向用例实际命中的约束编号（从报错信息的 [SC-…] 前缀取得） */
+const hit = new Set<string>();
 function blocked(k: Name, edit: (g: Grid) => void, msg: RegExp) {
   const g = grid(k);
   edit(g);
   let out: unknown;
   assert.throws(() => { out = parseStaticTables({ ...good, [k]: text(g) }); },
-    (e: unknown) => e instanceof BlockedError && e.code === "STATIC_TABLE_INVALID" && msg.test(e.message),
+    (e: unknown) => {
+      const ok = e instanceof BlockedError && e.code === "STATIC_TABLE_INVALID" && msg.test(e.message);
+      const id = ok ? /^\[(SC-[A-Z]+-\d+)\]/.exec((e as BlockedError).message)?.[1] : undefined;
+      if (id) hit.add(id);
+      return ok && id !== undefined;
+    },
     `${k}：应以 STATIC_TABLE_INVALID（${msg}）阻断`);
   assert.equal(out, undefined, "阻断时不得返回结果");
 }
@@ -34,6 +41,10 @@ function blocked(k: Name, edit: (g: Grid) => void, msg: RegExp) {
 test("静态表校验：原表经 拆分→拼回 后仍通过（负向用例的改动才是阻断原因）", () => {
   const t = parseStaticTables(Object.fromEntries(NAMES.map((n) => [n, text(grid(n))])) as StaticCsv);
   assert.equal(t.hexagrams.size, 64);
+});
+
+test("表头不符（每张表）", () => {
+  for (const k of NAMES) blocked(k, (g) => { g[0]![0] = g[0]![0] + "_x"; }, /表头不符/);
 });
 
 test("六十四卦：非法值", () => {
@@ -198,4 +209,13 @@ test("十二长生：整行循环错位（顺逆仍对，长生起点不合准�
   // 丙、戊同步错位：火土同宫仍成立，只剩起点不合
   blocked(K, (g) => { rotate(row(g, "丙"), 3); rotate(row(g, "戊"), 3); }, /丙 长生应在 寅/);
   blocked(K, (g) => { for (const r of g.slice(1)) rotate(r, 2); }, /长生应在/);          // 全表一起错两位
+});
+
+// —— 约束清单覆盖（E2-A 第 1 项审查）：docs/static_semantics.md 的每个 L2 编号都必须被上面的负向用例实际命中 ——
+test("约束清单覆盖：每个 L2 约束编号都有负向用例命中（SC-GEN-05 由 02+03+04 蕴含，不可达）", () => {
+  const l2 = [...readRepo("docs/static_semantics.md").matchAll(/^\| (SC-[A-Z]+-\d+) \|.*\| L2 \|$/gm)].map((m) => m[1]!);
+  assert.ok(l2.length >= 39, `清单 L2 编号只读到 ${l2.length} 个`);
+  const missing = l2.filter((id) => id !== "SC-GEN-05" && !hit.has(id));
+  assert.deepEqual(missing, [], "以下 L2 约束没有负向用例命中");
+  assert.deepEqual([...hit].filter((id) => !l2.includes(id)), [], "命中了清单中不存在的编号");
 });

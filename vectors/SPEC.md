@@ -67,6 +67,13 @@
 - 八字查表：断言 ResultNormal 示例四柱的天干十神与日主十二长生；藏干按《渊海子平》〈又地支藏遁歌〉原文断言“所藏之干的集合”（本气、中气、余气的次序为整理层，不由原文断言）。
 - 期望值由独立 Python 用规则推算与原文卦例得出，不读静态表、不调用引擎；脚本见 `reports/evidence/zhuanggua/derive.md`。
 
-## 9. 比对
+## 9. 独立正确性基准（`static_oracle.json`，L3）
+
+- 正本：数据仓库 `crosscheck/oracle/static_oracle.json`，由 `crosscheck/oracle/gen_oracle.py` 按 `crosscheck/gemini/G-1_对照推算_ref.py` 的规则推算生成；藏干歌诀从 M-2 交回报告 PDF 抽取。不读静态表 CSV、不读 Muse 已填表、不调用引擎。
+- 引擎副本哈希登记于 `data/static/MANIFEST.json` 的 `oracle` 项，`check:data` 核对。
+- `test/oracle.test.ts`：十张表 1,013 格逐格；装卦 4096 爻值 × 60 日辰 = 245,760 种全组合；八字 60 日柱 × 60 柱 = 3,600 种全组合。
+- 不覆盖：藏干本气、中气、余气的次序（无独立来源）。
+
+## 10. 比对
 
 引擎单元测试可以运行这些向量；与冻结基准的全量比对由 `xuanshu-data/harness/` 独立执行（B4-11、B3-1 D4）。

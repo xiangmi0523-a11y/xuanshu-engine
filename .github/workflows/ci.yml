@@ -17,3 +17,5 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: 禁令、隔离、冻结数据、编译、单元测试
         run: npm run ci
+      - name: 变异检查（每条 L2 校验与关键计算步骤都有测试守着；只允许 SC-GEN-05 存活）
+        run: npm run mutate
