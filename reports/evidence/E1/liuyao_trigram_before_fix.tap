@@ -1,0 +1,125 @@
+TAP version 13
+# Subtest: 六爻：本卦、动爻、变卦
+not ok 1 - 六爻：本卦、动爻、变卦
+  ---
+  duration_ms: 2.555549
+  type: 'test'
+  location: '/home/claude/xuanshu-engine/dist/test/liuyao.test.js:4:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      {
+        lower: '离',
+    +   upper: '兑'
+    -   upper: '巽'
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    lower: '离'
+    upper: '巽'
+  actual:
+    lower: '离'
+    upper: '兑'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/claude/xuanshu-engine/dist/test/liuyao.test.js:10:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: 六爻：全静无变卦；全阳为乾
+ok 2 - 六爻：全静无变卦；全阳为乾
+  ---
+  duration_ms: 0.289768
+  type: 'test'
+  ...
+# Subtest: 六爻：非法输入被拒
+ok 3 - 六爻：非法输入被拒
+  ---
+  duration_ms: 0.387263
+  type: 'test'
+  ...
+# Subtest: 六爻：八卦全部 8 种在下卦、上卦位置都按口诀识别（初爻在下）
+not ok 4 - 六爻：八卦全部 8 种在下卦、上卦位置都按口诀识别（初爻在下）
+  ---
+  duration_ms: 0.39712
+  type: 'test'
+  location: '/home/claude/xuanshu-engine/dist/test/liuyao.test.js:33:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    乾下 震上
+    + actual - expected
+    
+      {
+        lower: '乾',
+    +   upper: '艮'
+    -   upper: '震'
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    lower: '乾'
+    upper: '震'
+  actual:
+    lower: '乾'
+    upper: '艮'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/claude/xuanshu-engine/dist/test/liuyao.test.js:37:20)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 六爻：乾为天初九动 → 天风姤（下巽上乾）；坤为地初六动 → 地雷复（下震上坤）
+not ok 5 - 六爻：乾为天初九动 → 天风姤（下巽上乾）；坤为地初六动 → 地雷复（下震上坤）
+  ---
+  duration_ms: 0.372096
+  type: 'test'
+  location: '/home/claude/xuanshu-engine/dist/test/liuyao.test.js:41:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      {
+    +   lower: '兑',
+    -   lower: '巽',
+        upper: '乾'
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    lower: '巽'
+    upper: '乾'
+  actual:
+    lower: '兑'
+    upper: '乾'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/claude/xuanshu-engine/dist/test/liuyao.test.js:42:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 2
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 66.818344

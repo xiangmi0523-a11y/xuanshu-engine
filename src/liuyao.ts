@@ -10,7 +10,10 @@ import { BlockedError } from "./errors.js";
 
 export type YaoValue = 6 | 7 | 8 | 9;
 
-/** 八卦三爻（初、二、三爻；1 = 阳）。名称为通说。 */
+/**
+ * 八卦三爻，键按 初→二→三 爻（自下而上）书写，1 = 阳。名称为通说：
+ * 震仰盂（初爻阳）100、艮覆碗（上爻阳）001、兑上缺（上爻阴）110、巽下断（初爻阴）011。
+ */
 const TRIGRAMS: Record<string, string> = {
   "111": "乾", "110": "兑", "101": "离", "100": "震", "011": "巽", "010": "坎", "001": "艮", "000": "坤",
 };
@@ -25,11 +28,8 @@ export interface LiuyaoResult {
   pending: string[];
 }
 
-const trigramName = (bits: (0 | 1)[]): string => {
-  // TRIGRAMS 的键按 上→下 书写（乾 111，兑 110 = 上爻阴），此处输入为初爻在前，需反转
-  const key = [...bits].reverse().join("");
-  return TRIGRAMS[key]!;
-};
+// 输入与键同为 初爻在前，直接拼接，不反转（E1 补齐后修正：原实现多做了一次反转，致震↔艮、巽↔兑互换）
+const trigramName = (bits: (0 | 1)[]): string => TRIGRAMS[bits.join("")]!;
 
 export function computeLiuyao(yao: number[]): LiuyaoResult {
   if (yao.length !== 6 || yao.some((v) => ![6, 7, 8, 9].includes(v))) {

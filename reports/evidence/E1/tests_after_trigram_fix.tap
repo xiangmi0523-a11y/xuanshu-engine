@@ -1,0 +1,358 @@
+TAP version 13
+# Subtest: 子时规则：其余三值与缺失被拦截（引擎层，W-03）
+ok 1 - 子时规则：其余三值与缺失被拦截（引擎层，W-03）
+  ---
+  duration_ms: 56.027841
+  type: 'test'
+  ...
+# Subtest: 真太阳时：缺经度阻断；有经度时记录经度项、均时差与 UT1−UTC 近似，显示到分钟
+ok 2 - 真太阳时：缺经度阻断；有经度时记录经度项、均时差与 UT1−UTC 近似，显示到分钟
+  ---
+  duration_ms: 1.120466
+  type: 'test'
+  ...
+# Subtest: 子时边界提示：按参考时间判定，文案区分 clock / true_solar
+ok 3 - 子时边界提示：按参考时间判定，文案区分 clock / true_solar
+  ---
+  duration_ms: 0.565272
+  type: 'test'
+  ...
+# Subtest: 时辰未知：三柱，附规定声明，不做真太阳时切日
+ok 4 - 时辰未知：三柱，附规定声明，不做真太阳时切日
+  ---
+  duration_ms: 1.203994
+  type: 'test'
+  ...
+# Subtest: 远期外推标记：2027 年起（B4-5）
+ok 5 - 远期外推标记：2027 年起（B4-5）
+  ---
+  duration_ms: 0.617238
+  type: 'test'
+  ...
+# Subtest: 夏令时：+09:00 输入归一到 UTC+8 后再判（B4-12）
+ok 6 - 夏令时：+09:00 输入归一到 UTC+8 后再判（B4-12）
+  ---
+  duration_ms: 0.424085
+  type: 'test'
+  ...
+# Subtest: 超出节气表范围被阻断
+ok 7 - 超出节气表范围被阻断
+  ---
+  duration_ms: 0.160055
+  type: 'test'
+  ...
+# Subtest: 子时边界提示：闭区间 [22:30, 23:30]、[00:30, 01:30]
+ok 8 - 子时边界提示：闭区间 [22:30, 23:30]、[00:30, 01:30]
+  ---
+  duration_ms: 70.869829
+  type: 'test'
+  ...
+# Subtest: 交节告警：闭区间 ±2 小时、立春 ±24 小时（端点含）
+ok 9 - 交节告警：闭区间 ±2 小时、立春 ±24 小时（端点含）
+  ---
+  duration_ms: 0.757452
+  type: 'test'
+  ...
+# Subtest: 只知时辰且选真太阳时：阻断，待实现
+ok 10 - 只知时辰且选真太阳时：阻断，待实现
+  ---
+  duration_ms: 0.690309
+  type: 'test'
+  ...
+# Subtest: 支持区间按冻结表精确计算：[1900-02-04T05:51:30Z, 2100-12-07T01:42:06Z)
+ok 11 - 支持区间按冻结表精确计算：[1900-02-04T05:51:30Z, 2100-12-07T01:42:06Z)
+  ---
+  duration_ms: 0.501848
+  type: 'test'
+  ...
+# Subtest: 非 UTC+8 输入：先换算 UTC，再归一到 UTC+8（东京 +09:00）
+ok 12 - 非 UTC+8 输入：先换算 UTC，再归一到 UTC+8（东京 +09:00）
+  ---
+  duration_ms: 0.20884
+  type: 'test'
+  ...
+# Subtest: 六十甲子序与奇偶校验（P-D-01）
+ok 13 - 六十甲子序与奇偶校验（P-D-01）
+  ---
+  duration_ms: 0.924524
+  type: 'test'
+  ...
+# Subtest: 日柱锚点与契约金值（P-D-04、§13.11）
+ok 14 - 日柱锚点与契约金值（P-D-04、§13.11）
+  ---
+  duration_ms: 0.273467
+  type: 'test'
+  ...
+# Subtest: 年柱（立春年）
+ok 15 - 年柱（立春年）
+  ---
+  duration_ms: 0.119492
+  type: 'test'
+  ...
+# Subtest: 五虎遁（P-D-03）
+ok 16 - 五虎遁（P-D-03）
+  ---
+  duration_ms: 0.121103
+  type: 'test'
+  ...
+# Subtest: 五鼠遁与时支（P-D-05）
+ok 17 - 五鼠遁与时支（P-D-05）
+  ---
+  duration_ms: 0.221948
+  type: 'test'
+  ...
+# Subtest: 节 → 月支
+ok 18 - 节 → 月支
+  ---
+  duration_ms: 0.118223
+  type: 'test'
+  ...
+# Subtest: 六爻：本卦、动爻、变卦
+ok 19 - 六爻：本卦、动爻、变卦
+  ---
+  duration_ms: 1.400603
+  type: 'test'
+  ...
+# Subtest: 六爻：全静无变卦；全阳为乾
+ok 20 - 六爻：全静无变卦；全阳为乾
+  ---
+  duration_ms: 0.22508
+  type: 'test'
+  ...
+# Subtest: 六爻：非法输入被拒
+ok 21 - 六爻：非法输入被拒
+  ---
+  duration_ms: 0.314984
+  type: 'test'
+  ...
+# Subtest: 六爻：八卦全部 8 种在下卦、上卦位置都按口诀识别（初爻在下）
+ok 22 - 六爻：八卦全部 8 种在下卦、上卦位置都按口诀识别（初爻在下）
+  ---
+  duration_ms: 0.697216
+  type: 'test'
+  ...
+# Subtest: 六爻：乾为天初九动 → 天风姤（下巽上乾）；坤为地初六动 → 地雷复（下震上坤）
+ok 23 - 六爻：乾为天初九动 → 天风姤（下巽上乾）；坤为地初六动 → 地雷复（下震上坤）
+  ---
+  duration_ms: 0.148689
+  type: 'test'
+  ...
+# Subtest: 节气表：4824 条，节 2412 条
+ok 24 - 节气表：4824 条，节 2412 条
+  ---
+  duration_ms: 56.663956
+  type: 'test'
+  ...
+# Subtest: 均时差插值：样本点取原值，日中取两端线性均值，符号与 B1-1 一致
+ok 25 - 均时差插值：样本点取原值，日中取两端线性均值，符号与 B1-1 一致
+  ---
+  duration_ms: 0.278324
+  type: 'test'
+  ...
+# Subtest: 均时差超出范围被阻断
+ok 26 - 均时差超出范围被阻断
+  ---
+  duration_ms: 0.437375
+  type: 'test'
+  ...
+# Subtest: [true_solar] TS1_EAST_135_CROSS_MIDNIGHT
+ok 27 - [true_solar] TS1_EAST_135_CROSS_MIDNIGHT
+  ---
+  duration_ms: 52.923961
+  type: 'test'
+  ...
+# Subtest: [true_solar] TS2_WEST_105_BACK_BEFORE_MIDNIGHT
+ok 28 - [true_solar] TS2_WEST_105_BACK_BEFORE_MIDNIGHT
+  ---
+  duration_ms: 0.396655
+  type: 'test'
+  ...
+# Subtest: [true_solar] TS3_EOT_POSITIVE_NOV
+ok 29 - [true_solar] TS3_EOT_POSITIVE_NOV
+  ---
+  duration_ms: 0.239145
+  type: 'test'
+  ...
+# Subtest: [true_solar] TS4_EOT_NEGATIVE_FEB
+ok 30 - [true_solar] TS4_EOT_NEGATIVE_FEB
+  ---
+  duration_ms: 0.143095
+  type: 'test'
+  ...
+# Subtest: [true_solar] TS5_TOKYO_UTC9_ORDER
+ok 31 - [true_solar] TS5_TOKYO_UTC9_ORDER
+  ---
+  duration_ms: 0.2536
+  type: 'test'
+  ...
+# Subtest: [group 0] GOLDEN_PATH_FULL_PILLARS
+ok 32 - [group 0] GOLDEN_PATH_FULL_PILLARS
+  ---
+  duration_ms: 76.786616
+  type: 'test'
+  ...
+# Subtest: [group 0] SINGLE_DEGRADATION_MISSING_GENDER
+ok 33 - [group 0] SINGLE_DEGRADATION_MISSING_GENDER
+  ---
+  duration_ms: 0.77149
+  type: 'test'
+  ...
+# Subtest: [group 0] SINGLE_DEGRADATION_HOUR_UNKNOWN_NORMAL_DAY
+ok 34 - [group 0] SINGLE_DEGRADATION_HOUR_UNKNOWN_NORMAL_DAY
+  ---
+  duration_ms: 0.600742
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_2H01M
+ok 35 - [group 1] ST_JINGZHE_MINUS_2H01M
+  ---
+  duration_ms: 0.703692
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_1H59M
+ok 36 - [group 1] ST_JINGZHE_MINUS_1H59M
+  ---
+  duration_ms: 0.846179
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_1H
+ok 37 - [group 1] ST_JINGZHE_MINUS_1H
+  ---
+  duration_ms: 0.599978
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_5M
+ok 38 - [group 1] ST_JINGZHE_MINUS_5M
+  ---
+  duration_ms: 0.216691
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_1M
+ok 39 - [group 1] ST_JINGZHE_MINUS_1M
+  ---
+  duration_ms: 0.40568
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_1M
+ok 40 - [group 1] ST_JINGZHE_PLUS_1M
+  ---
+  duration_ms: 0.537694
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_5M
+ok 41 - [group 1] ST_JINGZHE_PLUS_5M
+  ---
+  duration_ms: 0.530763
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_1H
+ok 42 - [group 1] ST_JINGZHE_PLUS_1H
+  ---
+  duration_ms: 0.247829
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_1H59M
+ok 43 - [group 1] ST_JINGZHE_PLUS_1H59M
+  ---
+  duration_ms: 0.142903
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_2H01M
+ok 44 - [group 1] ST_JINGZHE_PLUS_2H01M
+  ---
+  duration_ms: 0.205055
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_MINUS_1H
+ok 45 - [group 1] ST_LICHUN_MINUS_1H
+  ---
+  duration_ms: 0.173919
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_MINUS_5M
+ok 46 - [group 1] ST_LICHUN_MINUS_5M
+  ---
+  duration_ms: 0.146376
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_MINUS_1M
+ok 47 - [group 1] ST_LICHUN_MINUS_1M
+  ---
+  duration_ms: 0.171719
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_PLUS_1M
+ok 48 - [group 1] ST_LICHUN_PLUS_1M
+  ---
+  duration_ms: 0.195735
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_PLUS_5M
+ok 49 - [group 1] ST_LICHUN_PLUS_5M
+  ---
+  duration_ms: 0.200834
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_PLUS_1H
+ok 50 - [group 1] ST_LICHUN_PLUS_1H
+  ---
+  duration_ms: 0.191808
+  type: 'test'
+  ...
+# Subtest: [group 2] ROLLOVER_2359_LATE_ZI
+ok 51 - [group 2] ROLLOVER_2359_LATE_ZI
+  ---
+  duration_ms: 0.092844
+  type: 'test'
+  ...
+# Subtest: [group 2] ROLLOVER_0000_EARLY_ZI
+ok 52 - [group 2] ROLLOVER_0000_EARLY_ZI
+  ---
+  duration_ms: 0.097775
+  type: 'test'
+  ...
+# Subtest: [group 2] ZI_HOUR_CONTINUITY_HAISHI_TO_ZI
+ok 53 - [group 2] ZI_HOUR_CONTINUITY_HAISHI_TO_ZI
+  ---
+  duration_ms: 0.21469
+  type: 'test'
+  ...
+# Subtest: [group 3] SHICHEN_ZI_CROSS_DAY_LATE
+ok 54 - [group 3] SHICHEN_ZI_CROSS_DAY_LATE
+  ---
+  duration_ms: 0.300845
+  type: 'test'
+  ...
+# Subtest: [group 3] SHICHEN_ZI_CROSS_DAY_EARLY
+ok 55 - [group 3] SHICHEN_ZI_CROSS_DAY_EARLY
+  ---
+  duration_ms: 0.166565
+  type: 'test'
+  ...
+# Subtest: [group 3] SHICHEN_ZI_AND_JINGZHE_SUPERPOSITION
+ok 56 - [group 3] SHICHEN_ZI_AND_JINGZHE_SUPERPOSITION
+  ---
+  duration_ms: 0.230099
+  type: 'test'
+  ...
+# Subtest: [group 3] SHICHEN_ZI_AND_LICHUN_SUPERPOSITION
+ok 57 - [group 3] SHICHEN_ZI_AND_LICHUN_SUPERPOSITION
+  ---
+  duration_ms: 0.166422
+  type: 'test'
+  ...
+# Subtest: [group 4] UNKNOWN_GENDER_AND_HOUR_ON_TERM_DAY
+ok 58 - [group 4] UNKNOWN_GENDER_AND_HOUR_ON_TERM_DAY
+  ---
+  duration_ms: 0.178909
+  type: 'test'
+  ...
+1..58
+# tests 58
+# suites 0
+# pass 58
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 801.364912
