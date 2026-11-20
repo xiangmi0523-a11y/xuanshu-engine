@@ -61,6 +61,12 @@
 - 每条记录当地窗口、UTC 窗口、UTC+8 窗口与依据；期望值由独立 Python 只读冻结 CSV 推出，脚本见 `reports/evidence/E1-closure/derive.md`。
 - 断言：日、年、月柱（单值或候选）、时柱（UNKNOWN 为 null）、CROSS_TERM_DAY_HOUR_UNKNOWN、requires_user_confirmation。
 
-## 8. 比对
+## 8. 装卦与八字查表向量（`zhuanggua.json`）
+
+- 装卦：输入六个爻值（初爻在前）与占日日辰干支；断言本卦、变卦的卦名、宫、宫内位置、世、应，以及每爻纳甲、五行、六亲（变卦六亲仍依本卦宫）、本卦六神，与旬空。
+- 八字查表：断言 ResultNormal 示例四柱的天干十神与日主十二长生；藏干按《渊海子平》〈又地支藏遁歌〉原文断言“所藏之干的集合”（本气、中气、余气的次序为整理层，不由原文断言）。
+- 期望值由独立 Python 用规则推算与原文卦例得出，不读静态表、不调用引擎；脚本见 `reports/evidence/zhuanggua/derive.md`。
+
+## 9. 比对
 
 引擎单元测试可以运行这些向量；与冻结基准的全量比对由 `xuanshu-data/harness/` 独立执行（B4-11、B3-1 D4）。

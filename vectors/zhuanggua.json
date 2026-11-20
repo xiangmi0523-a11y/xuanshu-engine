@@ -1,0 +1,554 @@
+{
+ "spec": "vectors/SPEC.md §8",
+ "generated_by": "独立 Python（规则推算 + 原文卦例），不读静态表、不调用引擎；脚本见 reports/evidence/zhuanggua/derive.md",
+ "cases": [
+  {
+   "id": "ZG01_QIAN_STATIC",
+   "yao": [
+    7,
+    7,
+    7,
+    7,
+    7,
+    7
+   ],
+   "day_ganzhi": "甲子",
+   "expect": {
+    "ben": {
+     "name": "乾为天",
+     "palace": "乾",
+     "palace_position": "本宫",
+     "shi": 6,
+     "ying": 3,
+     "lines": [
+      {
+       "stem_branch": "甲子",
+       "wuxing": "水",
+       "liuqin": "子孙",
+       "liushen": "青龙"
+      },
+      {
+       "stem_branch": "甲寅",
+       "wuxing": "木",
+       "liuqin": "妻财",
+       "liushen": "朱雀"
+      },
+      {
+       "stem_branch": "甲辰",
+       "wuxing": "土",
+       "liuqin": "父母",
+       "liushen": "勾陈"
+      },
+      {
+       "stem_branch": "壬午",
+       "wuxing": "火",
+       "liuqin": "官鬼",
+       "liushen": "螣蛇"
+      },
+      {
+       "stem_branch": "壬申",
+       "wuxing": "金",
+       "liuqin": "兄弟",
+       "liushen": "白虎"
+      },
+      {
+       "stem_branch": "壬戌",
+       "wuxing": "土",
+       "liuqin": "父母",
+       "liushen": "玄武"
+      }
+     ]
+    },
+    "bian": null,
+    "moving": [],
+    "xunkong": {
+     "xun_head": "甲子",
+     "void": [
+      "戌",
+      "亥"
+     ]
+    }
+   },
+   "basis": "乾为天静卦；六亲与《增删卜易》乾为天卦例一致（上→初：父母戌土、兄弟申金、官鬼午火、父母辰土、妻财寅木、子孙子水）"
+  },
+  {
+   "id": "ZG02_QIAN_TO_GOU",
+   "yao": [
+    9,
+    7,
+    7,
+    7,
+    7,
+    7
+   ],
+   "day_ganzhi": "戊戌",
+   "expect": {
+    "ben": {
+     "name": "乾为天",
+     "palace": "乾",
+     "palace_position": "本宫",
+     "shi": 6,
+     "ying": 3,
+     "lines": [
+      {
+       "stem_branch": "甲子",
+       "wuxing": "水",
+       "liuqin": "子孙",
+       "liushen": "勾陈"
+      },
+      {
+       "stem_branch": "甲寅",
+       "wuxing": "木",
+       "liuqin": "妻财",
+       "liushen": "螣蛇"
+      },
+      {
+       "stem_branch": "甲辰",
+       "wuxing": "土",
+       "liuqin": "父母",
+       "liushen": "白虎"
+      },
+      {
+       "stem_branch": "壬午",
+       "wuxing": "火",
+       "liuqin": "官鬼",
+       "liushen": "玄武"
+      },
+      {
+       "stem_branch": "壬申",
+       "wuxing": "金",
+       "liuqin": "兄弟",
+       "liushen": "青龙"
+      },
+      {
+       "stem_branch": "壬戌",
+       "wuxing": "土",
+       "liuqin": "父母",
+       "liushen": "朱雀"
+      }
+     ]
+    },
+    "bian": {
+     "name": "天风姤",
+     "palace": "乾",
+     "palace_position": "一世",
+     "shi": 1,
+     "ying": 4,
+     "lines": [
+      {
+       "stem_branch": "辛丑",
+       "wuxing": "土",
+       "liuqin": "父母"
+      },
+      {
+       "stem_branch": "辛亥",
+       "wuxing": "水",
+       "liuqin": "子孙"
+      },
+      {
+       "stem_branch": "辛酉",
+       "wuxing": "金",
+       "liuqin": "兄弟"
+      },
+      {
+       "stem_branch": "壬午",
+       "wuxing": "火",
+       "liuqin": "官鬼"
+      },
+      {
+       "stem_branch": "壬申",
+       "wuxing": "金",
+       "liuqin": "兄弟"
+      },
+      {
+       "stem_branch": "壬戌",
+       "wuxing": "土",
+       "liuqin": "父母"
+      }
+     ]
+    },
+    "moving": [
+     1
+    ],
+    "xunkong": {
+     "xun_head": "甲午",
+     "void": [
+      "辰",
+      "巳"
+     ]
+    }
+   },
+   "basis": "乾初九动变天风姤（乾宫一世）；变爻丑土仍依乾宫金论父母（P-B-04）；戊日六神勾陈起；甲午旬辰巳空"
+  },
+  {
+   "id": "ZG03_GU_XUN_GUIHUN",
+   "yao": [
+    8,
+    7,
+    7,
+    8,
+    8,
+    7
+   ],
+   "day_ganzhi": "丁卯",
+   "expect": {
+    "ben": {
+     "name": "山风蛊",
+     "palace": "巽",
+     "palace_position": "归魂",
+     "shi": 3,
+     "ying": 6,
+     "lines": [
+      {
+       "stem_branch": "辛丑",
+       "wuxing": "土",
+       "liuqin": "妻财",
+       "liushen": "朱雀"
+      },
+      {
+       "stem_branch": "辛亥",
+       "wuxing": "水",
+       "liuqin": "父母",
+       "liushen": "勾陈"
+      },
+      {
+       "stem_branch": "辛酉",
+       "wuxing": "金",
+       "liuqin": "官鬼",
+       "liushen": "螣蛇"
+      },
+      {
+       "stem_branch": "丙戌",
+       "wuxing": "土",
+       "liuqin": "妻财",
+       "liushen": "白虎"
+      },
+      {
+       "stem_branch": "丙子",
+       "wuxing": "水",
+       "liuqin": "父母",
+       "liushen": "玄武"
+      },
+      {
+       "stem_branch": "丙寅",
+       "wuxing": "木",
+       "liuqin": "兄弟",
+       "liushen": "青龙"
+      }
+     ]
+    },
+    "bian": null,
+    "moving": [],
+    "xunkong": {
+     "xun_head": "甲子",
+     "void": [
+      "戌",
+      "亥"
+     ]
+    }
+   },
+   "basis": "山风蛊为巽宫归魂（P-B-01 巽宫末从胡一桂）；世三应六；静卦"
+  },
+  {
+   "id": "ZG04_JIN_TO_XU_CROSS_PALACE",
+   "yao": [
+    6,
+    6,
+    6,
+    9,
+    6,
+    9
+   ],
+   "day_ganzhi": "癸亥",
+   "expect": {
+    "ben": {
+     "name": "火地晋",
+     "palace": "乾",
+     "palace_position": "游魂",
+     "shi": 4,
+     "ying": 1,
+     "lines": [
+      {
+       "stem_branch": "乙未",
+       "wuxing": "土",
+       "liuqin": "父母",
+       "liushen": "玄武"
+      },
+      {
+       "stem_branch": "乙巳",
+       "wuxing": "火",
+       "liuqin": "官鬼",
+       "liushen": "青龙"
+      },
+      {
+       "stem_branch": "乙卯",
+       "wuxing": "木",
+       "liuqin": "妻财",
+       "liushen": "朱雀"
+      },
+      {
+       "stem_branch": "己酉",
+       "wuxing": "金",
+       "liuqin": "兄弟",
+       "liushen": "勾陈"
+      },
+      {
+       "stem_branch": "己未",
+       "wuxing": "土",
+       "liuqin": "父母",
+       "liushen": "螣蛇"
+      },
+      {
+       "stem_branch": "己巳",
+       "wuxing": "火",
+       "liuqin": "官鬼",
+       "liushen": "白虎"
+      }
+     ]
+    },
+    "bian": {
+     "name": "水天需",
+     "palace": "坤",
+     "palace_position": "游魂",
+     "shi": 4,
+     "ying": 1,
+     "lines": [
+      {
+       "stem_branch": "甲子",
+       "wuxing": "水",
+       "liuqin": "子孙"
+      },
+      {
+       "stem_branch": "甲寅",
+       "wuxing": "木",
+       "liuqin": "妻财"
+      },
+      {
+       "stem_branch": "甲辰",
+       "wuxing": "土",
+       "liuqin": "父母"
+      },
+      {
+       "stem_branch": "戊申",
+       "wuxing": "金",
+       "liuqin": "兄弟"
+      },
+      {
+       "stem_branch": "戊戌",
+       "wuxing": "土",
+       "liuqin": "父母"
+      },
+      {
+       "stem_branch": "戊子",
+       "wuxing": "水",
+       "liuqin": "子孙"
+      }
+     ]
+    },
+    "moving": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "xunkong": {
+     "xun_head": "甲寅",
+     "void": [
+      "子",
+      "丑"
+     ]
+    }
+   },
+   "basis": "火地晋（乾宫游魂）六爻皆动变水天需（坤宫游魂）；变卦寻宫按变卦本身，六亲仍依本卦乾宫金"
+  },
+  {
+   "id": "ZG05_TAI_TWO_MOVING",
+   "yao": [
+    9,
+    7,
+    7,
+    8,
+    6,
+    8
+   ],
+   "day_ganzhi": "庚申",
+   "expect": {
+    "ben": {
+     "name": "地天泰",
+     "palace": "坤",
+     "palace_position": "三世",
+     "shi": 3,
+     "ying": 6,
+     "lines": [
+      {
+       "stem_branch": "甲子",
+       "wuxing": "水",
+       "liuqin": "妻财",
+       "liushen": "白虎"
+      },
+      {
+       "stem_branch": "甲寅",
+       "wuxing": "木",
+       "liuqin": "官鬼",
+       "liushen": "玄武"
+      },
+      {
+       "stem_branch": "甲辰",
+       "wuxing": "土",
+       "liuqin": "兄弟",
+       "liushen": "青龙"
+      },
+      {
+       "stem_branch": "癸丑",
+       "wuxing": "土",
+       "liuqin": "兄弟",
+       "liushen": "朱雀"
+      },
+      {
+       "stem_branch": "癸亥",
+       "wuxing": "水",
+       "liuqin": "妻财",
+       "liushen": "勾陈"
+      },
+      {
+       "stem_branch": "癸酉",
+       "wuxing": "金",
+       "liuqin": "子孙",
+       "liushen": "螣蛇"
+      }
+     ]
+    },
+    "bian": {
+     "name": "水风井",
+     "palace": "震",
+     "palace_position": "五世",
+     "shi": 5,
+     "ying": 2,
+     "lines": [
+      {
+       "stem_branch": "辛丑",
+       "wuxing": "土",
+       "liuqin": "兄弟"
+      },
+      {
+       "stem_branch": "辛亥",
+       "wuxing": "水",
+       "liuqin": "妻财"
+      },
+      {
+       "stem_branch": "辛酉",
+       "wuxing": "金",
+       "liuqin": "子孙"
+      },
+      {
+       "stem_branch": "戊申",
+       "wuxing": "金",
+       "liuqin": "子孙"
+      },
+      {
+       "stem_branch": "戊戌",
+       "wuxing": "土",
+       "liuqin": "兄弟"
+      },
+      {
+       "stem_branch": "戊子",
+       "wuxing": "水",
+       "liuqin": "妻财"
+      }
+     ]
+    },
+    "moving": [
+     1,
+     5
+    ],
+    "xunkong": {
+     "xun_head": "甲寅",
+     "void": [
+      "子",
+      "丑"
+     ]
+    }
+   },
+   "basis": "地天泰（坤宫三世）初、五爻动变；庚日白虎起"
+  }
+ ],
+ "bazi": {
+  "pillars": [
+   "庚午",
+   "甲申",
+   "壬子",
+   "丁未"
+  ],
+  "stem_shishen": [
+   "偏印",
+   "食神",
+   "日主",
+   "正财"
+  ],
+  "day_master_changsheng": [
+   "胎",
+   "长生",
+   "帝旺",
+   "养"
+  ]
+ },
+ "canggan_sets_from_yuanhai_song": {
+  "text": "子宫癸水在其中，丑癸辛金己土同，寅宫甲木兼丙戊，卯宫乙木独相逢，辰藏乙戊三分癸，巳中庚金丙戊丛，午宫丁火并己土，未宫乙己丁共宗，申位庚金壬水戊，酉宫辛字独丰隆，戌宫辛金及丁戊，亥藏壬甲是真踪",
+  "sets": {
+   "子": [
+    "癸"
+   ],
+   "丑": [
+    "己",
+    "癸",
+    "辛"
+   ],
+   "寅": [
+    "丙",
+    "戊",
+    "甲"
+   ],
+   "卯": [
+    "乙"
+   ],
+   "辰": [
+    "乙",
+    "戊",
+    "癸"
+   ],
+   "巳": [
+    "丙",
+    "庚",
+    "戊"
+   ],
+   "午": [
+    "丁",
+    "己"
+   ],
+   "未": [
+    "丁",
+    "乙",
+    "己"
+   ],
+   "申": [
+    "壬",
+    "庚",
+    "戊"
+   ],
+   "酉": [
+    "辛"
+   ],
+   "戌": [
+    "丁",
+    "戊",
+    "辛"
+   ],
+   "亥": [
+    "壬",
+    "甲"
+   ]
+  }
+ }
+}

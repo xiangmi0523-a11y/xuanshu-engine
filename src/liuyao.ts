@@ -4,7 +4,7 @@
  * - 输入为六个爻值（初爻在前）：6 老阴、7 少阳、8 少阴、9 老阳。摇卦结果作为输入保存（ENG.1），
  *   引擎不做随机采样；铜钱字 / 背约定契约未定（P-B-11），故不接受铜钱面作为输入。
  * - 动爻：6、9；变卦：动爻阴阳翻转（P-B-08）。
- * - 八宫寻宫、纳甲、世应、六亲、六神（P-B-01～06）需要 Muse 核对过的静态表，本阶段【待定】，不在此实现。
+ * - 八宫寻宫、纳甲、世应、六亲、六神、旬空（P-B-01～06）见 zhuanggua.ts（【用户裁决 E2-A】，静态表已准入）。
  */
 import { BlockedError } from "./errors.js";
 
@@ -47,6 +47,6 @@ export function computeLiuyao(yao: number[]): LiuyaoResult {
     bian_lines: bian,
     ben_trigrams: tri(ben),
     bian_trigrams: bian ? tri(bian) : null,
-    pending: ["八宫寻宫、纳甲、世应、六亲、六神需 Muse 核对过的静态表（P-B-01～06），E1 未实现【待定】"],
+    pending: ["装卦（寻宫、纳甲、世应、六亲、六神、旬空）见 computeZhuanggua"],
   };
 }
