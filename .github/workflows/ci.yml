@@ -1,0 +1,19 @@
+name: 引擎 CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: 安装（锁定版本）
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: 禁令、隔离、冻结数据、编译、单元测试
+        run: npm run ci

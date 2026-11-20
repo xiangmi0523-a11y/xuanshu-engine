@@ -1,0 +1,22 @@
+{
+  "name": "xuanshu-engine",
+  "version": "0.0.0",
+  "private": true,
+  "description": "玄枢计算引擎（纯计算核心）——B3-1 有边界工程启动",
+  "type": "module",
+  "engines": {
+    "node": "22.23.5"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test \"dist/test/**/*.test.js\"",
+    "check:forbidden": "node scripts/check-forbidden.mjs",
+    "check:isolation": "node scripts/check-isolation.mjs",
+    "check:data": "node scripts/check-data.mjs",
+    "ci": "npm run check:forbidden && npm run check:isolation && npm run check:data && npm run build && npm test"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "note": "冻结数据副本。正本在 xuanshu-data，哈希以契约登记为准；引擎只读，不得修改。",
+  "files": {
+    "jieqi_1900_2100_utc_skyfield.csv": { "sha256": "69a3215524381f96b212bc682416a3da47d9de4f286fa4ef14ce9ed03ee616e4", "decision": "B4-22" },
+    "day_pillars_1900_2100.csv":        { "sha256": "374922ef04e105f61fc7fd5e16966b6ae4584d39bf1f1abe39d0b38dc0fc3d89", "decision": "B4-22" },
+    "eot_1900_2100_daily.csv":          { "sha256": "e093fe9872cf49b8a8ef15481654935afda9e31ea88d96fc5da74bb93991f9da", "decision": "B1-1" }
+  }
+}
