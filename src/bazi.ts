@@ -10,7 +10,7 @@
 import { BlockedError } from "./errors.js";
 import { assertZiRuleAllowed } from "./zi.js";
 import {
-  dayIndex, ganzhiName, hourBranchOfMinute, hourIndex, monthBranchOfJie, monthIndex, yearIndex,
+  dayIndex, ganzhiName, hourBranchOfMinute, mod, hourIndex, monthBranchOfJie, monthIndex, yearIndex,
   SHICHEN_NAMES, type Shichen,
 } from "./ganzhi.js";
 import {
@@ -214,24 +214,34 @@ export function computeBazi(input: BaziInput, tables: Tables): BaziResult {
   } else if (timePrecision === "SHICHEN") {
     if (!input.shichen) throw new BlockedError("SHICHEN_MISSING", "精度为 SHICHEN 但未给出时辰");
     const b = SHICHEN_NAMES.indexOf(input.shichen);
-    // 窗口在 UTC+8 钟表轴上：子时 = [D−1 23:00, D 01:00)；其余时辰 = [D 2b−1 时, D 2b+1 时)
-    const startAxis = b === 0 ? dateUtcMidnight - HOUR : dateUtcMidnight + (2 * b - 1) * HOUR;
-    const endAxis = startAxis + 2 * HOUR;
-    const ws = startAxis - UTC8, we = endAxis - UTC8; // UTC 时刻
+    // 输入的日期 D 与时辰是出生证明上的当地民用时（§6.1 raw_payload：出生证明钟表时间 + 原始时区）。
+    // 窗口先在当地钟表上取：子时 = [D−1 23:00, D 01:00)（§13.3、B4-14）；其余时辰 = [D 2b−1 时, D 2b+1 时)。
+    // 再按已解析的 UTC 偏移换成 UTC 时刻（§13.10 第 2 条：非 UTC+8 输入先归一）。UTC+8 输入与旧行为完全相同。
+    const startLocal = b === 0 ? dateUtcMidnight - HOUR : dateUtcMidnight + (2 * b - 1) * HOUR;
+    const ws = startLocal - offset, we = ws + 2 * HOUR; // UTC 时刻
     assertJieqiRange(tables.jieqi, ws);
     assertJieqiRange(tables.jieqi, we - 1);
     // E1 验收第 4 项：只知时辰且选真太阳时，须按时辰区间映射判断，不得把时辰当作精确时间；本阶段未实现，阻断
     if (ref === "true_solar") throw new BlockedError("SHICHEN_TRUE_SOLAR_PENDING", "只知时辰且选真太阳时：按时辰区间映射的算法待实现（E1 验收第 4 项）");
 
-    // 日柱：子时跨 00:00，候选 [D−1, D]；其余时辰日柱为 D
-    const pD = parts(dateUtcMidnight), pPrev = parts(dateUtcMidnight - DAY);
-    if (b === 0) {
-      const a = dayPillarOf(pPrev.y, pPrev.m, pPrev.d), bb = dayPillarOf(pD.y, pD.m, pD.d);
-      day = { candidates: [a, bb], ambiguous: true };
-      primary.day_pillar = a;
-    } else day = single(dayPillarOf(pD.y, pD.m, pD.d));
-    // 时柱单值：子时按 D 的日干起；其余按 D
-    hour = single(ganzhiName(hourIndex(dayIndex(pD.y, pD.m, pD.d) % 10, b)));
+    // 日柱、时柱在参考时间轴（clock = UTC+8）上判定（§13.10）。当地时辰换到 UTC+8 后若不与某一个时辰对齐，
+    // 该窗口会跨两个时辰，时柱无法唯一；契约只定义了 SHICHEN 时柱单值（§13.3），未定义此情形 → 【待定】阻断，不伪造时柱。
+    const a0 = ws + UTC8, a1 = we + UTC8;
+    if (mod(a0 + HOUR, 2 * HOUR) !== 0) {
+      throw new BlockedError("SHICHEN_OFFSET_NOT_ALIGNED",
+        "只知时辰：出生地时区换到 UTC+8 后，该时辰跨两个时辰，时柱无法唯一确定；契约未定义此情形（【待定】，待用户裁决）");
+    }
+    const pa = parts(a0), pz = parts(a1 - 1);
+    const bAxis = hourBranchOfMinute(pa.minuteOfDay);
+    // 日柱按 00:00 换日：窗口跨 UTC+8 的 00:00 时给 [前一日, 当日] 候选（§13.3；UTC+8 子时即此情形）
+    const dA = dayPillarOf(pa.y, pa.m, pa.d), dZ = dayPillarOf(pz.y, pz.m, pz.d);
+    if (pa.d !== pz.d || pa.m !== pz.m || pa.y !== pz.y) {
+      day = { candidates: [dA, dZ], ambiguous: true };
+      primary.day_pillar = dA;
+    } else day = single(dA);
+    // 时柱单值；子时时干按 00:00 之后那一日的日干起（§13.3）
+    const stem = bAxis === 0 ? pz : pa;
+    hour = single(ganzhiName(hourIndex(dayIndex(stem.y, stem.m, stem.d) % 10, bAxis)));
 
     const inWin = jieWithin(tables.jieqi, ws, we);
     const ym = yearMonthAt(tables, ws);
@@ -249,11 +259,12 @@ export function computeBazi(input: BaziInput, tables: Tables): BaziResult {
       year = single(ym.year);
       month = single(ym.month);
     }
-    if (pD.y >= FAR_FUTURE_FROM_YEAR) flags.add("FAR_FUTURE_EXTRAPOLATION");
+    if (pz.y >= FAR_FUTURE_FROM_YEAR) flags.add("FAR_FUTURE_EXTRAPOLATION");
   } else {
-    // UNKNOWN：三柱模式；日柱按登记日期 D，不做真太阳时切日（N-3）
+    // UNKNOWN：三柱模式；日柱一律按登记的钟表日期 D 单值，不做真太阳时切日，也不因经度偏移给日柱双解（§13.3、N-3）。
+    // 交节判定用“当地登记日 D 全天”对应的 UTC 区间（§13.4：UNKNOWN 落在交节当日；§13.10：非 UTC+8 先归一），不伪造出生时刻。
     degradation.push("HOUR_UNKNOWN");
-    const ds = dateUtcMidnight - UTC8, de = ds + DAY;
+    const ds = dateUtcMidnight - offset, de = ds + DAY;
     assertJieqiRange(tables.jieqi, ds);
     assertJieqiRange(tables.jieqi, de - 1);
     day = single(dayPillarOf(civil.year, civil.month, civil.day));

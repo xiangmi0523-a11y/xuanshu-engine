@@ -1,0 +1,720 @@
+TAP version 13
+# Subtest: 子时规则：其余三值与缺失被拦截（引擎层，W-03）
+ok 1 - 子时规则：其余三值与缺失被拦截（引擎层，W-03）
+  ---
+  duration_ms: 57.526815
+  type: 'test'
+  ...
+# Subtest: 真太阳时：缺经度阻断；有经度时记录经度项、均时差与 UT1−UTC 近似，显示到分钟
+ok 2 - 真太阳时：缺经度阻断；有经度时记录经度项、均时差与 UT1−UTC 近似，显示到分钟
+  ---
+  duration_ms: 1.245113
+  type: 'test'
+  ...
+# Subtest: 子时边界提示：按参考时间判定，文案区分 clock / true_solar
+ok 3 - 子时边界提示：按参考时间判定，文案区分 clock / true_solar
+  ---
+  duration_ms: 0.618602
+  type: 'test'
+  ...
+# Subtest: 时辰未知：三柱，附规定声明，不做真太阳时切日
+ok 4 - 时辰未知：三柱，附规定声明，不做真太阳时切日
+  ---
+  duration_ms: 0.83883
+  type: 'test'
+  ...
+# Subtest: 远期外推标记：2027 年起（B4-5）
+ok 5 - 远期外推标记：2027 年起（B4-5）
+  ---
+  duration_ms: 0.405716
+  type: 'test'
+  ...
+# Subtest: 夏令时：+09:00 输入归一到 UTC+8 后再判（B4-12）
+ok 6 - 夏令时：+09:00 输入归一到 UTC+8 后再判（B4-12）
+  ---
+  duration_ms: 0.294697
+  type: 'test'
+  ...
+# Subtest: 超出节气表范围被阻断
+ok 7 - 超出节气表范围被阻断
+  ---
+  duration_ms: 0.149065
+  type: 'test'
+  ...
+# Subtest: 子时边界提示：闭区间 [22:30, 23:30]、[00:30, 01:30]
+ok 8 - 子时边界提示：闭区间 [22:30, 23:30]、[00:30, 01:30]
+  ---
+  duration_ms: 55.479661
+  type: 'test'
+  ...
+# Subtest: 交节告警：闭区间 ±2 小时、立春 ±24 小时（端点含）
+ok 9 - 交节告警：闭区间 ±2 小时、立春 ±24 小时（端点含）
+  ---
+  duration_ms: 0.769208
+  type: 'test'
+  ...
+# Subtest: 只知时辰且选真太阳时：阻断，待实现
+ok 10 - 只知时辰且选真太阳时：阻断，待实现
+  ---
+  duration_ms: 0.637974
+  type: 'test'
+  ...
+# Subtest: 支持区间按冻结表精确计算：[1900-02-04T05:51:30Z, 2100-12-07T01:42:06Z)
+ok 11 - 支持区间按冻结表精确计算：[1900-02-04T05:51:30Z, 2100-12-07T01:42:06Z)
+  ---
+  duration_ms: 0.390437
+  type: 'test'
+  ...
+# Subtest: 非 UTC+8 输入：先换算 UTC，再归一到 UTC+8（东京 +09:00）
+ok 12 - 非 UTC+8 输入：先换算 UTC，再归一到 UTC+8（东京 +09:00）
+  ---
+  duration_ms: 0.252593
+  type: 'test'
+  ...
+# Subtest: 六十甲子序与奇偶校验（P-D-01）
+ok 13 - 六十甲子序与奇偶校验（P-D-01）
+  ---
+  duration_ms: 0.832001
+  type: 'test'
+  ...
+# Subtest: 日柱锚点与契约金值（P-D-04、§13.11）
+ok 14 - 日柱锚点与契约金值（P-D-04、§13.11）
+  ---
+  duration_ms: 0.231362
+  type: 'test'
+  ...
+# Subtest: 年柱（立春年）
+ok 15 - 年柱（立春年）
+  ---
+  duration_ms: 0.142777
+  type: 'test'
+  ...
+# Subtest: 五虎遁（P-D-03）
+ok 16 - 五虎遁（P-D-03）
+  ---
+  duration_ms: 0.10392
+  type: 'test'
+  ...
+# Subtest: 五鼠遁与时支（P-D-05）
+ok 17 - 五鼠遁与时支（P-D-05）
+  ---
+  duration_ms: 0.154734
+  type: 'test'
+  ...
+# Subtest: 节 → 月支
+ok 18 - 节 → 月支
+  ---
+  duration_ms: 0.099417
+  type: 'test'
+  ...
+# Subtest: 六爻：本卦、动爻、变卦
+ok 19 - 六爻：本卦、动爻、变卦
+  ---
+  duration_ms: 1.342301
+  type: 'test'
+  ...
+# Subtest: 六爻：全静无变卦；全阳为乾
+ok 20 - 六爻：全静无变卦；全阳为乾
+  ---
+  duration_ms: 0.21119
+  type: 'test'
+  ...
+# Subtest: 六爻：非法输入被拒
+ok 21 - 六爻：非法输入被拒
+  ---
+  duration_ms: 0.328837
+  type: 'test'
+  ...
+# Subtest: 六爻：八卦全部 8 种在下卦、上卦位置都按口诀识别（初爻在下）
+ok 22 - 六爻：八卦全部 8 种在下卦、上卦位置都按口诀识别（初爻在下）
+  ---
+  duration_ms: 0.657099
+  type: 'test'
+  ...
+# Subtest: 六爻：乾为天初九动 → 天风姤（下巽上乾）；坤为地初六动 → 地雷复（下震上坤）
+ok 23 - 六爻：乾为天初九动 → 天风姤（下巽上乾）；坤为地初六动 → 地雷复（下震上坤）
+  ---
+  duration_ms: 0.118205
+  type: 'test'
+  ...
+# Subtest: 节气表：4824 条，节 2412 条
+ok 24 - 节气表：4824 条，节 2412 条
+  ---
+  duration_ms: 53.138032
+  type: 'test'
+  ...
+# Subtest: 均时差插值：样本点取原值，日中取两端线性均值，符号与 B1-1 一致
+ok 25 - 均时差插值：样本点取原值，日中取两端线性均值，符号与 B1-1 一致
+  ---
+  duration_ms: 0.294922
+  type: 'test'
+  ...
+# Subtest: 均时差超出范围被阻断
+ok 26 - 均时差超出范围被阻断
+  ---
+  duration_ms: 0.379258
+  type: 'test'
+  ...
+# Subtest: [true_solar] TS1_EAST_135_CROSS_MIDNIGHT
+ok 27 - [true_solar] TS1_EAST_135_CROSS_MIDNIGHT
+  ---
+  duration_ms: 74.347601
+  type: 'test'
+  ...
+# Subtest: [true_solar] TS2_WEST_105_BACK_BEFORE_MIDNIGHT
+ok 28 - [true_solar] TS2_WEST_105_BACK_BEFORE_MIDNIGHT
+  ---
+  duration_ms: 0.354233
+  type: 'test'
+  ...
+# Subtest: [true_solar] TS3_EOT_POSITIVE_NOV
+ok 29 - [true_solar] TS3_EOT_POSITIVE_NOV
+  ---
+  duration_ms: 0.229784
+  type: 'test'
+  ...
+# Subtest: [true_solar] TS4_EOT_NEGATIVE_FEB
+ok 30 - [true_solar] TS4_EOT_NEGATIVE_FEB
+  ---
+  duration_ms: 0.165189
+  type: 'test'
+  ...
+# Subtest: [true_solar] TS5_TOKYO_UTC9_ORDER
+ok 31 - [true_solar] TS5_TOKYO_UTC9_ORDER
+  ---
+  duration_ms: 0.27188
+  type: 'test'
+  ...
+# Subtest: [tz] TZ01_SHICHEN_UTC9_ORDINARY
+not ok 32 - [tz] TZ01_SHICHEN_UTC9_ORDINARY
+  ---
+  duration_ms: 61.044745
+  type: 'test'
+  location: '/tmp/e1old/dist/test/tz_precision.test.js:13:5'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception: 当地午时 [11,13) JST = UTC+8 [10,12)，跨巳、午两个时辰；契约只定义 SHICHEN 时柱单值，未定义此情形 → 阻断待裁决'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/e1old/dist/test/tz_precision.test.js:23:20)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: [tz] TZ02_SHICHEN_UTC9_CROSS_DATE
+not ok 33 - [tz] TZ02_SHICHEN_UTC9_CROSS_DATE
+  ---
+  duration_ms: 1.126921
+  type: 'test'
+  location: '/tmp/e1old/dist/test/tz_precision.test.js:13:5'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception: 当地子时 [3/10 23:00, 3/11 01:00) JST = UTC+8 [3/10 22:00, 3/11 00:00)，当地日期与 UTC+8 日期不同，且跨亥、子 → 阻断待裁决'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/e1old/dist/test/tz_precision.test.js:23:20)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: [tz] TZ03_SHICHEN_UTCm5_CROSS_DATE
+not ok 34 - [tz] TZ03_SHICHEN_UTCm5_CROSS_DATE
+  ---
+  duration_ms: 0.234005
+  type: 'test'
+  location: '/tmp/e1old/dist/test/tz_precision.test.js:13:5'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception: 当地子时 [1/14 23:00, 1/15 01:00) EST = UTC+8 [1/15 12:00, 14:00)，跨午、未 → 阻断待裁决'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/e1old/dist/test/tz_precision.test.js:23:20)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [tz] TZ04_SHICHEN_UTCm4_ALIGNED_CROSS_DATE
+not ok 35 - [tz] TZ04_SHICHEN_UTCm4_ALIGNED_CROSS_DATE
+  ---
+  duration_ms: 1.36618
+  type: 'test'
+  location: '/tmp/e1old/dist/test/tz_precision.test.js:13:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    日柱：当地子时 [7/9 23:00, 7/10 01:00) EDT = UTC+8 [7/10 11:00, 13:00) = 午时，整段落在 UTC+8 的 7/10：日柱单值、时柱午（§13.10 归一后按 00:00 换日）
+    + actual - expected
+    
+    + [
+    +   '甲戌',
+    +   '乙亥'
+    + ]
+    - '乙亥'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '乙亥'
+  actual:
+    0: '甲戌'
+    1: '乙亥'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/e1old/dist/test/tz_precision.test.js:27:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [tz] TZ05_SHICHEN_UTC6_ALIGNED_TO_ZI
+not ok 36 - [tz] TZ05_SHICHEN_UTC6_ALIGNED_TO_ZI
+  ---
+  duration_ms: 0.518878
+  type: 'test'
+  location: '/tmp/e1old/dist/test/tz_precision.test.js:13:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    日柱：当地亥时 [21,23) = UTC+8 [7/10 23:00, 7/11 01:00) = 子时，跨 UTC+8 的 00:00：日柱双解 [7/10, 7/11]、时柱单值、时干按 7/11（§13.3）
+    + actual - expected
+    
+    + '己巳'
+    - [
+    -   '己巳',
+    -   '庚午'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: '己巳'
+    1: '庚午'
+  actual: '己巳'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/e1old/dist/test/tz_precision.test.js:27:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [tz] TZ06_SHICHEN_UTC0_JIE_IN_WINDOW
+not ok 37 - [tz] TZ06_SHICHEN_UTC0_JIE_IN_WINDOW
+  ---
+  duration_ms: 0.401914
+  type: 'test'
+  location: '/tmp/e1old/dist/test/tz_precision.test.js:13:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    月柱：当地丑时 [01,03) UTC = UTC+8 [09,11) 巳时；惊蛰 02:22:46Z 落在窗口内 → 月柱候选（§13.4 判定层）
+    + actual - expected
+    
+    + '丙寅'
+    - [
+    -   '丙寅',
+    -   '丁卯'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: '丙寅'
+    1: '丁卯'
+  actual: '丙寅'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/e1old/dist/test/tz_precision.test.js:29:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [tz] TZ07_SHICHEN_UTC8_CONTROL
+ok 38 - [tz] TZ07_SHICHEN_UTC8_CONTROL
+  ---
+  duration_ms: 0.797225
+  type: 'test'
+  ...
+# Subtest: [tz] TZ08_SHICHEN_TRUE_SOLAR_UTC8
+ok 39 - [tz] TZ08_SHICHEN_TRUE_SOLAR_UTC8
+  ---
+  duration_ms: 0.406909
+  type: 'test'
+  ...
+# Subtest: [tz] TZ09_SHICHEN_TRUE_SOLAR_UTC9
+ok 40 - [tz] TZ09_SHICHEN_TRUE_SOLAR_UTC9
+  ---
+  duration_ms: 0.3058
+  type: 'test'
+  ...
+# Subtest: [tz] TZ16_SHICHEN_UTC0530_HALF_HOUR
+not ok 41 - [tz] TZ16_SHICHEN_UTC0530_HALF_HOUR
+  ---
+  duration_ms: 0.386384
+  type: 'test'
+  location: '/tmp/e1old/dist/test/tz_precision.test.js:13:5'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception: 半小时时区：当地子时 [6/9 23:00, 6/10 01:00) IST = UTC+8 [6/10 01:30, 03:30)，跨丑、寅 → 阻断待裁决'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/e1old/dist/test/tz_precision.test.js:23:20)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [tz] TZ10_UNKNOWN_UTC9_JIE_IN_LOCAL_DAY
+not ok 42 - [tz] TZ10_UNKNOWN_UTC9_JIE_IN_LOCAL_DAY
+  ---
+  duration_ms: 0.483593
+  type: 'test'
+  location: '/tmp/e1old/dist/test/tz_precision.test.js:13:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    月柱：惊蛰 2018-03-05 23:28:11 UTC+8 = 3/6 00:28 JST，落在当地登记日 3/6 内 → 交节候选；日柱按登记日 3/6（N-3）
+    + actual - expected
+    
+    + '乙卯'
+    - [
+    -   '甲寅',
+    -   '乙卯'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: '甲寅'
+    1: '乙卯'
+  actual: '乙卯'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/e1old/dist/test/tz_precision.test.js:29:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [tz] TZ11_UNKNOWN_UTC9_JIE_NOT_IN_LOCAL_DAY
+not ok 43 - [tz] TZ11_UNKNOWN_UTC9_JIE_NOT_IN_LOCAL_DAY
+  ---
+  duration_ms: 0.371639
+  type: 'test'
+  location: '/tmp/e1old/dist/test/tz_precision.test.js:13:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    月柱：当地 3/5 = UTC+8 [3/4 23:00, 3/5 23:00)，惊蛰 23:28 不在内 → 无候选，月柱取交节前
+    + actual - expected
+    
+    + [
+    +   '甲寅',
+    +   '乙卯'
+    + ]
+    - '甲寅'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '甲寅'
+  actual:
+    0: '甲寅'
+    1: '乙卯'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/e1old/dist/test/tz_precision.test.js:29:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [tz] TZ12_UNKNOWN_UTCm5_JIE_IN_LOCAL_DAY
+not ok 44 - [tz] TZ12_UNKNOWN_UTCm5_JIE_IN_LOCAL_DAY
+  ---
+  duration_ms: 0.343071
+  type: 'test'
+  location: '/tmp/e1old/dist/test/tz_precision.test.js:13:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    月柱：惊蛰 2024-03-05 10:22:46 UTC+8 = 3/4 21:22 EST，落在当地登记日 3/4 内 → 交节候选；日柱按登记日 3/4
+    + actual - expected
+    
+    + '丙寅'
+    - [
+    -   '丙寅',
+    -   '丁卯'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: '丙寅'
+    1: '丁卯'
+  actual: '丙寅'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/e1old/dist/test/tz_precision.test.js:29:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [tz] TZ13_UNKNOWN_UTCm5_JIE_NOT_IN_LOCAL_DAY
+not ok 45 - [tz] TZ13_UNKNOWN_UTCm5_JIE_NOT_IN_LOCAL_DAY
+  ---
+  duration_ms: 0.288092
+  type: 'test'
+  location: '/tmp/e1old/dist/test/tz_precision.test.js:13:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    月柱：当地 3/5 = UTC+8 [3/5 13:00, 3/6 13:00)，惊蛰 10:22 不在内 → 无候选，月柱取交节后
+    + actual - expected
+    
+    + [
+    +   '丙寅',
+    +   '丁卯'
+    + ]
+    - '丁卯'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '丁卯'
+  actual:
+    0: '丙寅'
+    1: '丁卯'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/e1old/dist/test/tz_precision.test.js:29:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [tz] TZ14_UNKNOWN_UTC8_CONTROL
+ok 46 - [tz] TZ14_UNKNOWN_UTC8_CONTROL
+  ---
+  duration_ms: 0.129061
+  type: 'test'
+  ...
+# Subtest: [tz] TZ15_UNKNOWN_TRUE_SOLAR_UTCm5
+not ok 47 - [tz] TZ15_UNKNOWN_TRUE_SOLAR_UTCm5
+  ---
+  duration_ms: 0.142224
+  type: 'test'
+  location: '/tmp/e1old/dist/test/tz_precision.test.js:13:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    月柱：时辰未知且选真太阳时：不阻断，日柱仍按登记日，不做真太阳时切日（§13.3、N-3）
+    + actual - expected
+    
+    + '丙寅'
+    - [
+    -   '丙寅',
+    -   '丁卯'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: '丙寅'
+    1: '丁卯'
+  actual: '丙寅'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/e1old/dist/test/tz_precision.test.js:29:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [group 0] GOLDEN_PATH_FULL_PILLARS
+ok 48 - [group 0] GOLDEN_PATH_FULL_PILLARS
+  ---
+  duration_ms: 62.886853
+  type: 'test'
+  ...
+# Subtest: [group 0] SINGLE_DEGRADATION_MISSING_GENDER
+ok 49 - [group 0] SINGLE_DEGRADATION_MISSING_GENDER
+  ---
+  duration_ms: 0.490114
+  type: 'test'
+  ...
+# Subtest: [group 0] SINGLE_DEGRADATION_HOUR_UNKNOWN_NORMAL_DAY
+ok 50 - [group 0] SINGLE_DEGRADATION_HOUR_UNKNOWN_NORMAL_DAY
+  ---
+  duration_ms: 0.411748
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_2H01M
+ok 51 - [group 1] ST_JINGZHE_MINUS_2H01M
+  ---
+  duration_ms: 0.445418
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_1H59M
+ok 52 - [group 1] ST_JINGZHE_MINUS_1H59M
+  ---
+  duration_ms: 0.579904
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_1H
+ok 53 - [group 1] ST_JINGZHE_MINUS_1H
+  ---
+  duration_ms: 0.356695
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_5M
+ok 54 - [group 1] ST_JINGZHE_MINUS_5M
+  ---
+  duration_ms: 0.307574
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_1M
+ok 55 - [group 1] ST_JINGZHE_MINUS_1M
+  ---
+  duration_ms: 0.4197
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_1M
+ok 56 - [group 1] ST_JINGZHE_PLUS_1M
+  ---
+  duration_ms: 0.340207
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_5M
+ok 57 - [group 1] ST_JINGZHE_PLUS_5M
+  ---
+  duration_ms: 0.347299
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_1H
+ok 58 - [group 1] ST_JINGZHE_PLUS_1H
+  ---
+  duration_ms: 0.147391
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_1H59M
+ok 59 - [group 1] ST_JINGZHE_PLUS_1H59M
+  ---
+  duration_ms: 0.090661
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_2H01M
+ok 60 - [group 1] ST_JINGZHE_PLUS_2H01M
+  ---
+  duration_ms: 0.089402
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_MINUS_1H
+ok 61 - [group 1] ST_LICHUN_MINUS_1H
+  ---
+  duration_ms: 0.129254
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_MINUS_5M
+ok 62 - [group 1] ST_LICHUN_MINUS_5M
+  ---
+  duration_ms: 0.093881
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_MINUS_1M
+ok 63 - [group 1] ST_LICHUN_MINUS_1M
+  ---
+  duration_ms: 0.092535
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_PLUS_1M
+ok 64 - [group 1] ST_LICHUN_PLUS_1M
+  ---
+  duration_ms: 0.162941
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_PLUS_5M
+ok 65 - [group 1] ST_LICHUN_PLUS_5M
+  ---
+  duration_ms: 0.103847
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_PLUS_1H
+ok 66 - [group 1] ST_LICHUN_PLUS_1H
+  ---
+  duration_ms: 0.094703
+  type: 'test'
+  ...
+# Subtest: [group 2] ROLLOVER_2359_LATE_ZI
+ok 67 - [group 2] ROLLOVER_2359_LATE_ZI
+  ---
+  duration_ms: 0.055647
+  type: 'test'
+  ...
+# Subtest: [group 2] ROLLOVER_0000_EARLY_ZI
+ok 68 - [group 2] ROLLOVER_0000_EARLY_ZI
+  ---
+  duration_ms: 0.042449
+  type: 'test'
+  ...
+# Subtest: [group 2] ZI_HOUR_CONTINUITY_HAISHI_TO_ZI
+ok 69 - [group 2] ZI_HOUR_CONTINUITY_HAISHI_TO_ZI
+  ---
+  duration_ms: 0.133322
+  type: 'test'
+  ...
+# Subtest: [group 3] SHICHEN_ZI_CROSS_DAY_LATE
+ok 70 - [group 3] SHICHEN_ZI_CROSS_DAY_LATE
+  ---
+  duration_ms: 0.193276
+  type: 'test'
+  ...
+# Subtest: [group 3] SHICHEN_ZI_CROSS_DAY_EARLY
+ok 71 - [group 3] SHICHEN_ZI_CROSS_DAY_EARLY
+  ---
+  duration_ms: 0.096644
+  type: 'test'
+  ...
+# Subtest: [group 3] SHICHEN_ZI_AND_JINGZHE_SUPERPOSITION
+ok 72 - [group 3] SHICHEN_ZI_AND_JINGZHE_SUPERPOSITION
+  ---
+  duration_ms: 0.142421
+  type: 'test'
+  ...
+# Subtest: [group 3] SHICHEN_ZI_AND_LICHUN_SUPERPOSITION
+ok 73 - [group 3] SHICHEN_ZI_AND_LICHUN_SUPERPOSITION
+  ---
+  duration_ms: 0.22474
+  type: 'test'
+  ...
+# Subtest: [group 4] UNKNOWN_GENDER_AND_HOUR_ON_TERM_DAY
+ok 74 - [group 4] UNKNOWN_GENDER_AND_HOUR_ON_TERM_DAY
+  ---
+  duration_ms: 0.148122
+  type: 'test'
+  ...
+1..74
+# tests 74
+# suites 0
+# pass 62
+# fail 12
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 925.658042

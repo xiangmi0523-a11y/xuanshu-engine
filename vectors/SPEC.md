@@ -53,6 +53,14 @@
 - `eot_seconds_approx` 仅供核对，允许 ±0.01 秒。
 - 期望值由独立 Python 脚本按 `docs/time-basis.md` 的顺序与冻结表计算，不调用引擎。
 
-## 7. 比对
+## 7. 非 UTC+8 出生地的时辰精度向量（`tz_precision.json`，E1 收口）
+
+- 输入的日期与时辰是出生证明上的**当地民用时**（契约 §6.1），`utc_offset_hours` 为已解析的偏移。
+- SHICHEN：当地时辰窗口（子时 = [D−1 23:00, D 01:00)）换成 UTC，再在 UTC+8 轴上按 00:00 换日判日柱、按时辰判时柱（§13.3、§13.10）。换到 UTC+8 后跨两个时辰的，断言阻断 `SHICHEN_OFFSET_NOT_ALIGNED`（【待定】）；选真太阳时的断言阻断 `SHICHEN_TRUE_SOLAR_PENDING`。
+- UNKNOWN：日柱按登记的当地日期 D（§13.3、N-3）；交节判定用当地 D 全天对应的 UTC 区间（§13.4）。
+- 每条记录当地窗口、UTC 窗口、UTC+8 窗口与依据；期望值由独立 Python 只读冻结 CSV 推出，脚本见 `reports/evidence/E1-closure/derive.md`。
+- 断言：日、年、月柱（单值或候选）、时柱（UNKNOWN 为 null）、CROSS_TERM_DAY_HOUR_UNKNOWN、requires_user_confirmation。
+
+## 8. 比对
 
 引擎单元测试可以运行这些向量；与冻结基准的全量比对由 `xuanshu-data/harness/` 独立执行（B4-11、B3-1 D4）。
