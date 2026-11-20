@@ -1,0 +1,76 @@
+ok 1 - 子时规则：其余三值与缺失被拦截（引擎层，W-03）
+ok 2 - 真太阳时：缺经度阻断；有经度时记录经度项、均时差与 UT1−UTC 近似，显示到分钟
+ok 3 - 子时边界提示：按参考时间判定，文案区分 clock / true_solar
+ok 4 - 时辰未知：三柱，附规定声明，不做真太阳时切日
+ok 5 - 远期外推标记：2027 年起（B4-5）
+ok 6 - 夏令时：+09:00 输入归一到 UTC+8 后再判（B4-12）
+ok 7 - 超出节气表范围被阻断
+ok 8 - 子时边界提示：闭区间 [22:30, 23:30]、[00:30, 01:30]
+ok 9 - 交节告警：闭区间 ±2 小时、立春 ±24 小时（端点含）
+ok 10 - 只知时辰且选真太阳时：阻断，待实现
+ok 11 - 支持区间按冻结表精确计算：[1900-02-04T05:51:30Z, 2100-12-07T01:42:06Z)
+ok 12 - 非 UTC+8 输入：先换算 UTC，再归一到 UTC+8（东京 +09:00）
+ok 13 - E1-2：UTC+8 轴上的窗口恰好在 00:00 结束不算跨日；实际跨过 00:00 才算
+ok 14 - E1-2：交节落在窗口起点算在窗口内，落在终点不算（左闭右开）
+ok 15 - 六十甲子序与奇偶校验（P-D-01）
+ok 16 - 日柱锚点与契约金值（P-D-04、§13.11）
+ok 17 - 年柱（立春年）
+ok 18 - 五虎遁（P-D-03）
+ok 19 - 五鼠遁与时支（P-D-05）
+ok 20 - 节 → 月支
+ok 21 - 六爻：本卦、动爻、变卦
+ok 22 - 六爻：全静无变卦；全阳为乾
+ok 23 - 六爻：非法输入被拒
+ok 24 - 六爻：八卦全部 8 种在下卦、上卦位置都按口诀识别（初爻在下）
+ok 25 - 六爻：乾为天初九动 → 天风姤（下巽上乾）；坤为地初六动 → 地雷复（下震上坤）
+ok 26 - 节气表：4824 条，节 2412 条
+ok 27 - 均时差插值：样本点取原值，日中取两端线性均值，符号与 B1-1 一致
+ok 28 - 均时差超出范围被阻断
+ok 29 - [true_solar] TS1_EAST_135_CROSS_MIDNIGHT
+ok 30 - [true_solar] TS2_WEST_105_BACK_BEFORE_MIDNIGHT
+ok 31 - [true_solar] TS3_EOT_POSITIVE_NOV
+ok 32 - [true_solar] TS4_EOT_NEGATIVE_FEB
+ok 33 - [true_solar] TS5_TOKYO_UTC9_ORDER
+ok 34 - [tz] TZ01_SHICHEN_UTC9_ORDINARY
+ok 35 - [tz] TZ02_SHICHEN_UTC9_CROSS_DATE
+ok 36 - [tz] TZ03_SHICHEN_UTCm5_CROSS_DATE
+ok 37 - [tz] TZ04_SHICHEN_UTCm4_ALIGNED_CROSS_DATE
+ok 38 - [tz] TZ05_SHICHEN_UTC6_ALIGNED_TO_ZI
+ok 39 - [tz] TZ06_SHICHEN_UTC0_JIE_IN_WINDOW
+ok 40 - [tz] TZ07_SHICHEN_UTC8_CONTROL
+ok 41 - [tz] TZ08_SHICHEN_TRUE_SOLAR_UTC8
+ok 42 - [tz] TZ09_SHICHEN_TRUE_SOLAR_UTC9
+ok 43 - [tz] TZ16_SHICHEN_UTC0530_HALF_HOUR
+ok 44 - [tz] TZ10_UNKNOWN_UTC9_JIE_IN_LOCAL_DAY
+ok 45 - [tz] TZ11_UNKNOWN_UTC9_JIE_NOT_IN_LOCAL_DAY
+ok 46 - [tz] TZ12_UNKNOWN_UTCm5_JIE_IN_LOCAL_DAY
+ok 47 - [tz] TZ13_UNKNOWN_UTCm5_JIE_NOT_IN_LOCAL_DAY
+ok 48 - [tz] TZ14_UNKNOWN_UTC8_CONTROL
+ok 49 - [tz] TZ15_UNKNOWN_TRUE_SOLAR_UTCm5
+ok 50 - [group 0] GOLDEN_PATH_FULL_PILLARS
+ok 51 - [group 0] SINGLE_DEGRADATION_MISSING_GENDER
+ok 52 - [group 0] SINGLE_DEGRADATION_HOUR_UNKNOWN_NORMAL_DAY
+ok 53 - [group 1] ST_JINGZHE_MINUS_2H01M
+ok 54 - [group 1] ST_JINGZHE_MINUS_1H59M
+ok 55 - [group 1] ST_JINGZHE_MINUS_1H
+ok 56 - [group 1] ST_JINGZHE_MINUS_5M
+ok 57 - [group 1] ST_JINGZHE_MINUS_1M
+ok 58 - [group 1] ST_JINGZHE_PLUS_1M
+ok 59 - [group 1] ST_JINGZHE_PLUS_5M
+ok 60 - [group 1] ST_JINGZHE_PLUS_1H
+ok 61 - [group 1] ST_JINGZHE_PLUS_1H59M
+ok 62 - [group 1] ST_JINGZHE_PLUS_2H01M
+ok 63 - [group 1] ST_LICHUN_MINUS_1H
+ok 64 - [group 1] ST_LICHUN_MINUS_5M
+ok 65 - [group 1] ST_LICHUN_MINUS_1M
+ok 66 - [group 1] ST_LICHUN_PLUS_1M
+ok 67 - [group 1] ST_LICHUN_PLUS_5M
+ok 68 - [group 1] ST_LICHUN_PLUS_1H
+ok 69 - [group 2] ROLLOVER_2359_LATE_ZI
+ok 70 - [group 2] ROLLOVER_0000_EARLY_ZI
+ok 71 - [group 2] ZI_HOUR_CONTINUITY_HAISHI_TO_ZI
+ok 72 - [group 3] SHICHEN_ZI_CROSS_DAY_LATE
+ok 73 - [group 3] SHICHEN_ZI_CROSS_DAY_EARLY
+ok 74 - [group 3] SHICHEN_ZI_AND_JINGZHE_SUPERPOSITION
+ok 75 - [group 3] SHICHEN_ZI_AND_LICHUN_SUPERPOSITION
+ok 76 - [group 4] UNKNOWN_GENDER_AND_HOUR_ON_TERM_DAY
