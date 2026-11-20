@@ -179,3 +179,23 @@ test("十二长生：非法地支、行内重复、次序不合、顺逆不合�
   blocked(K, (g) => { row(g, "乙")[0] = "甲"; }, /键重复：甲/);
   blocked(K, (g) => { drop(g, "癸"); }, /应为 10 行/);
 });
+
+// —— 第二轮验收补充：起点校验（不改上面任何用例） ——
+const rotate = (r: string[], n: number) => { const v = r.slice(1); r.splice(1, v.length, ...v.slice(n), ...v.slice(0, n)); };
+
+test("六神：整行循环错位（次序仍对，起首不合日干）", () => {
+  const K = "liuyao_liushen";
+  blocked(K, (g) => { rotate(row(g, "甲"), 1); }, /甲 日起首应为 青龙，表中为 朱雀/);   // 甲日改作朱雀起
+  blocked(K, (g) => { rotate(row(g, "戊"), 5); }, /戊 日起首应为 勾陈/);
+  blocked(K, (g) => { rotate(row(g, "癸"), 1); }, /癸 日起首应为 玄武/);
+  blocked(K, (g) => { for (const r of g.slice(1)) rotate(r, 1); }, /日起首应为/);       // 全表一起错一位
+});
+
+test("十二长生：整行循环错位（顺逆仍对，长生起点不合准入版本）", () => {
+  const K = "bazi_changsheng";
+  blocked(K, (g) => { rotate(row(g, "甲"), 1); }, /甲 长生应在 亥，表中为 子/);          // 阳干顺行错一位
+  blocked(K, (g) => { rotate(row(g, "乙"), 1); }, /乙 长生应在 午，表中为 巳/);          // 阴干逆行错一位
+  // 丙、戊同步错位：火土同宫仍成立，只剩起点不合
+  blocked(K, (g) => { rotate(row(g, "丙"), 3); rotate(row(g, "戊"), 3); }, /丙 长生应在 寅/);
+  blocked(K, (g) => { for (const r of g.slice(1)) rotate(r, 2); }, /长生应在/);          // 全表一起错两位
+});

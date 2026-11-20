@@ -6,7 +6,7 @@
  * 解析即校验（运行时语义校验，与 check:data 的文件哈希校验相互独立）：
  * 表头、行列数；每张表的键合法、不重复、齐全；每个取值合法；字段之间按契约一致。
  * 任何一项不合即抛 STATIC_TABLE_INVALID，不返回部分结果。
- * 校验只核对契约已写明的关系（P-B-01、03、05、06，R-39.10 第 4 项），不另立规则、不改表值。
+ * 校验只核对契约已写明的关系（P-B-01、03、05、06，R-39.10 第 4 项）及已准入原件给出的起点（六神起首、十干长生），不另立规则、不改表值。
  */
 import { BlockedError } from "./errors.js";
 import { BRANCHES, STEMS, mod } from "./ganzhi.js";
@@ -22,6 +22,20 @@ export const CHANGSHENG = ["长生", "沐浴", "冠带", "临官", "帝旺", "�
 
 /** 世爻由宫内位置决定（契约 P-B-03：本宫世上爻，一世至五世依次初至五爻，游魂四爻，归魂三爻） */
 export const SHI_BY_POSITION: Readonly<Record<string, number>> = { 本宫: 6, 一世: 1, 二世: 2, 三世: 3, 四世: 4, 五世: 5, 游魂: 4, 归魂: 3 };
+/**
+ * 六神按日干起首（契约 P-B-05）。基准：M-1 T5 来源 1《卜筮正宗》卷一·六兽起例歌诀
+ * “甲乙起青龙，丙丁起朱雀，戊起勾陈，己起螣蛇，庚辛起白虎，壬癸起玄武”（【用户裁决 M1-R】准入）。
+ */
+export const LIUSHEN_START: Readonly<Record<string, string>> = {
+  甲: "青龙", 乙: "青龙", 丙: "朱雀", 丁: "朱雀", 戊: "勾陈", 己: "螣蛇", 庚: "白虎", 辛: "白虎", 壬: "玄武", 癸: "玄武",
+};
+/**
+ * 十干长生之支。基准：M-1 T9“长生”列，《命理探原》卷三·阳顺阴逆（【用户裁决 M2-R】第 4 项准入，
+ * 第二来源《渊海子平》卷一〈论天干生旺死绝〉全同）。
+ */
+export const CHANGSHENG_START: Readonly<Record<string, string>> = {
+  甲: "亥", 乙: "午", 丙: "寅", 丁: "酉", 戊: "寅", 己: "酉", 庚: "巳", 辛: "子", 壬: "申", 癸: "卯",
+};
 /** 应 = 世 + 3 mod 6（契约 P-B-03），爻位取 1～6 */
 export const yingOf = (shi: number): number => mod(shi + 2, 6) + 1;
 
@@ -136,6 +150,7 @@ export function parseStaticTables(csv: StaticCsv): StaticTables {
       need(distinct(g), `六神 ${k} 一行内重复`);
       const start = LIUSHEN.indexOf(g[0] as (typeof LIUSHEN)[number]);
       need(g.every((x, i) => x === LIUSHEN[(start + i) % 6]), `六神 ${k} 次序不合（P-B-05）`);
+      need(g[0] === LIUSHEN_START[k], `六神 ${k} 日起首应为 ${LIUSHEN_START[k]}，表中为 ${g[0]}（P-B-05）`);
       return g;
     });
 
@@ -178,6 +193,9 @@ export function parseStaticTables(csv: StaticCsv): StaticTables {
     });
   need(changsheng.get("戊")!.join() === changsheng.get("丙")!.join() && changsheng.get("己")!.join() === changsheng.get("丁")!.join(),
     "十二长生 戊己须与丙丁同宫（火土同宫）");
+  for (const s of STEM_LIST) {
+    need(changsheng.get(s)![0] === CHANGSHENG_START[s], `十二长生 ${s} 长生应在 ${CHANGSHENG_START[s]}，表中为 ${changsheng.get(s)![0]}`);
+  }
 
   return { hexagrams, palaceWuxing, najia, branchWuxing, liuqin, liushen, xunkong, shishen, canggan, changsheng };
 }
