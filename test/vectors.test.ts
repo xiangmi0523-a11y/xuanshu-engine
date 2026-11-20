@@ -2,7 +2,7 @@
 // 与冻结基准的全量比对另由 xuanshu-data/harness/ 独立执行（B4-11、B3-1 D4）。
 import test from "node:test";
 import assert from "node:assert/strict";
-import { computeBazi, ganzhiName, type BaziInput, type BaziResult, type PillarField, type Shichen, type Tables } from "../src/index.js";
+import { computeBazi, type BaziInput, type BaziResult, type PillarField, type Shichen, type Tables } from "../src/index.js";
 import { loadTables, readVectors } from "./helpers/load.js";
 
 type Json = Record<string, unknown>;
@@ -110,7 +110,9 @@ for (const v of suite.cases) {
       const next = computeBazi({ ...input, civil: civilFromUtc8(utcMs + H) }, t);
       const a = valueOf(r.hour_pillar as PillarField), b = valueOf(next.hour_pillar as PillarField);
       assert.equal(b, e.next_hour_expected);
-      const idx = (s: string | null) => [...Array(60).keys()].find((k) => ganzhiName(k) === s)!;
+      // 六十甲子序在运行器内独立列出，不调用引擎函数判定
+      const SEQ = Array.from({ length: 60 }, (_, k) => "甲乙丙丁戊己庚辛壬癸"[k % 10]! + "子丑寅卯辰巳午未申酉戌亥"[k % 12]!);
+      const idx = (s: string | null) => SEQ.indexOf(s ?? "");
       assert.equal((idx(b) - idx(a) + 60) % 60, 1, "亥时接子时须相邻");
     }
   });

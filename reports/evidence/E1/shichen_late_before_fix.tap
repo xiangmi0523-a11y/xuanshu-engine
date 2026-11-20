@@ -1,0 +1,315 @@
+TAP version 13
+# Subtest: 子时规则：其余三值与缺失被拦截（引擎层，W-03）
+ok 1 - 子时规则：其余三值与缺失被拦截（引擎层，W-03）
+  ---
+  duration_ms: 70.099926
+  type: 'test'
+  ...
+# Subtest: 真太阳时：缺经度阻断；有经度时记录经度项、均时差与 UT1−UTC 近似，显示到分钟
+ok 2 - 真太阳时：缺经度阻断；有经度时记录经度项、均时差与 UT1−UTC 近似，显示到分钟
+  ---
+  duration_ms: 1.715128
+  type: 'test'
+  ...
+# Subtest: 子时边界提示：按参考时间判定，文案区分 clock / true_solar
+ok 3 - 子时边界提示：按参考时间判定，文案区分 clock / true_solar
+  ---
+  duration_ms: 1.585454
+  type: 'test'
+  ...
+# Subtest: 时辰未知：三柱，附规定声明，不做真太阳时切日
+ok 4 - 时辰未知：三柱，附规定声明，不做真太阳时切日
+  ---
+  duration_ms: 3.825011
+  type: 'test'
+  ...
+# Subtest: 远期外推标记：2027 年起（B4-5）
+ok 5 - 远期外推标记：2027 年起（B4-5）
+  ---
+  duration_ms: 0.251125
+  type: 'test'
+  ...
+# Subtest: 夏令时：+09:00 输入归一到 UTC+8 后再判（B4-12）
+ok 6 - 夏令时：+09:00 输入归一到 UTC+8 后再判（B4-12）
+  ---
+  duration_ms: 0.351128
+  type: 'test'
+  ...
+# Subtest: 超出节气表范围被阻断
+ok 7 - 超出节气表范围被阻断
+  ---
+  duration_ms: 0.166794
+  type: 'test'
+  ...
+# Subtest: 六十甲子序与奇偶校验（P-D-01）
+ok 8 - 六十甲子序与奇偶校验（P-D-01）
+  ---
+  duration_ms: 0.85437
+  type: 'test'
+  ...
+# Subtest: 日柱锚点与契约金值（P-D-04、§13.11）
+ok 9 - 日柱锚点与契约金值（P-D-04、§13.11）
+  ---
+  duration_ms: 0.236756
+  type: 'test'
+  ...
+# Subtest: 年柱（立春年）
+ok 10 - 年柱（立春年）
+  ---
+  duration_ms: 0.105972
+  type: 'test'
+  ...
+# Subtest: 五虎遁（P-D-03）
+ok 11 - 五虎遁（P-D-03）
+  ---
+  duration_ms: 0.109959
+  type: 'test'
+  ...
+# Subtest: 五鼠遁与时支（P-D-05）
+ok 12 - 五鼠遁与时支（P-D-05）
+  ---
+  duration_ms: 0.219493
+  type: 'test'
+  ...
+# Subtest: 节 → 月支
+ok 13 - 节 → 月支
+  ---
+  duration_ms: 0.166207
+  type: 'test'
+  ...
+# Subtest: 六爻：本卦、动爻、变卦
+ok 14 - 六爻：本卦、动爻、变卦
+  ---
+  duration_ms: 2.536538
+  type: 'test'
+  ...
+# Subtest: 六爻：全静无变卦；全阳为乾
+ok 15 - 六爻：全静无变卦；全阳为乾
+  ---
+  duration_ms: 0.277444
+  type: 'test'
+  ...
+# Subtest: 六爻：非法输入被拒
+ok 16 - 六爻：非法输入被拒
+  ---
+  duration_ms: 0.539835
+  type: 'test'
+  ...
+# Subtest: 节气表：4824 条，节 2412 条
+ok 17 - 节气表：4824 条，节 2412 条
+  ---
+  duration_ms: 91.910877
+  type: 'test'
+  ...
+# Subtest: 均时差插值：样本点取原值，日中取两端线性均值，符号与 B1-1 一致
+ok 18 - 均时差插值：样本点取原值，日中取两端线性均值，符号与 B1-1 一致
+  ---
+  duration_ms: 1.586101
+  type: 'test'
+  ...
+# Subtest: 均时差超出范围被阻断
+ok 19 - 均时差超出范围被阻断
+  ---
+  duration_ms: 0.766766
+  type: 'test'
+  ...
+# Subtest: [group 0] GOLDEN_PATH_FULL_PILLARS
+ok 20 - [group 0] GOLDEN_PATH_FULL_PILLARS
+  ---
+  duration_ms: 114.315713
+  type: 'test'
+  ...
+# Subtest: [group 0] SINGLE_DEGRADATION_MISSING_GENDER
+ok 21 - [group 0] SINGLE_DEGRADATION_MISSING_GENDER
+  ---
+  duration_ms: 1.022992
+  type: 'test'
+  ...
+# Subtest: [group 0] SINGLE_DEGRADATION_HOUR_UNKNOWN_NORMAL_DAY
+ok 22 - [group 0] SINGLE_DEGRADATION_HOUR_UNKNOWN_NORMAL_DAY
+  ---
+  duration_ms: 1.222157
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_2H01M
+ok 23 - [group 1] ST_JINGZHE_MINUS_2H01M
+  ---
+  duration_ms: 1.176107
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_1H59M
+ok 24 - [group 1] ST_JINGZHE_MINUS_1H59M
+  ---
+  duration_ms: 0.822586
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_1H
+ok 25 - [group 1] ST_JINGZHE_MINUS_1H
+  ---
+  duration_ms: 0.373561
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_5M
+ok 26 - [group 1] ST_JINGZHE_MINUS_5M
+  ---
+  duration_ms: 0.22467
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_MINUS_1M
+ok 27 - [group 1] ST_JINGZHE_MINUS_1M
+  ---
+  duration_ms: 0.326523
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_1M
+ok 28 - [group 1] ST_JINGZHE_PLUS_1M
+  ---
+  duration_ms: 0.501167
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_5M
+ok 29 - [group 1] ST_JINGZHE_PLUS_5M
+  ---
+  duration_ms: 0.585617
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_1H
+ok 30 - [group 1] ST_JINGZHE_PLUS_1H
+  ---
+  duration_ms: 0.296539
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_1H59M
+ok 31 - [group 1] ST_JINGZHE_PLUS_1H59M
+  ---
+  duration_ms: 0.22137
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_JINGZHE_PLUS_2H01M
+ok 32 - [group 1] ST_JINGZHE_PLUS_2H01M
+  ---
+  duration_ms: 0.187561
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_MINUS_1H
+ok 33 - [group 1] ST_LICHUN_MINUS_1H
+  ---
+  duration_ms: 0.265636
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_MINUS_5M
+ok 34 - [group 1] ST_LICHUN_MINUS_5M
+  ---
+  duration_ms: 0.211591
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_MINUS_1M
+ok 35 - [group 1] ST_LICHUN_MINUS_1M
+  ---
+  duration_ms: 0.250941
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_PLUS_1M
+ok 36 - [group 1] ST_LICHUN_PLUS_1M
+  ---
+  duration_ms: 0.233118
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_PLUS_5M
+ok 37 - [group 1] ST_LICHUN_PLUS_5M
+  ---
+  duration_ms: 0.208939
+  type: 'test'
+  ...
+# Subtest: [group 1] ST_LICHUN_PLUS_1H
+ok 38 - [group 1] ST_LICHUN_PLUS_1H
+  ---
+  duration_ms: 1.527075
+  type: 'test'
+  ...
+# Subtest: [group 2] ROLLOVER_2359_LATE_ZI
+ok 39 - [group 2] ROLLOVER_2359_LATE_ZI
+  ---
+  duration_ms: 0.243603
+  type: 'test'
+  ...
+# Subtest: [group 2] ROLLOVER_0000_EARLY_ZI
+ok 40 - [group 2] ROLLOVER_0000_EARLY_ZI
+  ---
+  duration_ms: 0.102436
+  type: 'test'
+  ...
+# Subtest: [group 2] ZI_HOUR_CONTINUITY_HAISHI_TO_ZI
+ok 41 - [group 2] ZI_HOUR_CONTINUITY_HAISHI_TO_ZI
+  ---
+  duration_ms: 0.251405
+  type: 'test'
+  ...
+# Subtest: [group 3] SHICHEN_ZI_CROSS_DAY_LATE
+not ok 42 - [group 3] SHICHEN_ZI_CROSS_DAY_LATE
+  ---
+  duration_ms: 3.315567
+  type: 'test'
+  location: '/tmp/e1pre/dist/test/vectors.test.js:64:5'
+  failureType: 'testCodeFailure'
+  error: |-
+    day 候选
+    + actual - expected
+    
+      [
+    +   '壬申',
+        '癸酉',
+    -   '甲戌'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: '癸酉'
+    1: '甲戌'
+  actual:
+    0: '壬申'
+    1: '癸酉'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/e1pre/dist/test/vectors.test.js:84:24)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [group 3] SHICHEN_ZI_CROSS_DAY_EARLY
+ok 43 - [group 3] SHICHEN_ZI_CROSS_DAY_EARLY
+  ---
+  duration_ms: 1.272262
+  type: 'test'
+  ...
+# Subtest: [group 3] SHICHEN_ZI_AND_JINGZHE_SUPERPOSITION
+ok 44 - [group 3] SHICHEN_ZI_AND_JINGZHE_SUPERPOSITION
+  ---
+  duration_ms: 0.303992
+  type: 'test'
+  ...
+# Subtest: [group 3] SHICHEN_ZI_AND_LICHUN_SUPERPOSITION
+ok 45 - [group 3] SHICHEN_ZI_AND_LICHUN_SUPERPOSITION
+  ---
+  duration_ms: 0.301487
+  type: 'test'
+  ...
+# Subtest: [group 4] UNKNOWN_GENDER_AND_HOUR_ON_TERM_DAY
+ok 46 - [group 4] UNKNOWN_GENDER_AND_HOUR_ON_TERM_DAY
+  ---
+  duration_ms: 0.43088
+  type: 'test'
+  ...
+1..46
+# tests 46
+# suites 0
+# pass 45
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 789.233705

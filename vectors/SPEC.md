@@ -46,6 +46,13 @@
 | `hour_pillar: null` | 时柱值为 null |
 | `next_hour_expected` + `next_hour_adjacent` | 出生时刻 +1 小时的时柱等于该值，且与本时柱在六十甲子中相邻 |
 
-## 6. 比对
+## 6. 真太阳时专用向量（`true_solar.json`）
+
+- 默认 `zi_reference_time = true_solar`、`time_precision = MINUTE`；`civil_iso` 为带偏移的当地钟表时间，UTC 偏移取 ISO 中的偏移。
+- 断言：`true_solar_display`（到分钟）、`expected_day_pillar`、`expected_hour_pillar`、`zi_boundary_hint`（是否出现子时边界提示）。
+- `eot_seconds_approx` 仅供核对，允许 ±0.01 秒。
+- 期望值由独立 Python 脚本按 `docs/time-basis.md` 的顺序与冻结表计算，不调用引擎。
+
+## 7. 比对
 
 引擎单元测试可以运行这些向量；与冻结基准的全量比对由 `xuanshu-data/harness/` 独立执行（B4-11、B3-1 D4）。

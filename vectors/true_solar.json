@@ -1,0 +1,75 @@
+{
+ "suite": "真太阳时专用向量（E1 验收第 5 项）",
+ "spec": "vectors/SPEC.md §7",
+ "defaults": {
+  "config": {
+   "zi_rule": "ye_zi_b",
+   "zi_reference_time": "true_solar"
+  },
+  "time_precision": "MINUTE",
+  "gender": "MALE"
+ },
+ "derivation": "期望值由独立的 Python 脚本按契约规则计算（不调用引擎）：UTC 时刻 t；均时差取冻结表 eot_1900_2100_daily.csv 按 t 线性插值（UT1−UTC 取 0）；真太阳时 = t + 经度×240 秒 + 均时差；日柱取冻结日柱表；时柱按五鼠遁、子时时干取 00:00 之后那一日；子时提示按 [22:30,23:30]、[00:30,01:30] 闭区间。",
+ "cases": [
+  {
+   "id": "TS1_EAST_135_CROSS_MIDNIGHT",
+   "civil_iso": "2024-03-10T23:50:00+08:00",
+   "longitude_deg": 135.0,
+   "expect": {
+    "true_solar_display": "2024-03-11 00:39",
+    "eot_seconds_approx": -604.507,
+    "expected_day_pillar": "甲戌",
+    "expected_hour_pillar": "甲子",
+    "zi_boundary_hint": true
+   }
+  },
+  {
+   "id": "TS2_WEST_105_BACK_BEFORE_MIDNIGHT",
+   "civil_iso": "2024-03-11T00:30:00+08:00",
+   "longitude_deg": 105.0,
+   "expect": {
+    "true_solar_display": "2024-03-10 23:19",
+    "eot_seconds_approx": -604.075,
+    "expected_day_pillar": "癸酉",
+    "expected_hour_pillar": "甲子",
+    "zi_boundary_hint": true
+   }
+  },
+  {
+   "id": "TS3_EOT_POSITIVE_NOV",
+   "civil_iso": "2026-11-03T12:00:00+08:00",
+   "longitude_deg": 120.0,
+   "expect": {
+    "true_solar_display": "2026-11-03 12:16",
+    "eot_seconds_approx": 986.763,
+    "expected_day_pillar": "辛巳",
+    "expected_hour_pillar": "甲午",
+    "zi_boundary_hint": false
+   }
+  },
+  {
+   "id": "TS4_EOT_NEGATIVE_FEB",
+   "civil_iso": "2026-02-11T12:00:00+08:00",
+   "longitude_deg": 120.0,
+   "expect": {
+    "true_solar_display": "2026-02-11 11:45",
+    "eot_seconds_approx": -850.419,
+    "expected_day_pillar": "丙辰",
+    "expected_hour_pillar": "甲午",
+    "zi_boundary_hint": false
+   }
+  },
+  {
+   "id": "TS5_TOKYO_UTC9_ORDER",
+   "civil_iso": "2024-03-10T23:50:00+09:00",
+   "longitude_deg": 139.69,
+   "expect": {
+    "true_solar_display": "2024-03-10 23:58",
+    "eot_seconds_approx": -605.154,
+    "expected_day_pillar": "癸酉",
+    "expected_hour_pillar": "甲子",
+    "zi_boundary_hint": false
+   }
+  }
+ ]
+}

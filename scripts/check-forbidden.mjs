@@ -22,5 +22,7 @@ for (const f of files) {
     }
   });
 }
+const present = ROOTS.filter((r) => existsSync(r));
+console.log(`W-01 扫描目录：${present.join("、")}（不存在未扫：${ROOTS.filter((r) => !existsSync(r)).join("、") || "无"}）`);
 console.log(hits ? `W-01：${hits} 处命中` : `✅ W-01：扫描 ${files.length} 个文件，五个模式匹配数均为 0`);
 process.exit(hits ? 1 : 0);

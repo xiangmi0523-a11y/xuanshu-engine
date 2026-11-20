@@ -63,13 +63,25 @@ export function jieWithin(table: JieqiTable, from: number, to: number): SolarTer
   return table.jie.filter((j) => j.utcMs >= from && j.utcMs < to);
 }
 
-/** 支持区间：须能找到前一个立春与后一个节。 */
+/**
+ * 由冻结节气表的实际覆盖计算支持区间 [fromMs, toMs)（E1 验收第 6 项）：
+ * - 下界 = 表中第一个立春的交节时刻（含）：此前无法确定年柱；
+ * - 上界 = 表中最后一个节的交节时刻（不含）：此后无法确定下一个节，交节判定无法进行。
+ * 按当前冻结表：[1900-02-04T05:51:30Z, 2100-12-07T01:42:06Z)，即北京时间
+ * [1900-02-04 13:51:30, 2100-12-07 09:42:06)。
+ */
+export function supportedRange(table: JieqiTable): { fromMs: number; toMs: number } {
+  const first = table.jie.find((j) => j.longitude === 315)!;
+  const last = table.jie[table.jie.length - 1]!;
+  return { fromMs: first.utcMs, toMs: last.utcMs };
+}
+
+/** 超出支持区间即阻断（JIEQI_OUT_OF_RANGE）。 */
 export function assertJieqiRange(table: JieqiTable, t: number): void {
-  if (!prevLichun(table, t) || !nextJie(table, t)) {
-    const first = table.jie.find((j) => j.longitude === 315)!;
-    const last = table.jie[table.jie.length - 1]!;
+  const { fromMs, toMs } = supportedRange(table);
+  if (!(t >= fromMs && t < toMs)) {
     throw new BlockedError("JIEQI_OUT_OF_RANGE",
-      `超出节气基准表支持范围（${new Date(first.utcMs).toISOString()} 至 ${new Date(last.utcMs).toISOString()} 之前）`);
+      `超出节气基准表支持范围 [${new Date(fromMs).toISOString()}, ${new Date(toMs).toISOString()})`);
   }
 }
 

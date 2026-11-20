@@ -110,8 +110,9 @@ function yearMonthAt(tables: Tables, t: number): { year: string; month: string }
   return { year: ganzhiName(yi), month: ganzhiName(monthIndex(yi % 10, monthBranchOfJie(jie.longitude))) };
 }
 
-/** 交节 n 前后两侧的年柱、月柱（候选 A = 交节前，B = 交节后，§13.11 规则 4）。 */
+/** 交节 n 前后两侧的年柱、月柱（候选 A = 交节前，B = 交节后，§13.11 规则 4）。两侧都须在支持区间内。 */
 function sides(tables: Tables, n: SolarTerm) {
+  assertJieqiRange(tables.jieqi, n.utcMs - 1);
   return { before: yearMonthAt(tables, n.utcMs - 1), after: yearMonthAt(tables, n.utcMs) };
 }
 
@@ -144,9 +145,10 @@ export function computeBazi(input: BaziInput, tables: Tables): BaziResult {
   const dateUtcMidnight = Date.UTC(civil.year, civil.month - 1, civil.day); // 日期 D（在 UTC+8 轴上视为 D 00:00）
 
   if (input.gender === "UNKNOWN") degradation.push("MISSING_GENDER");
-  if (input.utcOffsetSeconds !== 8 * 3600) {
-    pending.push("非 UTC+8 输入：钟表基准按归一到 UTC+8 后的时间计（§13.10 第 2 条字面）；海外出生是否改用当地钟表日期【待定】");
-  }
+  // 时间计算顺序（E1 验收第 1 项，见 docs/time-basis.md）：
+  // ① 输入：当地钟表时间 + 已解析的 UTC 偏移（含夏令时，来自 tz_resolution）→ ② UTC 时刻 t；
+  // ③ 交节判定一律用 t 对照节气表 UTC 时刻；④ 日柱、时柱的参考时间轴：clock = t + 8 小时（统一归一到 UTC+8），
+  //    true_solar = t + 经度项 + 均时差(t)。非 UTC+8 输入同样先经 ①② 归一。
 
   let year: PillarField, month: PillarField, day: PillarField;
   let hour: BaziResult["hour_pillar"];
@@ -196,19 +198,18 @@ export function computeBazi(input: BaziInput, tables: Tables): BaziResult {
       year = single(ym.year);
       month = single(ym.month);
     }
-    // 告警层：前后两个“节”任一在窗口内即告警（立春 ±24 小时，其余 ±2 小时；端点暂取含，【待定】）
+    // 告警层：前后两个“节”任一在窗口内即告警（立春 ±24 小时，其余 ±2 小时；闭区间，E1 验收第 3 项）
     for (const j of [prev, next]) {
       const w = j.longitude === 315 ? WARN_LICHUN_MS : WARN_MS;
       if (Math.abs(t - j.utcMs) <= w && !warnings.includes("boundary_warning")) warnings.push("boundary_warning");
     }
     if (parts(t + UTC8).y >= FAR_FUTURE_FROM_YEAR) flags.add("FAR_FUTURE_EXTRAPOLATION");
 
-    // 子时边界提示（§9.4，B1-1）：按参考时间判定 22:30–23:30 或 00:30–01:30（端点含否【待定】，暂取闭区间）
+    // 子时边界提示（§9.4，B1-1）：按参考时间判定 [22:30, 23:30] 或 [00:30, 01:30]，闭区间（E1 验收第 2 项）
     const mm = p.minuteOfDay;
     if ((mm >= 22 * 60 + 30 && mm <= 23 * 60 + 30) || (mm >= 30 && mm <= 90)) {
       warnings.push("ZI_BOUNDARY_HINT");
       notices.push({ code: "ZI_BOUNDARY_HINT", text: ref === "true_solar" ? ZI_HINT_TRUE_SOLAR : ZI_HINT_CLOCK });
-      pending.push("子时边界提示窗口端点是否包含（22:30、23:30、00:30、01:30）契约未写明，暂取闭区间【待定】");
     }
   } else if (timePrecision === "SHICHEN") {
     if (!input.shichen) throw new BlockedError("SHICHEN_MISSING", "精度为 SHICHEN 但未给出时辰");
@@ -219,7 +220,8 @@ export function computeBazi(input: BaziInput, tables: Tables): BaziResult {
     const ws = startAxis - UTC8, we = endAxis - UTC8; // UTC 时刻
     assertJieqiRange(tables.jieqi, ws);
     assertJieqiRange(tables.jieqi, we - 1);
-    if (ref === "true_solar") pending.push("SHICHEN 窗口按 UTC+8 钟表时间解释；选真太阳时时的解释【待定】");
+    // E1 验收第 4 项：只知时辰且选真太阳时，须按时辰区间映射判断，不得把时辰当作精确时间；本阶段未实现，阻断
+    if (ref === "true_solar") throw new BlockedError("SHICHEN_TRUE_SOLAR_PENDING", "只知时辰且选真太阳时：按时辰区间映射的算法待实现（E1 验收第 4 项）");
 
     // 日柱：子时跨 00:00，候选 [D−1, D]；其余时辰日柱为 D
     const pD = parts(dateUtcMidnight), pPrev = parts(dateUtcMidnight - DAY);
