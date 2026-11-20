@@ -100,6 +100,16 @@ function parts(msOnAxis: number) {
     minuteOfDay: d.getUTCHours() * 60 + d.getUTCMinutes(),
   };
 }
+/**
+ * UTC 时刻区间 [startUtc, endUtc)（左闭右开）在 UTC+8 钟表轴上覆盖的首日与末日（【用户裁决 E1-2】）。
+ * 末日取 endUtc 之前的最后一毫秒，所以区间恰好在 UTC+8 的 00:00 结束不算跨入新一天；
+ * 区间实际跨过 00:00 时 crossesMidnight = true，日柱给 [前一日, 当日] 候选。
+ */
+export function utc8DaySpan(startUtc: number, endUtc: number) {
+  const first = parts(startUtc + UTC8), last = parts(endUtc + UTC8 - 1);
+  const crossesMidnight = first.y !== last.y || first.m !== last.m || first.d !== last.d;
+  return { first, last, crossesMidnight };
+}
 const fmt = (msOnAxis: number) => new Date(msOnAxis).toISOString().slice(0, 16).replace("T", " ");
 
 /** 某 UTC 时刻的年柱、月柱（交节一律按时刻比较，与参考时间无关，§13.4）。 */
@@ -224,18 +234,20 @@ export function computeBazi(input: BaziInput, tables: Tables): BaziResult {
     // E1 验收第 4 项：只知时辰且选真太阳时，须按时辰区间映射判断，不得把时辰当作精确时间；本阶段未实现，阻断
     if (ref === "true_solar") throw new BlockedError("SHICHEN_TRUE_SOLAR_PENDING", "只知时辰且选真太阳时：按时辰区间映射的算法待实现（E1 验收第 4 项）");
 
-    // 日柱、时柱在参考时间轴（clock = UTC+8）上判定（§13.10）。当地时辰换到 UTC+8 后若不与某一个时辰对齐，
-    // 该窗口会跨两个时辰，时柱无法唯一；契约只定义了 SHICHEN 时柱单值（§13.3），未定义此情形 → 【待定】阻断，不伪造时柱。
-    const a0 = ws + UTC8, a1 = we + UTC8;
+    // 日柱、时柱在参考时间轴（clock = UTC+8）上判定（§13.10）。
+    // 【用户裁决 E1-1】当地时辰换到 UTC+8 后不与某一个时辰对齐（窗口跨两个时辰）：时柱无法唯一，
+    // 阻断整盘计算，不猜时柱、不给时柱候选，提示补充精确出生时间。
+    const a0 = ws + UTC8;
     if (mod(a0 + HOUR, 2 * HOUR) !== 0) {
       throw new BlockedError("SHICHEN_OFFSET_NOT_ALIGNED",
-        "只知时辰：出生地时区换到 UTC+8 后，该时辰跨两个时辰，时柱无法唯一确定；契约未定义此情形（【待定】，待用户裁决）");
+        "只知时辰：出生地时辰换到北京时间后跨两个时辰，时柱无法唯一确定。请补充精确出生时间（【用户裁决 E1-1】）");
     }
-    const pa = parts(a0), pz = parts(a1 - 1);
+    // 【用户裁决 E1-2】日柱按归一到 UTC+8 后的窗口 [start, end) 判断：实际跨 00:00 给 [前一日, 当日]，前一日为 primary
+    const span = utc8DaySpan(ws, we);
+    const pa = span.first, pz = span.last;
     const bAxis = hourBranchOfMinute(pa.minuteOfDay);
-    // 日柱按 00:00 换日：窗口跨 UTC+8 的 00:00 时给 [前一日, 当日] 候选（§13.3；UTC+8 子时即此情形）
     const dA = dayPillarOf(pa.y, pa.m, pa.d), dZ = dayPillarOf(pz.y, pz.m, pz.d);
-    if (pa.d !== pz.d || pa.m !== pz.m || pa.y !== pz.y) {
+    if (span.crossesMidnight) {
       day = { candidates: [dA, dZ], ambiguous: true };
       primary.day_pillar = dA;
     } else day = single(dA);

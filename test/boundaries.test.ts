@@ -57,3 +57,34 @@ test("非 UTC+8 输入：先换算 UTC，再归一到 UTC+8（东京 +09:00）",
   assert.equal(r.time_basis.utc8_iso, "2024-03-10T23:30:00.000+08:00");
   assert.equal((r.day_pillar as { value: string }).value, "癸酉");
 });
+
+// 【用户裁决 E1-2】左闭右开 [start, end) 的端点语义。期望值由定义直接得出：区间只含起点、不含终点。
+test("E1-2：UTC+8 轴上的窗口恰好在 00:00 结束不算跨日；实际跨过 00:00 才算", async () => {
+  const { utc8DaySpan } = await import("../src/index.js");
+  const at = (y: number, mo: number, d: number, h: number) => Date.UTC(y, mo - 1, d, h) - UTC8; // 北京时间 → UTC
+  const day = (s: { y: number; m: number; d: number }) => `${s.y}-${s.m}-${s.d}`;
+  // [22:00, 00:00)：恰好在 00:00 结束 → 单日
+  let s = utc8DaySpan(at(2024, 3, 10, 22), at(2024, 3, 11, 0));
+  assert.equal(s.crossesMidnight, false); assert.equal(day(s.first), "2024-3-10"); assert.equal(day(s.last), "2024-3-10");
+  // [23:00, 01:00)：跨 00:00 → 前一日在前、当日在后
+  s = utc8DaySpan(at(2024, 3, 10, 23), at(2024, 3, 11, 1));
+  assert.equal(s.crossesMidnight, true); assert.equal(day(s.first), "2024-3-10"); assert.equal(day(s.last), "2024-3-11");
+  // [00:00, 02:00)：从 00:00 开始（左端点含）→ 单日，属新一天
+  s = utc8DaySpan(at(2024, 3, 11, 0), at(2024, 3, 11, 2));
+  assert.equal(s.crossesMidnight, false); assert.equal(day(s.first), "2024-3-11");
+  // 终点比 00:00 多 1 毫秒 → 跨日
+  s = utc8DaySpan(at(2024, 3, 10, 22), at(2024, 3, 11, 0) + 1);
+  assert.equal(s.crossesMidnight, true);
+  // 跨年、跨月同样按日历日判断
+  s = utc8DaySpan(at(2023, 12, 31, 23), at(2024, 1, 1, 1));
+  assert.equal(s.crossesMidnight, true); assert.equal(day(s.first), "2023-12-31"); assert.equal(day(s.last), "2024-1-1");
+});
+
+test("E1-2：交节落在窗口起点算在窗口内，落在终点不算（左闭右开）", async () => {
+  const { jieWithin } = await import("../src/index.js");
+  const t = loadTables();
+  const jz = t.jieqi.all.find((r) => r.year === 2024 && r.term === "惊蛰")!.utcMs;
+  assert.equal(jieWithin(t.jieqi, jz, jz + H).length, 1, "起点含");
+  assert.equal(jieWithin(t.jieqi, jz - H, jz).length, 0, "终点不含");
+  assert.equal(jieWithin(t.jieqi, jz - H, jz + 1).length, 1);
+});
