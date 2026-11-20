@@ -154,3 +154,61 @@ run "M4 动爻标记偏一位" src/zhuanggua.ts 'ly.moving_lines.includes(l.line
 run "M5 十二长生阴干改顺行（取阳干表）" src/bazi_detail.ts 'st.changsheng.get(s)!.indexOf(b)' 'st.changsheng.get(STEMS[STEMS.indexOf(s) & ~1]!)!.indexOf(b)'
 run "M6 十神日干与他干对调" src/bazi_detail.ts 'st.shishen.get(`${dayStem}|${other}`)!' 'st.shishen.get(`${other}|${dayStem}`)!'
 ```
+
+## 第二轮补充（8fdacff）
+
+### 语义校验变异重跑（原始输出）
+
+| 编号 | 位置 | 校验 | 结果 |
+|---|---|---|---|
+| S01 | static.ts:78 | , | 测出（1 败） |
+| S02 | static.ts:80 | ${name} 应为 ${expected} 行 × ${header.length} 列 | 测出（10 败） |
+| S03 | static.ts:91 | ${name} 键非法：${k} | 测出（10 败） |
+| S04 | static.ts:92 | ${name} 键重复：${k} | 测出（10 败） |
+| S05 | static.ts:95 | ${name} 缺键：${k} | 未测出 |
+| S06 | static.ts:108 | ${t} 上下卦非法 | 测出（1 败） |
+| S07 | static.ts:109 | ${t} 上下卦与卦画不一致 | 测出（1 败） |
+| S08 | static.ts:110 | ${t} 卦名非法 | 测出（1 败） |
+| S09 | static.ts:111 | ${t} 卦名重复 | 测出（1 败） |
+| S10 | static.ts:113 | ${t} 卦宫非法 | 测出（1 败） |
+| S11 | static.ts:114 | ${t} 宫内位置非法 | 测出（1 败） |
+| S12 | static.ts:115 | ${t} 世应须为 1～6 | 测出（1 败） |
+| S13 | static.ts:116 | ${t} 世爻与宫内位置不合（P-B-03） | 测出（1 败） |
+| S14 | static.ts:117 | ${t} 应 ≠ 世 + 3（P-B-03） | 测出（1 败） |
+| S15 | static.ts:118 | ${t} 本宫卦须为本宫纯卦 | 测出（1 败） |
+| S16 | static.ts:123 | ${p}宫 应有 8 卦，实有 ${members.length} | 测出（1 败） |
+| S17 | static.ts:124 | ${p}宫 宫内位置须各一 | 测出（1 败） |
+| S18 | static.ts:129 | ${k}宫 五行非法：${w} | 测出（1 败） |
+| S19 | static.ts:134 | 纳甲 ${k} 干支非法：${gz} | 测出（1 败） |
+| S20 | static.ts:138 | 地支 ${k} 五行非法：${w} | 测出（1 败） |
+| S21 | static.ts:143 | 六亲 ${k} 取值非法：${q} | 测出（2 败） |
+| S22 | static.ts:149 | 六神 ${k} 取值非法 | 测出（1 败） |
+| S23 | static.ts:150 | 六神 ${k} 一行内重复 | 测出（1 败） |
+| S24 | static.ts:152 | 六神 ${k} 次序不合（P-B-05） | 测出（1 败） |
+| S25 | static.ts:153 | 六神 ${k} 日起首应为 ${LIUSHEN_START[k]}，表中为 ${g[0]}（P-B-05） | 测出（1 败） |
+| S26 | static.ts:160 | 甲 | 测出（1 败） |
+| S27 | static.ts:161 | 旬空 ${k} 空亡地支非法：${v1}${v2} | 测出（1 败） |
+| S28 | static.ts:163 | 旬空 ${k} 旬首应为 ${JIAZI[h]}，表中为 ${head} | 测出（1 败） |
+| S29 | static.ts:164 | 旬空 ${k} 空亡与旬首不对应 | 测出（1 败） |
+| S30 | static.ts:171 | 十神 ${k} 取值非法：${s} | 测出（1 败） |
+| S31 | static.ts:176 | 藏干 ${k} 本气非法或为空：${x} | 测出（1 败） |
+| S32 | static.ts:177 |  | 测出（1 败） |
+| S33 | static.ts:178 |  | 测出（1 败） |
+| S34 | static.ts:179 |  | 测出（1 败） |
+| S35 | static.ts:187 | 十二长生 ${k} 地支非法 | 测出（1 败） |
+| S36 | static.ts:188 | 十二长生 ${k} 一行内地支重复 | 测出（1 败） |
+| S37 | static.ts:190 | need(b.every((x, i) => i === 0 || BRANCHES.indexOf | 测出（1 败） |
+| S38 | static.ts:194 | 戊 | 测出（1 败） |
+| S39 | static.ts:197 | 十二长生 ${s} 长生应在 ${CHANGSHENG_START[s]}，表中为 ${changsheng.get(s)![0]} | 测出（1 败） |
+
+合计 39 处，测出 38，未测出 1
+
+### 结果快照（8fdacff 构建）
+```json
+{
+ "tables": "8842c4d9d0648d8a13ec748fdc20fb6cb6329ae87b05627d8aaab8de86e2f156",
+ "zhuanggua_calls": 245760,
+ "zhuanggua": "ec763a0399a831345a0f9a76e251624d353f9d7e87aa92ddb0532bc826408e5c",
+ "bazi": "eb1798669cb676dc22313b4db41641c51f84a90c8acb87fa82ad4da6235990d7"
+}
+```
