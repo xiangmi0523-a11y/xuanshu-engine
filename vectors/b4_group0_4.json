@@ -1,0 +1,669 @@
+{
+ "suite": "B4 回归矩阵 group 0～4",
+ "source": "xuanshu-data contract/玄枢数据契约_v1.0.md §13.11（b4_suite_version 1.0.0，含 B4-6～B4-16、B4-13/14 显式年份）",
+ "spec": "vectors/SPEC.md",
+ "defaults": {
+  "utc_offset_seconds": 28800,
+  "config": {
+   "zi_rule": "ye_zi_b",
+   "zi_reference_time": "clock"
+  }
+ },
+ "assumptions": [
+  "回归矩阵未写 CFG-01T；向量统一取 zi_reference_time = clock，避免经度与均时差影响历法边界断言【待定，交 GPT 复核】",
+  "expected_day_pillar、day_candidates、hour_pillar 取自契约 §13.11 已回填值（来自日干支序列）"
+ ],
+ "cases": [
+  {
+   "id": "GOLDEN_PATH_FULL_PILLARS",
+   "group": "0",
+   "input": {
+    "year": 2024,
+    "term": "惊蛰",
+    "offset": "+48h",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_status": "COMPLETE",
+    "expected_reasons": [],
+    "chart_type": "FOUR_PILLARS",
+    "expected_year_pillar": "甲辰",
+    "expected_month_pillar": "丁卯",
+    "expected_day_pillar": "庚午",
+    "year_ambiguous": false,
+    "month_ambiguous": false,
+    "day_ambiguous": false,
+    "hour_ambiguous": false,
+    "primary_candidate_includes": [],
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "SINGLE_DEGRADATION_MISSING_GENDER",
+   "group": "0",
+   "input": {
+    "year": 2024,
+    "term": "惊蛰",
+    "offset": "+48h",
+    "gender": "UNKNOWN",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_status": "OK_WITH_DEGRADATION",
+    "expected_reasons": [
+     "MISSING_GENDER"
+    ],
+    "expected_luck_status": "DEGRADED_LUCK_OMITTED",
+    "chart_type": "FOUR_PILLARS",
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "SINGLE_DEGRADATION_HOUR_UNKNOWN_NORMAL_DAY",
+   "group": "0",
+   "input": {
+    "year": 2024,
+    "term": "惊蛰",
+    "offset": "+48h",
+    "is_term_day": false,
+    "gender": "MALE",
+    "time_precision": "UNKNOWN"
+   },
+   "expect": {
+    "expected_status": "OK_WITH_DEGRADATION",
+    "expected_reasons": [
+     "HOUR_UNKNOWN"
+    ],
+    "chart_type": "THREE_PILLARS",
+    "hour_pillar": null,
+    "month_ambiguous": false,
+    "expected_warnings_not_containing": [
+     "CROSS_TERM_DAY_HOUR_UNKNOWN"
+    ],
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ST_JINGZHE_MINUS_2H01M",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "惊蛰",
+    "offset": "-2h01m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings_not_containing": [
+     "boundary_warning"
+    ],
+    "expected_flag": null,
+    "month_ambiguous": false,
+    "month_after_term": false,
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ST_JINGZHE_MINUS_1H59M",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "惊蛰",
+    "offset": "-1h59m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings": [
+     "boundary_warning"
+    ],
+    "expected_flag": null,
+    "month_ambiguous": false,
+    "month_after_term": false,
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ST_JINGZHE_MINUS_1H",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "惊蛰",
+    "offset": "-60m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings": [
+     "boundary_warning"
+    ],
+    "expected_flag": null,
+    "month_ambiguous": false,
+    "month_after_term": false,
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ST_JINGZHE_MINUS_5M",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "惊蛰",
+    "offset": "-5m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings": [
+     "boundary_warning"
+    ],
+    "expected_flag": null,
+    "month_ambiguous": false,
+    "month_after_term": false,
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ST_JINGZHE_MINUS_1M",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "惊蛰",
+    "offset": "-1m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings": [
+     "boundary_warning"
+    ],
+    "expected_flag": "SOLAR_TERM_BOUNDARY_AMBIGUOUS",
+    "year_ambiguous": false,
+    "month_ambiguous": true,
+    "month_candidates": [
+     "丙寅",
+     "丁卯"
+    ],
+    "primary_candidate_month": "丙寅",
+    "primary_candidate_includes": [
+     "month_pillar"
+    ],
+    "requires_user_confirmation": true
+   }
+  },
+  {
+   "id": "ST_JINGZHE_PLUS_1M",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "惊蛰",
+    "offset": "+1m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings": [
+     "boundary_warning"
+    ],
+    "expected_flag": "SOLAR_TERM_BOUNDARY_AMBIGUOUS",
+    "year_ambiguous": false,
+    "month_ambiguous": true,
+    "month_candidates": [
+     "丙寅",
+     "丁卯"
+    ],
+    "primary_candidate_month": "丙寅",
+    "primary_candidate_includes": [
+     "month_pillar"
+    ],
+    "requires_user_confirmation": true
+   }
+  },
+  {
+   "id": "ST_JINGZHE_PLUS_5M",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "惊蛰",
+    "offset": "+5m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings": [
+     "boundary_warning"
+    ],
+    "expected_flag": null,
+    "month_ambiguous": false,
+    "month_after_term": true,
+    "expected_month_pillar": "丁卯",
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ST_JINGZHE_PLUS_1H",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "惊蛰",
+    "offset": "+60m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings": [
+     "boundary_warning"
+    ],
+    "expected_flag": null,
+    "month_ambiguous": false,
+    "month_after_term": true,
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ST_JINGZHE_PLUS_1H59M",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "惊蛰",
+    "offset": "+1h59m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings": [
+     "boundary_warning"
+    ],
+    "expected_flag": null,
+    "month_ambiguous": false,
+    "month_after_term": true,
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ST_JINGZHE_PLUS_2H01M",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "惊蛰",
+    "offset": "+2h01m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings_not_containing": [
+     "boundary_warning"
+    ],
+    "expected_flag": null,
+    "month_ambiguous": false,
+    "month_after_term": true,
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ST_LICHUN_MINUS_1H",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "立春",
+    "offset": "-60m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings": [
+     "boundary_warning"
+    ],
+    "expected_flag": null,
+    "year_ambiguous": false,
+    "month_ambiguous": false,
+    "year_after_term": false,
+    "month_after_term": false,
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ST_LICHUN_MINUS_5M",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "立春",
+    "offset": "-5m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings": [
+     "boundary_warning"
+    ],
+    "expected_flag": null,
+    "year_ambiguous": false,
+    "month_ambiguous": false,
+    "year_after_term": false,
+    "month_after_term": false,
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ST_LICHUN_MINUS_1M",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "立春",
+    "offset": "-1m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings": [
+     "boundary_warning"
+    ],
+    "expected_flag": "SOLAR_TERM_BOUNDARY_AMBIGUOUS",
+    "year_ambiguous": true,
+    "month_ambiguous": true,
+    "year_candidates": [
+     "癸卯",
+     "甲辰"
+    ],
+    "month_candidates": [
+     "乙丑",
+     "丙寅"
+    ],
+    "primary_candidate_year": "癸卯",
+    "primary_candidate_month": "乙丑",
+    "primary_candidate_includes": [
+     "year_pillar",
+     "month_pillar"
+    ],
+    "requires_user_confirmation": true
+   }
+  },
+  {
+   "id": "ST_LICHUN_PLUS_1M",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "立春",
+    "offset": "+1m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings": [
+     "boundary_warning"
+    ],
+    "expected_flag": "SOLAR_TERM_BOUNDARY_AMBIGUOUS",
+    "year_ambiguous": true,
+    "month_ambiguous": true,
+    "year_candidates": [
+     "癸卯",
+     "甲辰"
+    ],
+    "month_candidates": [
+     "乙丑",
+     "丙寅"
+    ],
+    "primary_candidate_year": "癸卯",
+    "primary_candidate_month": "乙丑",
+    "primary_candidate_includes": [
+     "year_pillar",
+     "month_pillar"
+    ],
+    "requires_user_confirmation": true
+   }
+  },
+  {
+   "id": "ST_LICHUN_PLUS_5M",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "立春",
+    "offset": "+5m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings": [
+     "boundary_warning"
+    ],
+    "expected_flag": null,
+    "year_ambiguous": false,
+    "month_ambiguous": false,
+    "year_after_term": true,
+    "month_after_term": true,
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ST_LICHUN_PLUS_1H",
+   "group": "1",
+   "input": {
+    "year": 2024,
+    "term": "立春",
+    "offset": "+60m",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_warnings": [
+     "boundary_warning"
+    ],
+    "expected_flag": null,
+    "year_ambiguous": false,
+    "month_ambiguous": false,
+    "year_after_term": true,
+    "month_after_term": true,
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ROLLOVER_2359_LATE_ZI",
+   "group": "2",
+   "input": {
+    "fixed_utc8_datetime": "2024-03-10T23:30:00+08:00",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_day_pillar": "癸酉",
+    "expected_hour_pillar": "甲子",
+    "day_ambiguous": false,
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ROLLOVER_0000_EARLY_ZI",
+   "group": "2",
+   "input": {
+    "fixed_utc8_datetime": "2024-03-11T00:30:00+08:00",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_day_pillar": "甲戌",
+    "expected_hour_pillar": "甲子",
+    "day_ambiguous": false,
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "ZI_HOUR_CONTINUITY_HAISHI_TO_ZI",
+   "group": "2",
+   "input": {
+    "fixed_utc8_datetime": "2024-03-10T22:30:00+08:00",
+    "gender": "MALE",
+    "time_precision": "MINUTE"
+   },
+   "expect": {
+    "expected_hour_pillar": "癸亥",
+    "next_hour_expected": "甲子",
+    "next_hour_adjacent": true,
+    "requires_user_confirmation": false
+   }
+  },
+  {
+   "id": "SHICHEN_ZI_CROSS_DAY_LATE",
+   "group": "3",
+   "input": {
+    "fixed_utc8_datetime": "2024-03-10T23:30:00+08:00",
+    "shichen": "子",
+    "gender": "MALE",
+    "time_precision": "SHICHEN"
+   },
+   "expect": {
+    "day_ambiguous": true,
+    "day_candidates": [
+     "癸酉",
+     "甲戌"
+    ],
+    "hour_ambiguous": false,
+    "expected_hour_pillar": "甲子",
+    "year_ambiguous": false,
+    "month_ambiguous": false,
+    "primary_candidate_includes": [
+     "day_pillar"
+    ],
+    "primary_candidate_excludes": [
+     "year_pillar",
+     "month_pillar",
+     "hour_pillar"
+    ],
+    "requires_user_confirmation": true
+   }
+  },
+  {
+   "id": "SHICHEN_ZI_CROSS_DAY_EARLY",
+   "group": "3",
+   "input": {
+    "fixed_utc8_datetime": "2024-03-11T00:30:00+08:00",
+    "shichen": "子",
+    "gender": "MALE",
+    "time_precision": "SHICHEN"
+   },
+   "expect": {
+    "day_ambiguous": true,
+    "day_candidates": [
+     "癸酉",
+     "甲戌"
+    ],
+    "hour_ambiguous": false,
+    "expected_hour_pillar": "甲子",
+    "year_ambiguous": false,
+    "month_ambiguous": false,
+    "primary_candidate_includes": [
+     "day_pillar"
+    ],
+    "primary_candidate_excludes": [
+     "year_pillar",
+     "month_pillar",
+     "hour_pillar"
+    ],
+    "requires_user_confirmation": true
+   }
+  },
+  {
+   "id": "SHICHEN_ZI_AND_JINGZHE_SUPERPOSITION",
+   "group": "3",
+   "input": {
+    "year": 2018,
+    "term": "惊蛰",
+    "fixed_utc8_date": "2018-03-06",
+    "offset_mode": "AT_TERM_MINUS_1M",
+    "shichen": "子",
+    "gender": "MALE",
+    "time_precision": "SHICHEN"
+   },
+   "expect": {
+    "expected_flag": "SOLAR_TERM_BOUNDARY_AMBIGUOUS",
+    "year_ambiguous": false,
+    "month_ambiguous": true,
+    "day_ambiguous": true,
+    "day_candidates": [
+     "丙申",
+     "丁酉"
+    ],
+    "hour_ambiguous": false,
+    "primary_candidate_includes": [
+     "month_pillar",
+     "day_pillar"
+    ],
+    "primary_candidate_excludes": [
+     "year_pillar",
+     "hour_pillar"
+    ],
+    "requires_user_confirmation": true
+   }
+  },
+  {
+   "id": "SHICHEN_ZI_AND_LICHUN_SUPERPOSITION",
+   "group": "3",
+   "input": {
+    "year": 2017,
+    "term": "立春",
+    "fixed_utc8_date": "2017-02-04",
+    "offset_mode": "AT_TERM_MINUS_1M",
+    "shichen": "子",
+    "gender": "MALE",
+    "time_precision": "SHICHEN"
+   },
+   "expect": {
+    "expected_flag": "SOLAR_TERM_BOUNDARY_AMBIGUOUS",
+    "year_ambiguous": true,
+    "month_ambiguous": true,
+    "day_ambiguous": true,
+    "day_candidates": [
+     "辛酉",
+     "壬戌"
+    ],
+    "hour_ambiguous": false,
+    "primary_candidate_includes": [
+     "year_pillar",
+     "month_pillar",
+     "day_pillar"
+    ],
+    "primary_candidate_excludes": [
+     "hour_pillar"
+    ],
+    "requires_user_confirmation": true
+   }
+  },
+  {
+   "id": "UNKNOWN_GENDER_AND_HOUR_ON_TERM_DAY",
+   "group": "4",
+   "input": {
+    "year": 2024,
+    "term": "惊蛰",
+    "offset": "+10m",
+    "is_term_day": true,
+    "gender": "UNKNOWN",
+    "time_precision": "UNKNOWN"
+   },
+   "expect": {
+    "expected_status": "OK_WITH_DEGRADATION",
+    "expected_reasons": [
+     "MISSING_GENDER",
+     "HOUR_UNKNOWN"
+    ],
+    "expected_warnings": [
+     "CROSS_TERM_DAY_HOUR_UNKNOWN"
+    ],
+    "expected_flag": "SOLAR_TERM_BOUNDARY_AMBIGUOUS",
+    "chart_type": "THREE_PILLARS",
+    "hour_pillar": null,
+    "year_ambiguous": false,
+    "month_ambiguous": true,
+    "day_ambiguous": false,
+    "primary_candidate_includes": [
+     "month_pillar"
+    ],
+    "primary_candidate_excludes": [
+     "year_pillar",
+     "day_pillar",
+     "hour_pillar"
+    ],
+    "requires_user_confirmation": true
+   }
+  }
+ ]
+}
