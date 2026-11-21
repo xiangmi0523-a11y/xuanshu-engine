@@ -326,10 +326,12 @@ test("DB-C-07 / DB-C-08 / DB-C-09：R-I-1、R-I-3、R-I-4 发布校验查询", a
   fs("Edition", "X-E", "FORMAL", "NON_FORMAL"); fs("Evidence", "X-EV", null, "FORMAL");
   assert.equal(releaseChecks["Q-C-08"](db).length, 1, "R-I-3");
   fs("Evidence", "X-EV", "FORMAL", "NON_FORMAL");
-  ins(db, "formal", "evidence_link", { evidence_id: "X-EV", component_id: "P-B-02", evidence_role: "反证", branch_id: null });
-  assert.deepEqual(releaseChecks["Q-C-09"](db), [], "反证类 NON_FORMAL 不触发");
-  ins(db, "formal", "evidence_link", { evidence_id: "X-EV", component_id: "P-B-02", evidence_role: "支持", branch_id: null });
-  assert.ok(releaseChecks["Q-C-09"](db).length >= 1, "R-I-4：支持类 NON_FORMAL 而变体 FORMAL");
+  ins(db, "formal", "claim", { claim_id: "X-CL", component_id: "P-B-02", statement: "s", condition: null, branch_id: null });
+  ins(db, "formal", "evidence_link", { evidence_id: "X-EV", claim_id: "X-CL", directness: "direct", scope_note: null, branch_id: null });
+  ins(db, "formal", "evidence_link_role", { evidence_id: "X-EV", claim_id: "X-CL", role: "反证", role_note: "n" });
+  assert.deepEqual(releaseChecks["Q-C-09"](db), [], "只有反证角色的 NON_FORMAL 证据不触发");
+  ins(db, "formal", "evidence_link_role", { evidence_id: "X-EV", claim_id: "X-CL", role: "支持", role_note: "n" });
+  assert.ok(releaseChecks["Q-C-09"](db).length >= 1, "R-I-4：支持角色 NON_FORMAL 而变体 FORMAL");
 });
 
 // ---------------------------------------------------------------- DB-T
@@ -414,7 +416,7 @@ test("DB-X-02：正式库无行引用用户库对象", () => {
   assert.deepEqual(snapshotChecks["Q-X-02"]!(r.w.db), []);
 });
 
-test("DB-X-05：§12.2 七条证据一致性查询——各造一条违例恰查出 1 行，清除后 0 行", async () => {
+test("DB-X-05：§12.2 证据一致性查询（v1.0.6 九条）——各造一条违例恰查出 1 行，清除后 0 行", async () => {
   const { ins } = await import("./helpers.js");
   const { openMemoryDb } = await import("../../db/connect.js");
   const keys = Object.keys(evidenceChecks) as (keyof typeof evidenceChecks)[];
@@ -437,6 +439,13 @@ test("DB-X-05：§12.2 七条证据一致性查询——各造一条违例恰查
       case "Q-X-05-5": ev({}); ed("转录本（未与影印本对校）"); break;
       case "Q-X-05-6": db.exec("SELECT 1"); assert.throws(() => ev({ branch_id: "X-BR" })); continue; // 库层 CHECK 已先行拦截（DB-F-03）
       case "Q-X-05-7": continue; // 个人对象 branch_id 为 NOT NULL，库层先拦截（DB-N）
+      case "Q-X-05-8":
+        ev({}); ins(db, "formal", "claim", { claim_id: "X-CL", component_id: "P-B-02", statement: "s", condition: null, branch_id: null });
+        ins(db, "formal", "evidence_link", { evidence_id: "X-EV", claim_id: "X-CL", directness: "direct", scope_note: null, branch_id: null }); break;
+      case "Q-X-05-9":
+        ev({}); ed("原刊本"); ins(db, "formal", "variant_type", { type_code: "X-VT", applies_to_domain: "古籍文本异文", label: "字词" });
+        ins(db, "formal", "text_variant", { variant_id: "X-TV", type_code: "X-VT", passage_a: "X-P", edition_a: "X-E", passage_b: null, edition_b: "X-E",
+          reading_a: "甲", reading_b: null, preferred_reading: null, preferred_basis: null, impact_level: "calculation", impact_note: null }); break;
     }
     assert.equal(evidenceChecks[k](db).length, 1, `${k} 恰查出 1 行`);
   }

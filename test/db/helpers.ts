@@ -11,8 +11,8 @@ export type Row = Record<string, Val>;
 export interface Spec {
   tables: Record<string, {
     schema: "formal" | "main"; required: string[]; supplement: { columns: string[]; source: string } | null;
-    enums: Record<string, { constraint: string; values: string[] }>;
-    fks: { table: string; from: string[]; to: string[]; deferred: boolean }[];
+    enums: Record<string, { constraint: string; values: (string | number)[]; nullable: boolean; src: string }>;
+    fks: { table: string; from: string[]; to: string[]; deferred: boolean; src: string }[];
   }>;
 }
 export const spec = (): Spec => JSON.parse(readRepo("db/spec.json")) as Spec;
@@ -27,8 +27,8 @@ export function ins(db: DatabaseSync, schema: string, t: string, row: Row): void
 }
 
 /** 只建表的内存库，并写入全部基准行（DB-N / DB-E / DB-K 矩阵用） */
-export function tablesWithBase(): DatabaseSync {
-  const db = openMemoryDb({ tablesOnly: true });
+export function tablesWithBase(sql?: { formal: string; user: string }): DatabaseSync {
+  const db = openMemoryDb(sql ? { tablesOnly: true, sql } : { tablesOnly: true });
   db.exec("BEGIN");
   for (const [s, t, r] of baseRows()) ins(db, s, t, r);
   db.exec("COMMIT");

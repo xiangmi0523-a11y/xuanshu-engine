@@ -2,6 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import type { DatabaseSync } from "node:sqlite";
 import { DeletionModule, PROTECTED_ORDER, type DeletionHooks, type HookPoint } from "../../db/deletion.js";
 import { count, rejects, runCase } from "./helpers.js";
@@ -83,8 +84,9 @@ test("DB-D-03：授权档案 A，删档案 B 的行被拒", () => {
 });
 
 test("DB-D-04 / DB-D-05：已授权但无本次成功审计、或 U20 audit_id 与审计不符，报 DB-D-audit", () => {
-  // 以注入方式构造：G armed 时把 U20 换成“审计不存在”的 audit_id 会被闸门条件 d 先拒（DB-D-27）；
-  // 为单独检验 DB-D-audit，直接检验触发器第二条：闸门放行而审计缺失。用测试替身函数模拟闸门放行。
+  // 边界（E2-FIX E）：本用例只检验触发器第二道条件 DB-D-audit 本身——用测试替身让闸门放行，再看审计缺失 / 不符是否被拒。
+  // 它不检验真实授权流程，也不构成端到端安全证明；真实流程的“成功审计 ↔ U20 绑定 ↔ 删除”一致性见 E-1、E-2（不用替身）。
+  // 以注入方式构造：G armed 时把 U20 换成“审计不存在”的 audit_id 会被闸门条件 d 先拒（DB-D-27），故真实流程到不了这第二道条件。
   const { db } = setup();
   // DB-D-10 测试替身：只在本连接、本测试中以同名同参数个数函数替换闸门，证明库层审计条件独立于闸门（契约 §1.2：进程内代码可替换函数，只能防错、发现篡改）
   db.function("xs_del_gate", { deterministic: false }, (_p, _t, _a, _s) => 1);
@@ -294,4 +296,69 @@ test("DB-D-39：在 G、W 均未 armed 的三个时点读取真实 U20 值伪造
   assert.ok(r.ok, "暂停结束后流程继续完成");
   assert.deepEqual(profileRows(db, Bp), refRows, "最终结果与不暂停时相同");
   assert.deepEqual(Object.values(profileRows(db, A)).every((n) => n === 0), true);
+});
+
+// ---------------------------------------------------------------- E2-FIX E：真实授权流程的一致性（不使用任何测试替身）
+// DB-D-04 / DB-D-05 用测试替身单独检验触发器第二道条件（见该用例注释）；以下用例只走 DeletionModule 真实流程，
+// 检验“成功审计 ↔ U20 绑定 ↔ 实际删除”三者在同一事务内一致。它们证明工程实现的一致性，不是端到端安全证明（§1.2：进程内代码可替换函数）。
+test("E-1：真实流程——成功审计、U20 标记、branch_event 与实际删除在同一事务内绑定同一 audit_id；提交后 U20 清空、审计留存", () => {
+  const { db, del, opts } = setup();
+  const seen: Record<string, { marker: ReturnType<typeof marker>; audits: { audit_id: string; success: number }[]; snapRows: number }> = {};
+  const snap = (p: HookPoint) => (d: DatabaseSync) => {
+    seen[p] = { marker: marker(d), audits: d.prepare("SELECT audit_id, success FROM deletion_audit ORDER BY audit_id").all() as { audit_id: string; success: number }[],
+      snapRows: (d.prepare("SELECT count(*) AS n FROM calculation_snapshot WHERE owner_profile_id = ?").get(A) as { n: number }).n };
+  };
+  const hooks: DeletionHooks = { at: (p, d, info) => { if (p === "in_w" || p === "in_g" || p === "before_commit" || (p === "cascade" && info === "calculation_snapshot")) snap(p)(d); } };
+  const r = del.deleteProfile(A, { ...opts, hooks });
+  assert.ok(r.ok, JSON.stringify(r));
+  if (!r.ok) return;
+  // W 窗口：U20 已绑定本次 audit_id，成功审计尚未写入
+  assert.equal(seen["in_w"]!.marker?.audit_id, r.auditId);
+  assert.equal(seen["in_w"]!.marker?.kind, "success");
+  assert.ok(!seen["in_w"]!.audits.some((a) => a.audit_id === r.auditId), "W 窗口内成功审计尚未写入");
+  // G 窗口与级联、提交前：U20 与成功审计指向同一 audit_id，成功标记为 1
+  for (const p of ["in_g", "cascade", "before_commit"]) {
+    assert.equal(seen[p]!.marker?.audit_id, r.auditId, `${p}：U20.audit_id = 本次审计`);
+    assert.equal(seen[p]!.marker?.kind, "success");
+    assert.deepEqual(seen[p]!.audits.filter((a) => a.audit_id === r.auditId).map((a) => [a.audit_id, a.success]), [[r.auditId, 1]], `${p}：本次成功审计存在且唯一`);
+  }
+  assert.ok(seen["cascade"]!.snapRows > 0 && seen["before_commit"]!.snapRows === 0, "级联在审计绑定之后执行");
+  // 提交后：U20 清空；审计、计数、branch_event 指向同一 audit_id；档案行已删
+  assert.equal(marker(db), undefined);
+  assert.equal((db.prepare("SELECT count(*) AS n FROM deletion_audit WHERE audit_id = ? AND success = 1").get(r.auditId) as { n: number }).n, 1);
+  assert.ok((db.prepare("SELECT count(*) AS n FROM deletion_audit_count WHERE audit_id = ?").get(r.auditId) as { n: number }).n > 0);
+  assert.deepEqual((db.prepare("SELECT DISTINCT audit_id FROM branch_event").all() as { audit_id: string }[]).map((x) => x.audit_id), [r.auditId]);
+  assert.ok(Object.values(profileRows(db, A)).every((n) => n === 0));
+});
+
+test("E-2：真实流程——第二次删除不能沿用第一次的审计：U20 绑定新 audit_id；把 U20 改回旧审计 ID 后 DELETE 被真实闸门拒，整次删除回滚", () => {
+  const { db, del, opts } = setup();
+  const r1 = del.deleteProfile(A, opts);
+  assert.ok(r1.ok);
+  if (!r1.ok) return;
+  let swapped = "";
+  const r2 = del.deleteProfile(Bp, { ...opts, hooks: at("in_g", (d) => {
+    const m = marker(d)!;
+    assert.notEqual(m.audit_id, r1.auditId, "U20 绑定本次新审计");
+    d.exec("DELETE FROM deletion_txn_marker");
+    d.prepare("INSERT INTO deletion_txn_marker (id, txn_token, audit_id, grant_seq, kind) VALUES (1, ?, ?, ?, 'success')").run(m.txn_token, r1.auditId, m.grant_seq);
+    swapped = r1.auditId;
+  }) });
+  assert.equal(swapped, r1.auditId);
+  assert.equal(r2.ok, false, "沿用旧审计的删除失败");
+  assert.match(r2.ok ? "" : r2.error, /DB-D-/);
+  assert.ok(Object.values(profileRows(db, Bp)).some((n) => n > 0), "档案 B 完整（整次回滚）");
+  assert.equal(marker(db), undefined);
+  // 只留：第一次成功审计 + 第二次失败审计；第二次的成功审计随回滚消失
+  const audits = db.prepare("SELECT audit_id, success FROM deletion_audit ORDER BY success DESC").all() as { audit_id: string; success: number }[];
+  assert.deepEqual(audits.map((a) => a.success), [1, 0]);
+  assert.equal(audits[0]!.audit_id, r1.auditId);
+  assert.equal(audits[1]!.audit_id, r2.ok ? "" : r2.failureAuditId);
+});
+
+test("E-3：真实流程——连接上的 xs_del_gate / xs_audit_write 为删除模块注册的真实实现（非替身），本文件只有 DB-D-04/05 一处使用替身", () => {
+  const src = readFileSync(new URL("../../../test/db/deletion.test.ts", import.meta.url), "utf8");
+  const doubles = src.split("\n").filter((l) => /db\.function\("xs_(del_gate|audit_write)"/.test(l));
+  assert.equal(doubles.length, 2, "只在 DB-D-04/05 中替换两次");
+  assert.ok(doubles.every((l) => src.indexOf(l) > src.indexOf('test("DB-D-04 / DB-D-05') && src.indexOf(l) < src.indexOf('test("DB-D-06')), "替身只出现在 DB-D-04/05 用例内");
 });

@@ -1,5 +1,9 @@
 {
- "note": "机读规格（E2 实施授权书第七节第 4 项）。required 取自审核清单 §4 建表清单（基线 7388ffa）逐行提取的“必”列；supplement 为清单以引用方式写明而非逐列列出的必填列，逐表注明出处。enums、fks 取自 DDL，供 DB-E / DB-K 矩阵生成。DB-N2 以 required ∪ supplement 与 DDL 的 NOT NULL 集合双向比对。",
+ "note": "独立机读规格（E2-FIX D）。由 scripts/gen-spec.mjs 从审核清单第 4 节逐字摘录（db/spec/checklist_s4.md）与补充出处表（db/spec/sources.json）生成，不读 DDL。required 为清单“必”列；enums 只收多值 CHECK（单值等式另有专门用例），nullable 取自清单强度或补充出处；fks 为清单 FK 标记与补充。DDL 与本规格的双向比对见 test/db/spec.test.ts。",
+ "inputs": {
+  "checklist_s4_sha256": "c711f5979c82d3a745a35acdb0e73cb1b1d242a91967f111fe2d01dddcbc69af",
+  "sources_sha256": "83795030b577aaf628086fb27f91b58517a8f7de759c6485eec71be4caac246e"
+ },
  "tables": {
   "data_release": {
    "schema": "formal",
@@ -11,7 +15,8 @@
    ],
    "supplement": null,
    "enums": {},
-   "fks": []
+   "fks": [],
+   "src": "清单 F01"
   },
   "data_version": {
    "schema": "formal",
@@ -31,7 +36,9 @@
       "place",
       "eot",
       "day_pillar"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 F02"
     }
    },
    "fks": [
@@ -43,9 +50,11 @@
      "to": [
       "data_release"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F02；目标：清单 F01：data_release.data_release 为 PK"
     }
-   ]
+   ],
+   "src": "清单 F02"
   },
   "engine_release": {
    "schema": "formal",
@@ -65,9 +74,11 @@
      "to": [
       "data_release"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F03；目标：清单 F01：data_release.data_release 为 PK"
     }
-   ]
+   ],
+   "src": "清单 F03"
   },
   "engine_function": {
    "schema": "formal",
@@ -88,9 +99,11 @@
      "to": [
       "engine_release_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F04；目标：清单 F03：engine_release.engine_release_id 为 PK"
     }
-   ]
+   ],
+   "src": "清单 F04"
   },
   "engine_function_source": {
    "schema": "formal",
@@ -113,9 +126,11 @@
       "engine_release_id",
       "calc_function_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F04：impl_hash 由 engine_function_source 计算（§3.8）；工程补充：清单未标 FK"
     }
-   ]
+   ],
+   "src": "清单 F04"
   },
   "step_code": {
    "schema": "formal",
@@ -135,10 +150,13 @@
       "FENGSHUI",
       "CALENDAR",
       "TEXT"
-     ]
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §6.6 步骤编号表 module；工程补充：清单 F05 未标 CHECK（§1.4“枚举字段一律加 CHECK”）"
     }
    },
-   "fks": []
+   "fks": [],
+   "src": "清单 F05"
   },
   "step_dependency": {
    "schema": "formal",
@@ -157,7 +175,8 @@
      "to": [
       "step_code"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F05；目标：清单 F05：step_dependency(depends_on 必 FK)，指向步骤编号"
     },
     {
      "table": "step_code",
@@ -167,43 +186,11 @@
      "to": [
       "step_code"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F05；目标：清单 F05：step_code.step_code 为 PK"
     }
-   ]
-  },
-  "step_code_retirement": {
-   "schema": "formal",
-   "required": [],
-   "supplement": {
-    "columns": [
-     "data_release",
-     "step_code"
-    ],
-    "source": "清单 §3.8 第 915 行：废止的步骤只追加废止标记"
-   },
-   "enums": {},
-   "fks": [
-    {
-     "table": "data_release",
-     "from": [
-      "data_release"
-     ],
-     "to": [
-      "data_release"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "step_code",
-     "from": [
-      "step_code"
-     ],
-     "to": [
-      "step_code"
-     ],
-     "deferred": false
-    }
-   ]
+   ],
+   "src": "清单 F05"
   },
   "canonicalization_version": {
    "schema": "formal",
@@ -215,7 +202,67 @@
    ],
    "supplement": null,
    "enums": {},
-   "fks": []
+   "fks": [],
+   "src": "清单 F06"
+  },
+  "blocker_step_map": {
+   "schema": "formal",
+   "required": [
+    "basis_ref",
+    "block_id",
+    "data_release",
+    "effect",
+    "step_code"
+   ],
+   "supplement": null,
+   "enums": {
+    "effect": {
+     "constraint": "DB-E-blocker_step_map.effect",
+     "values": [
+      "BLOCKED-HARD",
+      "BLOCKED-FORMAL",
+      "NON_FORMAL"
+     ],
+     "nullable": false,
+     "src": "清单 F07"
+    }
+   },
+   "fks": [
+    {
+     "table": "blocker",
+     "from": [
+      "block_id"
+     ],
+     "to": [
+      "block_id"
+     ],
+     "deferred": false,
+     "src": "清单 F07；目标：清单 F41：blocker.block_id 为 PK"
+    },
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false,
+     "src": "清单 F07 data_release 必；工程补充"
+    },
+    {
+     "table": "step_code",
+     "from": [
+      "step_code"
+     ],
+     "to": [
+      "step_code"
+     ],
+     "deferred": false,
+     "src": "清单 F07；目标：清单 F05：step_code.step_code 为 PK"
+    }
+   ],
+   "src": "清单 F07"
   },
   "source": {
    "schema": "formal",
@@ -226,16 +273,30 @@
    ],
    "supplement": null,
    "enums": {
+    "attribution_claim_status": {
+     "constraint": "DB-E-source.attribution_claim_status",
+     "values": [
+      "已证实",
+      "推断",
+      "未知",
+      "已证伪"
+     ],
+     "nullable": true,
+     "src": "清单 F08；值：契约 v1.0 §2.1：归属主张本身的已证实/推断/未知/已证伪（条件必须）"
+    },
     "attribution_status": {
      "constraint": "DB-E-source.attribution_status",
      "values": [
       "确定",
       "存疑",
       "系名"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 F08"
     }
    },
-   "fks": []
+   "fks": [],
+   "src": "清单 F08"
   },
   "edition": {
    "schema": "formal",
@@ -247,21 +308,25 @@
    ],
    "supplement": null,
    "enums": {
-    "transcription_status": {
-     "constraint": "DB-E-edition.transcription_status",
-     "values": [
-      "原刊本",
-      "转录本（未与影印本对校）",
-      "个人校勘"
-     ]
-    },
     "confidence": {
      "constraint": "DB-E-edition.confidence",
      "values": [
       "A",
       "B",
       "C"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 F09"
+    },
+    "transcription_status": {
+     "constraint": "DB-E-edition.transcription_status",
+     "values": [
+      "原刊本",
+      "转录本（未与影印本对校）",
+      "个人校勘"
+     ],
+     "nullable": false,
+     "src": "清单 F09；值：契约 v1.0 §2.2 增两值；“原刊本”据清单 §2 第 218 行（契约写出的两值与“原刊本”，后者【待定】，随 Q-3）"
     }
    },
    "fks": [
@@ -273,7 +338,8 @@
      "to": [
       "edition_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F09；目标：契约 v1.0 §2.2 parent_edition_id 指向底本"
     },
     {
      "table": "source",
@@ -283,9 +349,11 @@
      "to": [
       "source_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F09；目标：规则：<表>_id 指向该表"
     }
-   ]
+   ],
+   "src": "清单 F09"
   },
   "passage": {
    "schema": "formal",
@@ -298,7 +366,18 @@
     "volume_page"
    ],
    "supplement": null,
-   "enums": {},
+   "enums": {
+    "result": {
+     "constraint": "DB-E-passage.result",
+     "values": [
+      "MATCH",
+      "MISMATCH",
+      "PARTIAL"
+     ],
+     "nullable": true,
+     "src": "清单 F10"
+    }
+   },
    "fks": [
     {
      "table": "edition",
@@ -308,9 +387,11 @@
      "to": [
       "edition_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F10；目标：规则：<表>_id 指向该表"
     }
-   ]
+   ],
+   "src": "清单 F10"
   },
   "variant_type": {
    "schema": "formal",
@@ -321,39 +402,41 @@
    ],
    "supplement": null,
    "enums": {},
-   "fks": []
+   "fks": [],
+   "src": "清单 F12"
   },
   "text_variant": {
    "schema": "formal",
    "required": [
     "edition_a",
     "edition_b",
+    "impact_level",
     "type_code",
     "variant_id"
    ],
    "supplement": null,
-   "enums": {},
+   "enums": {
+    "impact_level": {
+     "constraint": "DB-E-text_variant.impact_level",
+     "values": [
+      "none",
+      "wording_only",
+      "calculation"
+     ],
+     "nullable": false,
+     "src": "契约 v1.0.6 修订单第一项（§2.3）"
+    },
+    "preferred_reading": {
+     "constraint": "DB-E-text_variant.preferred_reading",
+     "values": [
+      "a",
+      "b"
+     ],
+     "nullable": true,
+     "src": "契约 v1.0.6 修订单第一项（§2.3）"
+    }
+   },
    "fks": [
-    {
-     "table": "edition",
-     "from": [
-      "edition_b"
-     ],
-     "to": [
-      "edition_id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "passage",
-     "from": [
-      "passage_b"
-     ],
-     "to": [
-      "passage_id"
-     ],
-     "deferred": false
-    },
     {
      "table": "edition",
      "from": [
@@ -362,7 +445,19 @@
      "to": [
       "edition_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F13；目标：契约 v1.0 §2.3 各自写明所属 Edition"
+    },
+    {
+     "table": "edition",
+     "from": [
+      "edition_b"
+     ],
+     "to": [
+      "edition_id"
+     ],
+     "deferred": false,
+     "src": "清单 F13；目标：契约 v1.0 §2.3"
     },
     {
      "table": "passage",
@@ -372,7 +467,19 @@
      "to": [
       "passage_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F13；目标：契约 v1.0 §2.3 passage_a 写明所属段"
+    },
+    {
+     "table": "passage",
+     "from": [
+      "passage_b"
+     ],
+     "to": [
+      "passage_id"
+     ],
+     "deferred": false,
+     "src": "清单 F13；目标：契约 v1.0 §2.3"
     },
     {
      "table": "variant_type",
@@ -382,18 +489,45 @@
      "to": [
       "type_code"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F13；目标：清单 F12：variant_type.type_code 为 PK"
     }
-   ]
+   ],
+   "src": "清单 F13；必填：契约 v1.0.6 修订单第一项（§2.3）"
   },
-  "annotation_layer": {
+  "text_variant_component": {
    "schema": "formal",
    "required": [
-    "layer_code"
+    "component_id",
+    "variant_id"
    ],
    "supplement": null,
    "enums": {},
-   "fks": []
+   "fks": [
+    {
+     "table": "rule_component",
+     "from": [
+      "component_id"
+     ],
+     "to": [
+      "component_id"
+     ],
+     "deferred": false,
+     "src": "清单 F14；目标：清单 F21：rule_component.component_id 为 PK"
+    },
+    {
+     "table": "text_variant",
+     "from": [
+      "variant_id"
+     ],
+     "to": [
+      "variant_id"
+     ],
+     "deferred": false,
+     "src": "清单 F14；目标：清单 F13：text_variant.variant_id"
+    }
+   ],
+   "src": "清单 F14"
   },
   "annotation": {
    "schema": "formal",
@@ -414,7 +548,8 @@
      "to": [
       "layer_code"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F15；目标：清单 F15：annotation_layer.layer_code 为 PK"
     },
     {
      "table": "passage",
@@ -424,9 +559,21 @@
      "to": [
       "passage_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F15；目标：规则：<表>_id 指向该表"
     }
-   ]
+   ],
+   "src": "清单 F15"
+  },
+  "annotation_layer": {
+   "schema": "formal",
+   "required": [
+    "layer_code"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [],
+   "src": "清单 F15"
   },
   "evidence": {
    "schema": "formal",
@@ -440,15 +587,15 @@
    ],
    "supplement": null,
    "enums": {
-    "evidence_tier": {
-     "constraint": "DB-E-evidence.evidence_tier",
+    "confidence": {
+     "constraint": "DB-E-evidence.confidence",
      "values": [
-      "E1",
-      "E2",
-      "E3",
-      "E4",
-      "E5"
-     ]
+      "A",
+      "B",
+      "C"
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §2.4 confidence A/B/C；清单 F16 写“confidence 必”未标 CHECK"
     },
     "evidence_category": {
      "constraint": "DB-E-evidence.evidence_category",
@@ -460,25 +607,34 @@
       "C-E",
       "C-F",
       "C-G"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 F16"
     },
-    "confidence": {
-     "constraint": "DB-E-evidence.confidence",
+    "evidence_tier": {
+     "constraint": "DB-E-evidence.evidence_tier",
      "values": [
-      "A",
-      "B",
-      "C"
-     ]
+      "E1",
+      "E2",
+      "E3",
+      "E4",
+      "E5"
+     ],
+     "nullable": false,
+     "src": "清单 F16"
     },
     "origin": {
      "constraint": "DB-E-evidence.origin",
      "values": [
       "human",
       "ai_output"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 F16"
     }
    },
-   "fks": []
+   "fks": [],
+   "src": "清单 F16"
   },
   "evidence_passage": {
    "schema": "formal",
@@ -490,16 +646,6 @@
    "enums": {},
    "fks": [
     {
-     "table": "passage",
-     "from": [
-      "passage_id"
-     ],
-     "to": [
-      "passage_id"
-     ],
-     "deferred": false
-    },
-    {
      "table": "evidence",
      "from": [
       "evidence_id"
@@ -507,9 +653,22 @@
      "to": [
       "evidence_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F17；目标：规则：<表>_id 指向该表"
+    },
+    {
+     "table": "passage",
+     "from": [
+      "passage_id"
+     ],
+     "to": [
+      "passage_id"
+     ],
+     "deferred": false,
+     "src": "清单 F17；目标：规则：<表>_id 指向该表"
     }
-   ]
+   ],
+   "src": "清单 F17"
   },
   "manual_check_record": {
    "schema": "formal",
@@ -531,30 +690,11 @@
      "to": [
       "evidence_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F19；目标：规则：<表>_id 指向该表"
     }
-   ]
-  },
-  "system_school": {
-   "schema": "formal",
-   "required": [
-    "id",
-    "name"
    ],
-   "supplement": null,
-   "enums": {},
-   "fks": [
-    {
-     "table": "system_school",
-     "from": [
-      "parent_id"
-     ],
-     "to": [
-      "id"
-     ],
-     "deferred": false
-    }
-   ]
+   "src": "清单 F19"
   },
   "rule": {
    "schema": "formal",
@@ -566,14 +706,15 @@
    ],
    "supplement": null,
    "enums": {
-    "track": {
-     "constraint": "DB-E-rule.track",
+    "default_scope": {
+     "constraint": "DB-E-rule.default_scope",
      "values": [
-      "A",
-      "B",
-      "C",
-      "D"
-     ]
+      "进默认",
+      "多版本",
+      "暂缓"
+     ],
+     "nullable": false,
+     "src": "清单 F20"
     },
     "tier": {
      "constraint": "DB-E-rule.tier",
@@ -581,15 +722,20 @@
       "T0",
       "T1",
       "T2"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 F20"
     },
-    "default_scope": {
-     "constraint": "DB-E-rule.default_scope",
+    "track": {
+     "constraint": "DB-E-rule.track",
      "values": [
-      "进默认",
-      "多版本",
-      "暂缓"
-     ]
+      "A",
+      "B",
+      "C",
+      "D"
+     ],
+     "nullable": false,
+     "src": "清单 F20"
     }
    },
    "fks": [
@@ -601,7 +747,8 @@
      "to": [
       "id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F20；目标：清单 F30：system_school(id 必)"
     },
     {
      "table": "system_school",
@@ -611,9 +758,11 @@
      "to": [
       "id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F20；目标：清单 F30：system_school(id 必)"
     }
-   ]
+   ],
+   "src": "清单 F20"
   },
   "rule_component": {
    "schema": "formal",
@@ -634,7 +783,18 @@
       "C-E",
       "C-F",
       "C-G"
-     ]
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §3.2 / §2.4 evidence_category C-A～C-G；清单 F21 写“evidence_category 必”未标 CHECK"
+    },
+    "is_calendar_anchor": {
+     "constraint": "DB-E-rule_component.is_calendar_anchor",
+     "values": [
+      0,
+      1
+     ],
+     "nullable": true,
+     "src": "契约 v1.0 §3.2 is_calendar_anchor（布尔，条件必须）；清单 F21 条件必须"
     }
    },
    "fks": [
@@ -646,27 +806,579 @@
      "to": [
       "rule_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F21；目标：清单 F20：rule.rule_id 为 PK"
     }
-   ]
+   ],
+   "src": "清单 F21"
   },
-  "evidence_link": {
+  "component_blocker": {
    "schema": "formal",
    "required": [
+    "block_id",
+    "component_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "blocker",
+     "from": [
+      "block_id"
+     ],
+     "to": [
+      "block_id"
+     ],
+     "deferred": false,
+     "src": "清单 F22；目标：清单 F41：blocker.block_id 为 PK"
+    },
+    {
+     "table": "rule_component",
+     "from": [
+      "component_id"
+     ],
+     "to": [
+      "component_id"
+     ],
+     "deferred": false,
+     "src": "清单 F22；目标：清单 F21：rule_component.component_id 为 PK"
+    }
+   ],
+   "src": "清单 F22"
+  },
+  "component_default": {
+   "schema": "formal",
+   "required": [
+    "applicable_scope",
+    "approval_ref",
     "component_id",
-    "evidence_id",
-    "evidence_role"
+    "data_release",
+    "rule_variant_id",
+    "sequence_no"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "approval_record",
+     "from": [
+      "approval_ref"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "deferred": false,
+     "src": "清单 F23；目标：清单 F23 / F26：approval_ref 指批准记录（F37 approval_id）"
+    },
+    {
+     "table": "rule_component",
+     "from": [
+      "component_id"
+     ],
+     "to": [
+      "component_id"
+     ],
+     "deferred": false,
+     "src": "清单 F23；目标：清单 F21：rule_component.component_id 为 PK"
+    },
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false,
+     "src": "清单 F23；工程补充"
+    },
+    {
+     "table": "rule_variant",
+     "from": [
+      "rule_variant_id"
+     ],
+     "to": [
+      "rule_variant_id"
+     ],
+     "deferred": false,
+     "src": "清单 F23；目标：清单 F24：rule_variant.rule_variant_id 为 PK"
+    }
+   ],
+   "src": "清单 F23"
+  },
+  "rule_variant": {
+   "schema": "formal",
+   "required": [
+    "canonicalization_version",
+    "component_id",
+    "confidence",
+    "content_hash",
+    "hash_algorithm",
+    "rule_variant_id",
+    "version_no"
    ],
    "supplement": null,
    "enums": {
-    "evidence_role": {
-     "constraint": "DB-E-evidence_link.evidence_role",
+    "confidence": {
+     "constraint": "DB-E-rule_variant.confidence",
      "values": [
-      "支持",
-      "反证",
-      "限定",
-      "异文记录"
-     ]
+      "A",
+      "B",
+      "C"
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §3.3 confidence A/B/C；清单 F24 写“confidence 必”未标 CHECK"
+    },
+    "non_formal_reason": {
+     "constraint": "DB-E-rule_variant.non_formal_reason",
+     "values": [
+      "实验规则",
+      "个人校勘",
+      "未核验",
+      "暂缓规则",
+      "依赖非正式",
+      "其他"
+     ],
+     "nullable": true,
+     "src": "清单 F24；值：契约 v1.0 §3.3 non_formal_reason（条件必须）"
+    }
+   },
+   "fks": [
+    {
+     "table": "canonicalization_version",
+     "from": [
+      "canonicalization_version"
+     ],
+     "to": [
+      "version"
+     ],
+     "deferred": false,
+     "src": "清单 F24；目标：清单 F06：canonicalization_version.version 为 PK"
+    },
+    {
+     "table": "rule_component",
+     "from": [
+      "component_id"
+     ],
+     "to": [
+      "component_id"
+     ],
+     "deferred": false,
+     "src": "清单 F24；目标：清单 F21：rule_component.component_id 为 PK"
+    },
+    {
+     "table": "system_school",
+     "from": [
+      "school_id"
+     ],
+     "to": [
+      "id"
+     ],
+     "deferred": false,
+     "src": "清单 F24 school_id 可；工程补充"
+    }
+   ],
+   "src": "清单 F24"
+  },
+  "rule_variant_edition": {
+   "schema": "formal",
+   "required": [
+    "edition_id",
+    "rule_variant_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "edition",
+     "from": [
+      "edition_id"
+     ],
+     "to": [
+      "edition_id"
+     ],
+     "deferred": false,
+     "src": "清单 F25；目标：规则：<表>_id 指向该表"
+    },
+    {
+     "table": "rule_variant",
+     "from": [
+      "rule_variant_id"
+     ],
+     "to": [
+      "rule_variant_id"
+     ],
+     "deferred": false,
+     "src": "清单 F25；目标：清单 F24：rule_variant.rule_variant_id 为 PK"
+    }
+   ],
+   "src": "清单 F25"
+  },
+  "variant_supersedes": {
+   "schema": "formal",
+   "required": [
+    "applicable_scope",
+    "data_release",
+    "new_variant_id",
+    "old_variant_id",
+    "reason"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "approval_record",
+     "from": [
+      "approval_ref"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "deferred": false,
+     "src": "清单 F26；目标：清单 F23 / F26：approval_ref 指批准记录（F37 approval_id）"
+    },
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false,
+     "src": "清单 F26；工程补充"
+    },
+    {
+     "table": "rule_variant",
+     "from": [
+      "new_variant_id"
+     ],
+     "to": [
+      "rule_variant_id"
+     ],
+     "deferred": false,
+     "src": "清单 F26；目标：清单 F26；F24 rule_variant_id PK"
+    },
+    {
+     "table": "rule_variant",
+     "from": [
+      "old_variant_id"
+     ],
+     "to": [
+      "rule_variant_id"
+     ],
+     "deferred": false,
+     "src": "清单 F26；目标：清单 F26；F24 rule_variant_id PK"
+    }
+   ],
+   "src": "清单 F26"
+  },
+  "param_variant_map": {
+   "schema": "formal",
+   "required": [
+    "applicable_scope",
+    "data_release",
+    "param_id",
+    "param_value",
+    "rule_variant_id",
+    "selection_rule"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false,
+     "src": "清单 F27；工程补充"
+    },
+    {
+     "table": "parameter_registry",
+     "from": [
+      "param_id"
+     ],
+     "to": [
+      "param_id"
+     ],
+     "deferred": false,
+     "src": "清单 F27；目标：清单 F34：parameter_registry.param_id 为 PK"
+    },
+    {
+     "table": "rule_variant",
+     "from": [
+      "rule_variant_id"
+     ],
+     "to": [
+      "rule_variant_id"
+     ],
+     "deferred": false,
+     "src": "清单 F27；目标：清单 F24：rule_variant.rule_variant_id 为 PK"
+    }
+   ],
+   "src": "清单 F27"
+  },
+  "term": {
+   "schema": "formal",
+   "required": [
+    "name",
+    "system_id",
+    "term_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "term",
+     "from": [
+      "homonym_of"
+     ],
+     "to": [
+      "term_id"
+     ],
+     "deferred": false,
+     "src": "清单 F28 homonym_of 可（同名异义指向另一术语）；工程补充"
+    },
+    {
+     "table": "system_school",
+     "from": [
+      "system_id"
+     ],
+     "to": [
+      "id"
+     ],
+     "deferred": false,
+     "src": "清单 F28 / F30；工程补充"
+    }
+   ],
+   "src": "清单 F28"
+  },
+  "term_alias": {
+   "schema": "formal",
+   "required": [
+    "alias",
+    "term_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "term",
+     "from": [
+      "term_id"
+     ],
+     "to": [
+      "term_id"
+     ],
+     "deferred": false,
+     "src": "清单 F28；工程补充"
+    }
+   ],
+   "src": "清单 F28"
+  },
+  "dispute": {
+   "schema": "formal",
+   "required": [
+    "dispute_id",
+    "object_ref",
+    "status"
+   ],
+   "supplement": null,
+   "enums": {
+    "status": {
+     "constraint": "DB-E-dispute.status",
+     "values": [
+      "未裁决",
+      "已裁决"
+     ],
+     "nullable": false,
+     "src": "清单 F29"
+    }
+   },
+   "fks": [],
+   "src": "清单 F29"
+  },
+  "dispute_claim": {
+   "schema": "formal",
+   "required": [
+    "claim",
+    "dispute_id",
+    "evidence_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "dispute",
+     "from": [
+      "dispute_id"
+     ],
+     "to": [
+      "dispute_id"
+     ],
+     "deferred": false,
+     "src": "清单 F29；工程补充"
+    },
+    {
+     "table": "evidence",
+     "from": [
+      "evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "deferred": false,
+     "src": "清单 F29；工程补充"
+    }
+   ],
+   "src": "清单 F29"
+  },
+  "judgment": {
+   "schema": "formal",
+   "required": [
+    "actor_role",
+    "basis_evidence_id",
+    "conclusion",
+    "decided_at",
+    "judgment_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "evidence",
+     "from": [
+      "basis_evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "deferred": false,
+     "src": "清单 F30；工程补充"
+    }
+   ],
+   "src": "清单 F30"
+  },
+  "system_school": {
+   "schema": "formal",
+   "required": [
+    "id",
+    "name"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "system_school",
+     "from": [
+      "parent_id"
+     ],
+     "to": [
+      "id"
+     ],
+     "deferred": false,
+     "src": "清单 F30 parent_id 可；工程补充"
+    }
+   ],
+   "src": "清单 F30"
+  },
+  "evidence_status_history": {
+   "schema": "formal",
+   "required": [
+    "data_release",
+    "field",
+    "new_value",
+    "sequence_no",
+    "target_id",
+    "target_type"
+   ],
+   "supplement": null,
+   "enums": {
+    "field": {
+     "constraint": "DB-E-evidence_status_history.field",
+     "values": [
+      "evidence_status",
+      "claim_status"
+     ],
+     "nullable": false,
+     "src": "清单 F31"
+    },
+    "target_type": {
+     "constraint": "DB-E-evidence_status_history.target_type",
+     "values": [
+      "Evidence",
+      "RuleComponent"
+     ],
+     "nullable": false,
+     "src": "清单 F31"
+    }
+   },
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false,
+     "src": "清单 F31；工程补充"
+    }
+   ],
+   "src": "清单 F31"
+  },
+  "admission_record": {
+   "schema": "formal",
+   "required": [
+    "admission_id",
+    "basis_ref",
+    "component_id",
+    "data_release",
+    "decided_by",
+    "new_status",
+    "purpose",
+    "sequence_no"
+   ],
+   "supplement": null,
+   "enums": {
+    "new_status": {
+     "constraint": "DB-E-admission_record.new_status",
+     "values": [
+      "FORMAL_ALLOWED",
+      "CONDITIONAL",
+      "RESEARCH_ONLY",
+      "DEFERRED",
+      "PROHIBITED"
+     ],
+     "nullable": false,
+     "src": "清单 F32；值：契约 v1.0 §3.2 admission_calc 五档"
+    },
+    "previous_status": {
+     "constraint": "DB-E-admission_record.previous_status",
+     "values": [
+      "FORMAL_ALLOWED",
+      "CONDITIONAL",
+      "RESEARCH_ONLY",
+      "DEFERRED",
+      "PROHIBITED"
+     ],
+     "nullable": true,
+     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）"
+    },
+    "purpose": {
+     "constraint": "DB-E-admission_record.purpose",
+     "values": [
+      "calc",
+      "text",
+      "qualitative"
+     ],
+     "nullable": false,
+     "src": "清单 F32"
     }
    },
    "fks": [
@@ -678,50 +1390,450 @@
      "to": [
       "component_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F32；工程补充"
     },
     {
-     "table": "evidence",
+     "table": "data_release",
      "from": [
-      "evidence_id"
+      "data_release"
      ],
      "to": [
-      "evidence_id"
+      "data_release"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F32；工程补充"
     }
-   ]
+   ],
+   "src": "清单 F32"
   },
-  "text_variant_component": {
+  "formal_status_history": {
    "schema": "formal",
    "required": [
-    "component_id",
-    "variant_id"
+    "data_release",
+    "new_value",
+    "sequence_no",
+    "target_id",
+    "target_type"
+   ],
+   "supplement": null,
+   "enums": {
+    "new_value": {
+     "constraint": "DB-E-formal_status_history.new_value",
+     "values": [
+      "FORMAL",
+      "NON_FORMAL"
+     ],
+     "nullable": false,
+     "src": "清单 F33"
+    },
+    "previous_value": {
+     "constraint": "DB-E-formal_status_history.previous_value",
+     "values": [
+      "FORMAL",
+      "NON_FORMAL"
+     ],
+     "nullable": true,
+     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）"
+    },
+    "target_type": {
+     "constraint": "DB-F-20",
+     "values": [
+      "Source",
+      "Edition",
+      "Evidence",
+      "RuleVariant"
+     ],
+     "nullable": false,
+     "src": "清单 F33；值：undefined；约束名：清单 §5 DB-F-20 失败定位"
+    }
+   },
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false,
+     "src": "清单 F33；工程补充"
+    }
+   ],
+   "src": "清单 F33"
+  },
+  "parameter_registry": {
+   "schema": "formal",
+   "required": [
+    "has_default",
+    "module",
+    "param_id",
+    "registry_origin",
+    "registry_status",
+    "registry_version",
+    "value_kind"
+   ],
+   "supplement": null,
+   "enums": {
+    "has_default": {
+     "constraint": "DB-E-parameter_registry.has_default",
+     "values": [
+      0,
+      1
+     ],
+     "nullable": false,
+     "src": "清单 F34（bool）"
+    },
+    "module": {
+     "constraint": "DB-E-parameter_registry.module",
+     "values": [
+      "BAZI",
+      "LIUYAO",
+      "CALENDAR",
+      "FENGSHUI",
+      "TEXT"
+     ],
+     "nullable": false,
+     "src": "清单 F34；值：契约 v1.0 §5.1 module"
+    },
+    "registry_origin": {
+     "constraint": "DB-E-parameter_registry.registry_origin",
+     "values": [
+      "第 8 章 §5 表内",
+      "补充来源登记"
+     ],
+     "nullable": false,
+     "src": "清单 F34；值：契约 v1.0 §5.1 registry_origin"
+    },
+    "registry_status": {
+     "constraint": "DB-E-parameter_registry.registry_status",
+     "values": [
+      "ACTIVE",
+      "VERSION_LOCKED"
+     ],
+     "nullable": false,
+     "src": "清单 F34；值：清单 §10 Q-8（第 2407 行）registry_status ∈ {ACTIVE, VERSION_LOCKED}；实施授权书 Q-8 同意"
+    },
+    "value_kind": {
+     "constraint": "DB-E-parameter_registry.value_kind",
+     "values": [
+      "enum",
+      "numeric",
+      "bool"
+     ],
+     "nullable": false,
+     "src": "清单 F34"
+    }
+   },
+   "fks": [
+    {
+     "table": "parameter_registry",
+     "from": [
+      "follows_param"
+     ],
+     "to": [
+      "param_id"
+     ],
+     "deferred": false,
+     "src": "清单 F34；目标：清单 F34：跟随另一参数"
+    },
+    {
+     "table": "parameter_registry",
+     "from": [
+      "parent_param"
+     ],
+     "to": [
+      "param_id"
+     ],
+     "deferred": false,
+     "src": "清单 F34；目标：清单 F34"
+    }
+   ],
+   "src": "清单 F34"
+  },
+  "param_allowed_value": {
+   "schema": "formal",
+   "required": [
+    "claim_status",
+    "evidence_status",
+    "param_id",
+    "value"
+   ],
+   "supplement": null,
+   "enums": {
+    "claim_status": {
+     "constraint": "DB-E-param_allowed_value.claim_status",
+     "values": [
+      "已证实",
+      "推断",
+      "未知",
+      "已证伪"
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §2.4 claim_status；清单 F35 未标 CHECK"
+    },
+    "evidence_status": {
+     "constraint": "DB-E-param_allowed_value.evidence_status",
+     "values": [
+      "UNVERIFIED",
+      "SINGLE_SOURCE",
+      "CROSS_CHECKED",
+      "PRIMARY_VERIFIED",
+      "DISPUTED",
+      "REJECTED"
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §2.4 evidence_status；清单 F35 未标 CHECK"
+    }
+   },
+   "fks": [
+    {
+     "table": "parameter_registry",
+     "from": [
+      "param_id"
+     ],
+     "to": [
+      "param_id"
+     ],
+     "deferred": false,
+     "src": "清单 F35；目标：清单 F34：parameter_registry.param_id 为 PK"
+    }
+   ],
+   "src": "清单 F35"
+  },
+  "param_dependency": {
+   "schema": "formal",
+   "required": [
+    "depends_on",
+    "param_id"
    ],
    "supplement": null,
    "enums": {},
    "fks": [
     {
-     "table": "rule_component",
+     "table": "parameter_registry",
      "from": [
-      "component_id"
+      "depends_on"
      ],
      "to": [
-      "component_id"
+      "param_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F36；目标：清单 F36"
     },
     {
-     "table": "text_variant",
+     "table": "parameter_registry",
      "from": [
-      "variant_id"
+      "param_id"
      ],
      "to": [
-      "variant_id"
+      "param_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F36；目标：清单 F34：parameter_registry.param_id 为 PK"
     }
-   ]
+   ],
+   "src": "清单 F36"
+  },
+  "approval_record": {
+   "schema": "formal",
+   "required": [
+    "approval_id",
+    "data_release",
+    "decided_at",
+    "decided_by",
+    "decision",
+    "scope",
+    "sequence_no",
+    "target_content_hash",
+    "target_id",
+    "target_type"
+   ],
+   "supplement": null,
+   "enums": {
+    "decision": {
+     "constraint": "DB-E-approval_record.decision",
+     "values": [
+      "approve",
+      "approve_conditional",
+      "reject",
+      "revoke"
+     ],
+     "nullable": false,
+     "src": "清单 F37；值：契约 v1.0 §8.2 decision"
+    }
+   },
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false,
+     "src": "清单 F37；工程补充"
+    },
+    {
+     "table": "approval_record",
+     "from": [
+      "supersedes_approval_id"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "deferred": false,
+     "src": "清单 F37；目标：清单 F37：须指向同一 target 的较早记录"
+    },
+    {
+     "table": "rule_variant",
+     "from": [
+      "target_id"
+     ],
+     "to": [
+      "rule_variant_id"
+     ],
+     "deferred": false,
+     "src": "清单 F37；目标：清单 F37：target_type = rule_variant"
+    }
+   ],
+   "src": "清单 F37"
+  },
+  "approval_basis": {
+   "schema": "formal",
+   "required": [
+    "approval_id",
+    "basis_ref"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "approval_record",
+     "from": [
+      "approval_id"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "deferred": true,
+     "src": "清单 F38：每条批准至少一行（批准行 BEFORE INSERT 检查子行，子行先写，故延迟）；工程补充：清单未标 FK"
+    }
+   ],
+   "src": "清单 F38"
+  },
+  "approval_review": {
+   "schema": "formal",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "approval_id",
+     "review_id"
+    ],
+    "source": "清单 F38：approval_review(approval_id、review_id) 为主键列"
+   },
+   "enums": {},
+   "fks": [
+    {
+     "table": "approval_record",
+     "from": [
+      "approval_id"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "deferred": true,
+     "src": "清单 F38（同上）；工程补充"
+    },
+    {
+     "table": "review_record",
+     "from": [
+      "review_id"
+     ],
+     "to": [
+      "review_id"
+     ],
+     "deferred": false,
+     "src": "清单 F38 / F40；工程补充"
+    }
+   ],
+   "src": "清单 F38"
+  },
+  "approval_revoke_reason": {
+   "schema": "formal",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "approval_id",
+     "reason_code"
+    ],
+    "source": "清单 F38：approval_revoke_reason(approval_id、reason_code) 为主键列"
+   },
+   "enums": {},
+   "fks": [
+    {
+     "table": "approval_record",
+     "from": [
+      "approval_id"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "deferred": true,
+     "src": "清单 F38：revoke 至少一行（同上）；工程补充"
+    },
+    {
+     "table": "revoke_reason_registry",
+     "from": [
+      "reason_code"
+     ],
+     "to": [
+      "code"
+     ],
+     "deferred": false,
+     "src": "清单 F38 / F39；工程补充"
+    }
+   ],
+   "src": "清单 F38"
+  },
+  "revoke_reason_registry": {
+   "schema": "formal",
+   "required": [
+    "code",
+    "label"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [],
+   "src": "清单 F39"
+  },
+  "review_record": {
+   "schema": "formal",
+   "required": [
+    "body",
+    "created_at",
+    "review_id",
+    "role",
+    "target_id",
+    "target_type"
+   ],
+   "supplement": null,
+   "enums": {
+    "role": {
+     "constraint": "DB-E-review_record.role",
+     "values": [
+      "research",
+      "architecture",
+      "revocation_trigger"
+     ],
+     "nullable": false,
+     "src": "清单 F40"
+    }
+   },
+   "fks": [],
+   "src": "清单 F40"
   },
   "blocker": {
    "schema": "formal",
@@ -754,931 +1866,13 @@
       "GLOBAL",
       "MODULE",
       "PATH"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 F41"
     }
    },
-   "fks": []
-  },
-  "component_blocker": {
-   "schema": "formal",
-   "required": [
-    "block_id",
-    "component_id"
-   ],
-   "supplement": null,
-   "enums": {},
-   "fks": [
-    {
-     "table": "blocker",
-     "from": [
-      "block_id"
-     ],
-     "to": [
-      "block_id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "rule_component",
-     "from": [
-      "component_id"
-     ],
-     "to": [
-      "component_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "blocker_step_map": {
-   "schema": "formal",
-   "required": [
-    "basis_ref",
-    "block_id",
-    "data_release",
-    "effect",
-    "step_code"
-   ],
-   "supplement": null,
-   "enums": {
-    "effect": {
-     "constraint": "DB-E-blocker_step_map.effect",
-     "values": [
-      "BLOCKED-HARD",
-      "BLOCKED-FORMAL",
-      "NON_FORMAL"
-     ]
-    }
-   },
-   "fks": [
-    {
-     "table": "data_release",
-     "from": [
-      "data_release"
-     ],
-     "to": [
-      "data_release"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "step_code",
-     "from": [
-      "step_code"
-     ],
-     "to": [
-      "step_code"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "blocker",
-     "from": [
-      "block_id"
-     ],
-     "to": [
-      "block_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "rule_variant": {
-   "schema": "formal",
-   "required": [
-    "canonicalization_version",
-    "component_id",
-    "confidence",
-    "content_hash",
-    "hash_algorithm",
-    "rule_variant_id",
-    "version_no"
-   ],
-   "supplement": null,
-   "enums": {
-    "confidence": {
-     "constraint": "DB-E-rule_variant.confidence",
-     "values": [
-      "A",
-      "B",
-      "C"
-     ]
-    }
-   },
-   "fks": [
-    {
-     "table": "system_school",
-     "from": [
-      "school_id"
-     ],
-     "to": [
-      "id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "canonicalization_version",
-     "from": [
-      "canonicalization_version"
-     ],
-     "to": [
-      "version"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "rule_component",
-     "from": [
-      "component_id"
-     ],
-     "to": [
-      "component_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "rule_variant_edition": {
-   "schema": "formal",
-   "required": [
-    "edition_id",
-    "rule_variant_id"
-   ],
-   "supplement": null,
-   "enums": {},
-   "fks": [
-    {
-     "table": "edition",
-     "from": [
-      "edition_id"
-     ],
-     "to": [
-      "edition_id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "rule_variant",
-     "from": [
-      "rule_variant_id"
-     ],
-     "to": [
-      "rule_variant_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "revoke_reason_registry": {
-   "schema": "formal",
-   "required": [
-    "code",
-    "label"
-   ],
-   "supplement": null,
-   "enums": {},
-   "fks": []
-  },
-  "review_record": {
-   "schema": "formal",
-   "required": [
-    "body",
-    "created_at",
-    "review_id",
-    "role",
-    "target_id",
-    "target_type"
-   ],
-   "supplement": null,
-   "enums": {
-    "role": {
-     "constraint": "DB-E-review_record.role",
-     "values": [
-      "research",
-      "architecture",
-      "revocation_trigger"
-     ]
-    }
-   },
-   "fks": []
-  },
-  "approval_record": {
-   "schema": "formal",
-   "required": [
-    "approval_id",
-    "data_release",
-    "decided_at",
-    "decided_by",
-    "decision",
-    "scope",
-    "sequence_no",
-    "target_content_hash",
-    "target_id",
-    "target_type"
-   ],
-   "supplement": null,
-   "enums": {
-    "decision": {
-     "constraint": "DB-E-approval_record.decision",
-     "values": [
-      "approve",
-      "approve_conditional",
-      "reject",
-      "revoke"
-     ]
-    }
-   },
-   "fks": [
-    {
-     "table": "approval_record",
-     "from": [
-      "supersedes_approval_id"
-     ],
-     "to": [
-      "approval_id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "data_release",
-     "from": [
-      "data_release"
-     ],
-     "to": [
-      "data_release"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "rule_variant",
-     "from": [
-      "target_id"
-     ],
-     "to": [
-      "rule_variant_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "approval_basis": {
-   "schema": "formal",
-   "required": [
-    "approval_id",
-    "basis_ref"
-   ],
-   "supplement": null,
-   "enums": {},
-   "fks": [
-    {
-     "table": "approval_record",
-     "from": [
-      "approval_id"
-     ],
-     "to": [
-      "approval_id"
-     ],
-     "deferred": true
-    }
-   ]
-  },
-  "approval_review": {
-   "schema": "formal",
-   "required": [],
-   "supplement": {
-    "columns": [
-     "approval_id",
-     "review_id"
-    ],
-    "source": "清单 F38：approval_review(approval_id、review_id) 为主键列"
-   },
-   "enums": {},
-   "fks": [
-    {
-     "table": "review_record",
-     "from": [
-      "review_id"
-     ],
-     "to": [
-      "review_id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "approval_record",
-     "from": [
-      "approval_id"
-     ],
-     "to": [
-      "approval_id"
-     ],
-     "deferred": true
-    }
-   ]
-  },
-  "approval_revoke_reason": {
-   "schema": "formal",
-   "required": [],
-   "supplement": {
-    "columns": [
-     "approval_id",
-     "reason_code"
-    ],
-    "source": "清单 F38：approval_revoke_reason(approval_id、reason_code) 为主键列"
-   },
-   "enums": {},
-   "fks": [
-    {
-     "table": "revoke_reason_registry",
-     "from": [
-      "reason_code"
-     ],
-     "to": [
-      "code"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "approval_record",
-     "from": [
-      "approval_id"
-     ],
-     "to": [
-      "approval_id"
-     ],
-     "deferred": true
-    }
-   ]
-  },
-  "component_default": {
-   "schema": "formal",
-   "required": [
-    "applicable_scope",
-    "approval_ref",
-    "component_id",
-    "data_release",
-    "rule_variant_id",
-    "sequence_no"
-   ],
-   "supplement": null,
-   "enums": {},
-   "fks": [
-    {
-     "table": "data_release",
-     "from": [
-      "data_release"
-     ],
-     "to": [
-      "data_release"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "approval_record",
-     "from": [
-      "approval_ref"
-     ],
-     "to": [
-      "approval_id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "rule_variant",
-     "from": [
-      "rule_variant_id"
-     ],
-     "to": [
-      "rule_variant_id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "rule_component",
-     "from": [
-      "component_id"
-     ],
-     "to": [
-      "component_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "variant_supersedes": {
-   "schema": "formal",
-   "required": [
-    "applicable_scope",
-    "data_release",
-    "new_variant_id",
-    "old_variant_id",
-    "reason"
-   ],
-   "supplement": null,
-   "enums": {},
-   "fks": [
-    {
-     "table": "data_release",
-     "from": [
-      "data_release"
-     ],
-     "to": [
-      "data_release"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "approval_record",
-     "from": [
-      "approval_ref"
-     ],
-     "to": [
-      "approval_id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "rule_variant",
-     "from": [
-      "new_variant_id"
-     ],
-     "to": [
-      "rule_variant_id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "rule_variant",
-     "from": [
-      "old_variant_id"
-     ],
-     "to": [
-      "rule_variant_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "parameter_registry": {
-   "schema": "formal",
-   "required": [
-    "has_default",
-    "module",
-    "param_id",
-    "registry_origin",
-    "registry_status",
-    "registry_version",
-    "value_kind"
-   ],
-   "supplement": null,
-   "enums": {
-    "registry_origin": {
-     "constraint": "DB-E-parameter_registry.registry_origin",
-     "values": [
-      "第 8 章 §5 表内",
-      "补充来源登记"
-     ]
-    },
-    "module": {
-     "constraint": "DB-E-parameter_registry.module",
-     "values": [
-      "BAZI",
-      "LIUYAO",
-      "CALENDAR",
-      "FENGSHUI",
-      "TEXT"
-     ]
-    },
-    "value_kind": {
-     "constraint": "DB-E-parameter_registry.value_kind",
-     "values": [
-      "enum",
-      "numeric",
-      "bool"
-     ]
-    },
-    "has_default": {
-     "constraint": "DB-E-parameter_registry.has_default",
-     "values": [
-      0,
-      1
-     ]
-    },
-    "registry_status": {
-     "constraint": "DB-E-parameter_registry.registry_status",
-     "values": [
-      "ACTIVE",
-      "VERSION_LOCKED"
-     ]
-    }
-   },
-   "fks": [
-    {
-     "table": "parameter_registry",
-     "from": [
-      "parent_param"
-     ],
-     "to": [
-      "param_id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "parameter_registry",
-     "from": [
-      "follows_param"
-     ],
-     "to": [
-      "param_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "param_allowed_value": {
-   "schema": "formal",
-   "required": [
-    "claim_status",
-    "evidence_status",
-    "param_id",
-    "value"
-   ],
-   "supplement": null,
-   "enums": {
-    "evidence_status": {
-     "constraint": "DB-E-param_allowed_value.evidence_status",
-     "values": [
-      "UNVERIFIED",
-      "SINGLE_SOURCE",
-      "CROSS_CHECKED",
-      "PRIMARY_VERIFIED",
-      "DISPUTED",
-      "REJECTED"
-     ]
-    },
-    "claim_status": {
-     "constraint": "DB-E-param_allowed_value.claim_status",
-     "values": [
-      "已证实",
-      "推断",
-      "未知",
-      "已证伪"
-     ]
-    }
-   },
-   "fks": [
-    {
-     "table": "parameter_registry",
-     "from": [
-      "param_id"
-     ],
-     "to": [
-      "param_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "param_dependency": {
-   "schema": "formal",
-   "required": [
-    "depends_on",
-    "param_id"
-   ],
-   "supplement": null,
-   "enums": {},
-   "fks": [
-    {
-     "table": "parameter_registry",
-     "from": [
-      "depends_on"
-     ],
-     "to": [
-      "param_id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "parameter_registry",
-     "from": [
-      "param_id"
-     ],
-     "to": [
-      "param_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "param_variant_map": {
-   "schema": "formal",
-   "required": [
-    "applicable_scope",
-    "data_release",
-    "param_id",
-    "param_value",
-    "rule_variant_id",
-    "selection_rule"
-   ],
-   "supplement": null,
-   "enums": {},
-   "fks": [
-    {
-     "table": "data_release",
-     "from": [
-      "data_release"
-     ],
-     "to": [
-      "data_release"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "rule_variant",
-     "from": [
-      "rule_variant_id"
-     ],
-     "to": [
-      "rule_variant_id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "parameter_registry",
-     "from": [
-      "param_id"
-     ],
-     "to": [
-      "param_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "term": {
-   "schema": "formal",
-   "required": [
-    "name",
-    "system_id",
-    "term_id"
-   ],
-   "supplement": null,
-   "enums": {},
-   "fks": [
-    {
-     "table": "term",
-     "from": [
-      "homonym_of"
-     ],
-     "to": [
-      "term_id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "system_school",
-     "from": [
-      "system_id"
-     ],
-     "to": [
-      "id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "term_alias": {
-   "schema": "formal",
-   "required": [
-    "alias",
-    "term_id"
-   ],
-   "supplement": null,
-   "enums": {},
-   "fks": [
-    {
-     "table": "term",
-     "from": [
-      "term_id"
-     ],
-     "to": [
-      "term_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "dispute": {
-   "schema": "formal",
-   "required": [
-    "dispute_id",
-    "object_ref",
-    "status"
-   ],
-   "supplement": null,
-   "enums": {
-    "status": {
-     "constraint": "DB-E-dispute.status",
-     "values": [
-      "未裁决",
-      "已裁决"
-     ]
-    }
-   },
-   "fks": []
-  },
-  "dispute_claim": {
-   "schema": "formal",
-   "required": [
-    "claim",
-    "dispute_id",
-    "evidence_id"
-   ],
-   "supplement": null,
-   "enums": {},
-   "fks": [
-    {
-     "table": "evidence",
-     "from": [
-      "evidence_id"
-     ],
-     "to": [
-      "evidence_id"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "dispute",
-     "from": [
-      "dispute_id"
-     ],
-     "to": [
-      "dispute_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "judgment": {
-   "schema": "formal",
-   "required": [
-    "actor_role",
-    "basis_evidence_id",
-    "conclusion",
-    "decided_at",
-    "judgment_id"
-   ],
-   "supplement": null,
-   "enums": {},
-   "fks": [
-    {
-     "table": "evidence",
-     "from": [
-      "basis_evidence_id"
-     ],
-     "to": [
-      "evidence_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "evidence_status_history": {
-   "schema": "formal",
-   "required": [
-    "data_release",
-    "field",
-    "new_value",
-    "sequence_no",
-    "target_id",
-    "target_type"
-   ],
-   "supplement": null,
-   "enums": {
-    "target_type": {
-     "constraint": "DB-E-evidence_status_history.target_type",
-     "values": [
-      "Evidence",
-      "RuleComponent"
-     ]
-    },
-    "field": {
-     "constraint": "DB-E-evidence_status_history.field",
-     "values": [
-      "evidence_status",
-      "claim_status"
-     ]
-    }
-   },
-   "fks": [
-    {
-     "table": "data_release",
-     "from": [
-      "data_release"
-     ],
-     "to": [
-      "data_release"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "admission_record": {
-   "schema": "formal",
-   "required": [
-    "admission_id",
-    "basis_ref",
-    "component_id",
-    "data_release",
-    "decided_by",
-    "new_status",
-    "purpose",
-    "sequence_no"
-   ],
-   "supplement": null,
-   "enums": {
-    "purpose": {
-     "constraint": "DB-E-admission_record.purpose",
-     "values": [
-      "calc",
-      "text",
-      "qualitative"
-     ]
-    },
-    "new_status": {
-     "constraint": "DB-E-admission_record.new_status",
-     "values": [
-      "FORMAL_ALLOWED",
-      "CONDITIONAL",
-      "RESEARCH_ONLY",
-      "DEFERRED",
-      "PROHIBITED"
-     ]
-    }
-   },
-   "fks": [
-    {
-     "table": "data_release",
-     "from": [
-      "data_release"
-     ],
-     "to": [
-      "data_release"
-     ],
-     "deferred": false
-    },
-    {
-     "table": "rule_component",
-     "from": [
-      "component_id"
-     ],
-     "to": [
-      "component_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "formal_status_history": {
-   "schema": "formal",
-   "required": [
-    "data_release",
-    "new_value",
-    "sequence_no",
-    "target_id",
-    "target_type"
-   ],
-   "supplement": null,
-   "enums": {
-    "target_type": {
-     "constraint": "DB-F-20",
-     "values": [
-      "Source",
-      "Edition",
-      "Evidence",
-      "RuleVariant"
-     ]
-    },
-    "new_value": {
-     "constraint": "DB-E-formal_status_history.new_value",
-     "values": [
-      "FORMAL",
-      "NON_FORMAL"
-     ]
-    }
-   },
-   "fks": [
-    {
-     "table": "data_release",
-     "from": [
-      "data_release"
-     ],
-     "to": [
-      "data_release"
-     ],
-     "deferred": false
-    }
-   ]
+   "fks": [],
+   "src": "清单 F41"
   },
   "blocker_change": {
    "schema": "formal",
@@ -1697,20 +1891,21 @@
      "values": [
       "现行",
       "已解除"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 F42"
+    },
+    "previous_status": {
+     "constraint": "DB-E-blocker_change.previous_status",
+     "values": [
+      "现行",
+      "已解除"
+     ],
+     "nullable": true,
+     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）"
     }
    },
    "fks": [
-    {
-     "table": "data_release",
-     "from": [
-      "data_release"
-     ],
-     "to": [
-      "data_release"
-     ],
-     "deferred": false
-    },
     {
      "table": "blocker",
      "from": [
@@ -1719,9 +1914,22 @@
      "to": [
       "block_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 F42；目标：清单 F41：blocker.block_id 为 PK"
+    },
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false,
+     "src": "清单 F42；工程补充"
     }
-   ]
+   ],
+   "src": "清单 F42"
   },
   "profile": {
    "schema": "main",
@@ -1731,7 +1939,8 @@
    ],
    "supplement": null,
    "enums": {},
-   "fks": []
+   "fks": [],
+   "src": "清单 U01"
   },
   "calculation_input": {
    "schema": "main",
@@ -1753,7 +1962,29 @@
       "LIUYAO",
       "FENGSHUI",
       "CALENDAR"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U02；值：契约 v1.0 §6.1 domain"
+    },
+    "gender": {
+     "constraint": "DB-E-calculation_input.gender",
+     "values": [
+      "MALE",
+      "FEMALE",
+      "UNKNOWN"
+     ],
+     "nullable": true,
+     "src": "清单 U02；值：契约 v1.0 §6.1 raw_payload 性别 gender（MALE / FEMALE / UNKNOWN）；【用户裁决 G-1】"
+    },
+    "time_precision": {
+     "constraint": "DB-E-calculation_input.time_precision",
+     "values": [
+      "MINUTE",
+      "SHICHEN",
+      "UNKNOWN"
+     ],
+     "nullable": true,
+     "src": "契约 v1.0 §6.1 time_precision（MINUTE / SHICHEN / UNKNOWN）；【用户裁决 G-2】；清单 U02 条件必须"
     }
    },
    "fks": [
@@ -1765,9 +1996,11 @@
      "to": [
       "owner_profile_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 U02；目标：清单 U01：profile.owner_profile_id 为 PK"
     }
-   ]
+   ],
+   "src": "清单 U02"
   },
   "input_tz_resolution": {
    "schema": "main",
@@ -1788,7 +2021,9 @@
      "values": [
       0,
       1
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U03（bool）"
     }
    },
    "fks": [
@@ -1800,9 +2035,11 @@
      "to": [
       "input_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 U03；目标：清单 U02：calculation_input.input_id 为 PK"
     }
-   ]
+   ],
+   "src": "清单 U03"
   },
   "calculation_config": {
    "schema": "main",
@@ -1824,10 +2061,13 @@
       "LIUYAO",
       "FENGSHUI",
       "CALENDAR"
-     ]
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §5.4 配置所属域，与 §6.1 domain 同值；清单 U04 未标 CHECK"
     }
    },
-   "fks": []
+   "fks": [],
+   "src": "清单 U04"
   },
   "config_param_value": {
    "schema": "main",
@@ -1845,6 +2085,15 @@
     "source": "实施授权书 Q-12：stored_only / applied 标记"
    },
    "enums": {
+    "apply_mode": {
+     "constraint": "DB-E-config_param_value.apply_mode",
+     "values": [
+      "applied",
+      "stored_only"
+     ],
+     "nullable": false,
+     "src": "实施授权书 Q-12 (a)：stored-only / not-applied 标记"
+    },
     "value_source": {
      "constraint": "DB-E-config_param_value.value_source",
      "values": [
@@ -1852,14 +2101,9 @@
       "approved_default",
       "follows_param",
       "version_locked"
-     ]
-    },
-    "apply_mode": {
-     "constraint": "DB-E-config_param_value.apply_mode",
-     "values": [
-      "applied",
-      "stored_only"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U05；值：契约 v1.0 §5.4 param_values.value_source"
     }
    },
    "fks": [
@@ -1873,9 +2117,11 @@
       "config_id",
       "config_version"
      ],
-     "deferred": true
+     "deferred": true,
+     "src": "工程补充：配置行按 config_hash = sha256(jcs-1(params))（清单 §6 (2)）校验，取值行先写，外键延迟；清单 U05 未标 FK"
     }
-   ]
+   ],
+   "src": "清单 U05"
   },
   "profile_config_ref": {
    "schema": "main",
@@ -1897,7 +2143,8 @@
       "config_id",
       "config_version"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 U06 PK(三列)；工程补充"
     },
     {
      "table": "profile",
@@ -1907,9 +2154,11 @@
      "to": [
       "owner_profile_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 U06；目标：清单 U01：profile.owner_profile_id 为 PK"
     }
-   ]
+   ],
+   "src": "清单 U06"
   },
   "calculation_snapshot": {
    "schema": "main",
@@ -1941,6 +2190,15 @@
     "source": "清单 U07：第 6.1 节全部字段（recomputed_from_snapshot_id 可空）"
    },
    "enums": {
+    "calc_status": {
+     "constraint": "DB-E-calculation_snapshot.calc_status",
+     "values": [
+      "CALC_FORMAL",
+      "CALC_RESEARCH"
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §6.3 合法组合只有 CALC_FORMAL / CALC_RESEARCH（BLOCKED 不产生快照）"
+    },
     "domain": {
      "constraint": "DB-E-calculation_snapshot.domain",
      "values": [
@@ -1948,21 +2206,18 @@
       "LIUYAO",
       "FENGSHUI",
       "CALENDAR"
-     ]
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §6.1 domain（清单 U07“第 6.1 节全部字段”）"
     },
     "formal_status": {
      "constraint": "DB-E-calculation_snapshot.formal_status",
      "values": [
       "FORMAL",
       "NON_FORMAL"
-     ]
-    },
-    "calc_status": {
-     "constraint": "DB-E-calculation_snapshot.calc_status",
-     "values": [
-      "CALC_FORMAL",
-      "CALC_RESEARCH"
-     ]
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §6.3 formal_status"
     },
     "research_scope": {
      "constraint": "DB-E-calculation_snapshot.research_scope",
@@ -1970,14 +2225,18 @@
       "FORMAL",
       "FORMAL_SCOPE_NON_FORMAL",
       "PERSONAL_RESEARCH"
-     ]
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §7.4 research_scope（【用户裁决 A-2】）"
     },
     "result_completeness": {
      "constraint": "DB-E-calculation_snapshot.result_completeness",
      "values": [
       "COMPLETE",
       "OK_WITH_DEGRADATION"
-     ]
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §13.1、【用户裁决 N-1】；清单 §6 第 1851 行"
     }
    },
    "fks": [
@@ -1991,17 +2250,8 @@
       "config_id",
       "config_version"
      ],
-     "deferred": false
-    },
-    {
-     "table": "calculation_snapshot",
-     "from": [
-      "recomputed_from_snapshot_id"
-     ],
-     "to": [
-      "snapshot_id"
-     ],
-     "deferred": false
+     "deferred": false,
+     "src": "契约 v1.0 §6.2 config_ref"
     },
     {
      "table": "calculation_input",
@@ -2011,7 +2261,8 @@
      "to": [
       "input_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "契约 v1.0 §6.2 input_ref"
     },
     {
      "table": "profile",
@@ -2021,9 +2272,22 @@
      "to": [
       "owner_profile_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "契约 v1.0 §6.3；清单 U07；工程补充"
+    },
+    {
+     "table": "calculation_snapshot",
+     "from": [
+      "recomputed_from_snapshot_id"
+     ],
+     "to": [
+      "snapshot_id"
+     ],
+     "deferred": false,
+     "src": "契约 v1.0 §6.3 自引用 snapshot_id【架构验收 二】"
     }
-   ]
+   ],
+   "src": "清单 U07"
   },
   "snapshot_non_formal_reason": {
    "schema": "main",
@@ -2052,7 +2316,24 @@
       "RULE_PROVISIONAL",
       "BLOCKER_PATH",
       "RESEARCH_ONLY"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U08"
+    },
+    "ri_segment": {
+     "constraint": "DB-E-snapshot_non_formal_reason.ri_segment",
+     "values": [
+      "R-I-1",
+      "R-I-2",
+      "R-I-3",
+      "R-I-4",
+      "R-I-5",
+      "R-I-6",
+      "R-I-7",
+      "R-I-8"
+     ],
+     "nullable": true,
+     "src": "契约 v1.0 §7.3 R-I-1～R-I-8；清单 U08 ri_segment 条件必须"
     }
    },
    "fks": [
@@ -2064,9 +2345,11 @@
      "to": [
       "snapshot_id"
      ],
-     "deferred": true
+     "deferred": true,
+     "src": "清单 U08；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED"
     }
-   ]
+   ],
+   "src": "清单 U08"
   },
   "snapshot_degradation_reason": {
    "schema": "main",
@@ -2082,7 +2365,9 @@
      "values": [
       "MISSING_GENDER",
       "HOUR_UNKNOWN"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U09；值：契约 v1.0 §13.1～§13.3 已列原因码（清单 U09“契约已列者”）"
     }
    },
    "fks": [
@@ -2094,9 +2379,11 @@
      "to": [
       "snapshot_id"
      ],
-     "deferred": true
+     "deferred": true,
+     "src": "清单 U09；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED"
     }
-   ]
+   ],
+   "src": "清单 U09"
   },
   "snapshot_dependency": {
    "schema": "main",
@@ -2126,7 +2413,9 @@
       "place_data",
       "engine",
       "cross_domain"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U10；值：契约 v1.0 §6.4 dep_type 表（8 行，其中 edition / evidence 合为一行，值为 9 个；清单 U10 记“8 类”按行计）"
     },
     "ref_kind": {
      "constraint": "DB-E-snapshot_dependency.ref_kind",
@@ -2134,7 +2423,9 @@
       "formal",
       "personal",
       "user_snapshot"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U10 / §6.4 与 §7.4：依赖对象分正式、个人、用户快照（R-I-2）；工程补充：值名为实现命名"
     }
    },
    "fks": [
@@ -2146,13 +2437,18 @@
      "to": [
       "snapshot_id"
      ],
-     "deferred": true
+     "deferred": true,
+     "src": "清单 U10；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED"
     }
-   ]
+   ],
+   "src": "清单 U10"
   },
   "snapshot_gov_approval": {
    "schema": "main",
-   "required": [],
+   "required": [
+    "owner_profile_id",
+    "snapshot_id"
+   ],
    "supplement": {
     "columns": [
      "approval_id",
@@ -2172,13 +2468,18 @@
      "to": [
       "snapshot_id"
      ],
-     "deferred": true
+     "deferred": true,
+     "src": "清单 U11；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id"
     }
-   ]
+   ],
+   "src": "清单 U11"
   },
   "snapshot_gov_blocker": {
    "schema": "main",
-   "required": [],
+   "required": [
+    "owner_profile_id",
+    "snapshot_id"
+   ],
    "supplement": {
     "columns": [
      "block_id",
@@ -2195,7 +2496,9 @@
       "现行",
       "已解除",
       "无记录"
-     ]
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §9.6 status 现行 / 已解除；“无记录”= 计算当时该阻断尚无变更记录（§6.5 记“当时状态”）。工程补充"
     }
    },
    "fks": [
@@ -2207,13 +2510,18 @@
      "to": [
       "snapshot_id"
      ],
-     "deferred": true
+     "deferred": true,
+     "src": "清单 U11；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id"
     }
-   ]
+   ],
+   "src": "清单 U11"
   },
   "snapshot_gov_sequence": {
    "schema": "main",
-   "required": [],
+   "required": [
+    "owner_profile_id",
+    "snapshot_id"
+   ],
    "supplement": {
     "columns": [
      "kind",
@@ -2232,7 +2540,9 @@
       "formal_status",
       "approval",
       "blocker_change"
-     ]
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §6.5 governance_context：证据状态与准入状态序号；清单 §3.3 序号表（evidence_status_history、admission_record、formal_status_history、approval_record、blocker_change）"
     }
    },
    "fks": [
@@ -2244,9 +2554,11 @@
      "to": [
       "snapshot_id"
      ],
-     "deferred": true
+     "deferred": true,
+     "src": "清单 U11；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id"
     }
-   ]
+   ],
+   "src": "清单 U11"
   },
   "snapshot_resolved_context": {
    "schema": "main",
@@ -2264,7 +2576,9 @@
       "jieqi_prev",
       "jieqi_next",
       "table_version"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U12"
     }
    },
    "fks": [
@@ -2276,9 +2590,11 @@
      "to": [
       "snapshot_id"
      ],
-     "deferred": true
+     "deferred": true,
+     "src": "清单 U12；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED"
     }
-   ]
+   ],
+   "src": "清单 U12"
   },
   "execution_trace_step": {
    "schema": "main",
@@ -2295,12 +2611,24 @@
     "source": "实现补充：清单 §3.8 执行顺序按 step_dependency，轨迹记录实际执行序"
    },
    "enums": {
+    "skip_kind": {
+     "constraint": "DB-E-execution_trace_step.skip_kind",
+     "values": [
+      "范围外",
+      "输入缺失",
+      "按规则跳过"
+     ],
+     "nullable": true,
+     "src": "清单 U13"
+    },
     "status": {
      "constraint": "DB-E-execution_trace_step.status",
      "values": [
       "完成",
       "未执行"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U13"
     }
    },
    "fks": [
@@ -2312,9 +2640,11 @@
      "to": [
       "snapshot_id"
      ],
-     "deferred": true
+     "deferred": true,
+     "src": "清单 U13；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED"
     }
-   ]
+   ],
+   "src": "清单 U13"
   },
   "branch": {
    "schema": "main",
@@ -2335,7 +2665,8 @@
      "to": [
       "snapshot_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 U14；目标：清单 U14：base_snapshot_id 可 FK（不级联）"
     },
     {
      "table": "branch",
@@ -2345,9 +2676,11 @@
      "to": [
       "branch_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 U14；目标：清单 U14"
     }
-   ]
+   ],
+   "src": "清单 U14"
   },
   "branch_status_history": {
    "schema": "main",
@@ -2366,7 +2699,20 @@
       "promoted",
       "merged",
       "abandoned"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U15；值：契约 v1.0 §7.1 status（历史表）"
+    },
+    "previous_status": {
+     "constraint": "DB-E-branch_status_history.previous_status",
+     "values": [
+      "active",
+      "promoted",
+      "merged",
+      "abandoned"
+     ],
+     "nullable": true,
+     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）"
     }
    },
    "fks": [
@@ -2378,13 +2724,18 @@
      "to": [
       "branch_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 U15；目标：清单 U14：branch.branch_id 为 PK"
     }
-   ]
+   ],
+   "src": "清单 U15"
   },
   "personal_edition": {
    "schema": "main",
-   "required": [],
+   "required": [
+    "branch_id",
+    "formal_status"
+   ],
    "supplement": {
     "columns": [
      "branch_id",
@@ -2399,21 +2750,25 @@
     "source": "清单 U16：与正式同名表同构，对正式对象用三元组"
    },
    "enums": {
-    "transcription_status": {
-     "constraint": "DB-E-personal_edition.transcription_status",
-     "values": [
-      "原刊本",
-      "转录本（未与影印本对校）",
-      "个人校勘"
-     ]
-    },
     "confidence": {
      "constraint": "DB-E-personal_edition.confidence",
      "values": [
       "A",
       "B",
       "C"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U16：与 edition 同构（清单 F09）"
+    },
+    "transcription_status": {
+     "constraint": "DB-E-personal_edition.transcription_status",
+     "values": [
+      "原刊本",
+      "转录本（未与影印本对校）",
+      "个人校勘"
+     ],
+     "nullable": false,
+     "src": "清单 U16：与 edition 同构（清单 F09；值：契约 v1.0 §2.2 增两值；“原刊本”据清单 §2 第 218 行（契约写出的两值与“原刊本”，后者【待定】，随 Q-3））"
     }
    },
    "fks": [
@@ -2425,13 +2780,18 @@
      "to": [
       "branch_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 U16；目标：清单 U14：branch.branch_id 为 PK"
     }
-   ]
+   ],
+   "src": "清单 U16"
   },
   "personal_evidence": {
    "schema": "main",
-   "required": [],
+   "required": [
+    "branch_id",
+    "formal_status"
+   ],
    "supplement": {
     "columns": [
      "branch_id",
@@ -2447,15 +2807,26 @@
     "source": "清单 U16：与正式同名表同构（含 F16 必填列与 v_evidence_current 的状态列）"
    },
    "enums": {
-    "evidence_tier": {
-     "constraint": "DB-E-personal_evidence.evidence_tier",
+    "claim_status": {
+     "constraint": "DB-E-personal_evidence.claim_status",
      "values": [
-      "E1",
-      "E2",
-      "E3",
-      "E4",
-      "E5"
-     ]
+      "已证实",
+      "推断",
+      "未知",
+      "已证伪"
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §2.4"
+    },
+    "confidence": {
+     "constraint": "DB-E-personal_evidence.confidence",
+     "values": [
+      "A",
+      "B",
+      "C"
+     ],
+     "nullable": false,
+     "src": "清单 U16：与 evidence 同构（契约 v1.0 §2.4 confidence A/B/C；清单 F16 写“confidence 必”未标 CHECK）"
     },
     "evidence_category": {
      "constraint": "DB-E-personal_evidence.evidence_category",
@@ -2467,15 +2838,9 @@
       "C-E",
       "C-F",
       "C-G"
-     ]
-    },
-    "confidence": {
-     "constraint": "DB-E-personal_evidence.confidence",
-     "values": [
-      "A",
-      "B",
-      "C"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U16：与 evidence 同构（清单 F16）"
     },
     "evidence_status": {
      "constraint": "DB-E-personal_evidence.evidence_status",
@@ -2486,23 +2851,30 @@
       "PRIMARY_VERIFIED",
       "DISPUTED",
       "REJECTED"
-     ]
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §2.4（个人证据直接存状态列）"
     },
-    "claim_status": {
-     "constraint": "DB-E-personal_evidence.claim_status",
+    "evidence_tier": {
+     "constraint": "DB-E-personal_evidence.evidence_tier",
      "values": [
-      "已证实",
-      "推断",
-      "未知",
-      "已证伪"
-     ]
+      "E1",
+      "E2",
+      "E3",
+      "E4",
+      "E5"
+     ],
+     "nullable": false,
+     "src": "清单 U16：与 evidence 同构（清单 F16）"
     },
     "origin": {
      "constraint": "DB-E-personal_evidence.origin",
      "values": [
       "human",
       "ai_output"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U16：与 evidence 同构（清单 F16）"
     }
    },
    "fks": [
@@ -2514,13 +2886,18 @@
      "to": [
       "branch_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 U16；目标：清单 U14：branch.branch_id 为 PK"
     }
-   ]
+   ],
+   "src": "清单 U16"
   },
   "personal_rule_variant": {
    "schema": "main",
-   "required": [],
+   "required": [
+    "branch_id",
+    "formal_status"
+   ],
    "supplement": {
     "columns": [
      "branch_id",
@@ -2545,7 +2922,9 @@
       "A",
       "B",
       "C"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U16：与 rule_variant 同构（契约 v1.0 §3.3 confidence A/B/C；清单 F24 写“confidence 必”未标 CHECK）"
     },
     "non_formal_reason": {
      "constraint": "DB-E-personal_rule_variant.non_formal_reason",
@@ -2556,7 +2935,9 @@
       "暂缓规则",
       "依赖非正式",
       "其他"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U16：与 rule_variant 同构（清单 F24；值：契约 v1.0 §3.3 non_formal_reason（条件必须））"
     }
    },
    "fks": [
@@ -2568,61 +2949,49 @@
      "to": [
       "branch_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 U16；目标：清单 U14：branch.branch_id 为 PK"
     }
-   ]
+   ],
+   "src": "清单 U16"
   },
   "personal_text_variant": {
    "schema": "main",
-   "required": [],
+   "required": [
+    "branch_id",
+    "formal_status"
+   ],
    "supplement": {
     "columns": [
      "branch_id",
      "edition_a_ref",
      "edition_b_ref",
      "formal_status",
+     "impact_level",
      "type_code",
      "variant_id"
     ],
-    "source": "清单 U16：与 F13 同构，对正式对象用三元组文本"
-   },
-   "enums": {},
-   "fks": [
-    {
-     "table": "branch",
-     "from": [
-      "branch_id"
-     ],
-     "to": [
-      "branch_id"
-     ],
-     "deferred": false
-    }
-   ]
-  },
-  "personal_evidence_link": {
-   "schema": "main",
-   "required": [],
-   "supplement": {
-    "columns": [
-     "branch_id",
-     "component_hash",
-     "component_id",
-     "component_release",
-     "evidence_id",
-     "evidence_role"
-    ],
-    "source": "清单 U16：与 F18 同构，对正式子项用三元组"
+    "source": "清单 U16：与 F13 同构，对正式对象用三元组文本；impact_level：契约 v1.0.6 修订单第一项（§2.3）"
    },
    "enums": {
-    "evidence_role": {
-     "constraint": "DB-E-personal_evidence_link.evidence_role",
+    "impact_level": {
+     "constraint": "DB-E-personal_text_variant.impact_level",
      "values": [
-      "支持",
-      "反证",
-      "限定",
-      "异文记录"
-     ]
+      "none",
+      "wording_only",
+      "calculation"
+     ],
+     "nullable": false,
+     "src": "清单 U16：与 text_variant 同构（契约 v1.0.6 修订单第一项（§2.3））"
+    },
+    "preferred_reading": {
+     "constraint": "DB-E-personal_text_variant.preferred_reading",
+     "values": [
+      "a",
+      "b"
+     ],
+     "nullable": true,
+     "src": "清单 U16：与 text_variant 同构（契约 v1.0.6 修订单第一项（§2.3））"
     }
    },
    "fks": [
@@ -2634,19 +3003,11 @@
      "to": [
       "branch_id"
      ],
-     "deferred": false
-    },
-    {
-     "table": "personal_evidence",
-     "from": [
-      "evidence_id"
-     ],
-     "to": [
-      "evidence_id"
-     ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 U16；目标：清单 U14：branch.branch_id 为 PK"
     }
-   ]
+   ],
+   "src": "清单 U16"
   },
   "blocked_audit_event": {
    "schema": "main",
@@ -2667,14 +3028,24 @@
       "LIUYAO",
       "FENGSHUI",
       "CALENDAR"
-     ]
+     ],
+     "nullable": false,
+     "src": "契约 v1.0 §6.3 阻断审计按计算域记录（与 §6.1 domain 同值）；工程补充：清单 U17 未标 CHECK"
     }
    },
-   "fks": []
+   "fks": [],
+   "src": "清单 U17"
   },
   "deletion_audit": {
    "schema": "main",
-   "required": [],
+   "required": [
+    "app_version",
+    "audit_id",
+    "data_release",
+    "deleted_at",
+    "success",
+    "trigger"
+   ],
    "supplement": {
     "columns": [
      "app_version",
@@ -2692,14 +3063,21 @@
      "values": [
       0,
       1
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U18 success 均必（布尔）；工程补充：清单未写 bool"
     }
    },
-   "fks": []
+   "fks": [],
+   "src": "清单 U18"
   },
   "deletion_audit_count": {
    "schema": "main",
-   "required": [],
+   "required": [
+    "audit_id",
+    "count",
+    "object_type"
+   ],
    "supplement": {
     "columns": [
      "audit_id",
@@ -2728,7 +3106,9 @@
       "snapshot_resolved_context",
       "execution_trace_step",
       "branch_base_snapshot_cleared"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U18；值：清单 §3.6 第 815 行“object_type 为 CHECK 枚举”；值 = 清单 §3.6 删除级联所涉用户库表（U01～U13）加 branch 置空事件（§10.2）。工程补充：清单未逐值列出"
     }
    },
    "fks": [
@@ -2740,9 +3120,11 @@
      "to": [
       "audit_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 U18；工程补充"
     }
-   ]
+   ],
+   "src": "清单 U18"
   },
   "branch_event": {
    "schema": "main",
@@ -2764,7 +3146,8 @@
      "to": [
       "audit_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 U19；目标：清单 U18：deletion_audit.audit_id"
     },
     {
      "table": "branch",
@@ -2774,9 +3157,11 @@
      "to": [
       "branch_id"
      ],
-     "deferred": false
+     "deferred": false,
+     "src": "清单 U19；目标：清单 U14：branch.branch_id 为 PK"
     }
-   ]
+   ],
+   "src": "清单 U19"
   },
   "deletion_txn_marker": {
    "schema": "main",
@@ -2794,10 +3179,360 @@
      "values": [
       "success",
       "failure"
-     ]
+     ],
+     "nullable": false,
+     "src": "清单 U20"
     }
    },
-   "fks": []
+   "fks": [],
+   "src": "清单 U20"
+  },
+  "step_code_retirement": {
+   "schema": "formal",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "data_release",
+     "step_code"
+    ],
+    "source": "清单 §3.8 第 915 行：废止的步骤只追加废止标记"
+   },
+   "enums": {},
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false,
+     "src": "清单 §3.8；目标：清单 F01 data_release PK"
+    },
+    {
+     "table": "step_code",
+     "from": [
+      "step_code"
+     ],
+     "to": [
+      "step_code"
+     ],
+     "deferred": false,
+     "src": "清单 §3.8；目标：清单 F05 step_code PK"
+    }
+   ],
+   "src": "清单 §3.8：废止的步骤只追加废止标记（不在第 4 节表格中）"
+  },
+  "evidence_link": {
+   "schema": "formal",
+   "required": [
+    "claim_id",
+    "directness",
+    "evidence_id"
+   ],
+   "supplement": null,
+   "enums": {
+    "directness": {
+     "constraint": "DB-E-evidence_link.directness",
+     "values": [
+      "direct",
+      "indirect"
+     ],
+     "nullable": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    }
+   },
+   "fks": [
+    {
+     "table": "claim",
+     "from": [
+      "claim_id"
+     ],
+     "to": [
+      "claim_id"
+     ],
+     "deferred": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    },
+    {
+     "table": "evidence",
+     "from": [
+      "evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "deferred": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    }
+   ],
+   "src": "契约 v1.0.6 修订单第二项（§2.5）"
+  },
+  "claim": {
+   "schema": "formal",
+   "required": [
+    "claim_id",
+    "component_id",
+    "statement"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "rule_component",
+     "from": [
+      "component_id"
+     ],
+     "to": [
+      "component_id"
+     ],
+     "deferred": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    }
+   ],
+   "src": "契约 v1.0.6 修订单第二项（§2.5）"
+  },
+  "evidence_link_role": {
+   "schema": "formal",
+   "required": [
+    "claim_id",
+    "evidence_id",
+    "role",
+    "role_note"
+   ],
+   "supplement": null,
+   "enums": {
+    "role": {
+     "constraint": "DB-E-evidence_link_role.role",
+     "values": [
+      "支持",
+      "反证"
+     ],
+     "nullable": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    }
+   },
+   "fks": [
+    {
+     "table": "evidence_link",
+     "from": [
+      "evidence_id",
+      "claim_id"
+     ],
+     "to": [
+      "evidence_id",
+      "claim_id"
+     ],
+     "deferred": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    }
+   ],
+   "src": "契约 v1.0.6 修订单第二项（§2.5）"
+  },
+  "search_record": {
+   "schema": "formal",
+   "required": [
+    "claim_id",
+    "expected_find_premise",
+    "outcome",
+    "search_id",
+    "search_scope",
+    "search_terms",
+    "searched_at"
+   ],
+   "supplement": null,
+   "enums": {
+    "outcome": {
+     "constraint": "DB-E-search_record.outcome",
+     "values": [
+      "未找到",
+      "找到"
+     ],
+     "nullable": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    }
+   },
+   "fks": [
+    {
+     "table": "claim",
+     "from": [
+      "claim_id"
+     ],
+     "to": [
+      "claim_id"
+     ],
+     "deferred": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    }
+   ],
+   "src": "契约 v1.0.6 修订单第二项（§2.5）"
+  },
+  "citation_record": {
+   "schema": "formal",
+   "required": [
+    "citation_id",
+    "cited_ref",
+    "passage_id",
+    "verdict"
+   ],
+   "supplement": null,
+   "enums": {
+    "verdict": {
+     "constraint": "DB-E-citation_record.verdict",
+     "values": [
+      "属实",
+      "不属实",
+      "未核验"
+     ],
+     "nullable": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    }
+   },
+   "fks": [
+    {
+     "table": "evidence",
+     "from": [
+      "basis_evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "deferred": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    },
+    {
+     "table": "passage",
+     "from": [
+      "passage_id"
+     ],
+     "to": [
+      "passage_id"
+     ],
+     "deferred": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    }
+   ],
+   "src": "契约 v1.0.6 修订单第二项（§2.5）"
+  },
+  "text_variant_evidence": {
+   "schema": "formal",
+   "required": [
+    "evidence_id",
+    "variant_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "evidence",
+     "from": [
+      "evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "deferred": false,
+     "src": "契约 v1.0.6 修订单第一项（§2.3）"
+    },
+    {
+     "table": "text_variant",
+     "from": [
+      "variant_id"
+     ],
+     "to": [
+      "variant_id"
+     ],
+     "deferred": false,
+     "src": "契约 v1.0.6 修订单第一项（§2.3）"
+    }
+   ],
+   "src": "契约 v1.0.6 修订单第一项（§2.3）"
+  },
+  "personal_evidence_link": {
+   "schema": "main",
+   "required": [
+    "branch_id",
+    "claim_hash",
+    "claim_id",
+    "claim_release",
+    "directness",
+    "evidence_id"
+   ],
+   "supplement": null,
+   "enums": {
+    "directness": {
+     "constraint": "DB-E-personal_evidence_link.directness",
+     "values": [
+      "direct",
+      "indirect"
+     ],
+     "nullable": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    }
+   },
+   "fks": [
+    {
+     "table": "branch",
+     "from": [
+      "branch_id"
+     ],
+     "to": [
+      "branch_id"
+     ],
+     "deferred": false,
+     "src": "清单 U16"
+    },
+    {
+     "table": "personal_evidence",
+     "from": [
+      "evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "deferred": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    }
+   ],
+   "src": "契约 v1.0.6 修订单第二项（§2.5）（个人链接同构，三元组）"
+  },
+  "personal_evidence_link_role": {
+   "schema": "main",
+   "required": [
+    "claim_id",
+    "evidence_id",
+    "role",
+    "role_note"
+   ],
+   "supplement": null,
+   "enums": {
+    "role": {
+     "constraint": "DB-E-personal_evidence_link_role.role",
+     "values": [
+      "支持",
+      "反证"
+     ],
+     "nullable": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    }
+   },
+   "fks": [
+    {
+     "table": "personal_evidence_link",
+     "from": [
+      "evidence_id",
+      "claim_id"
+     ],
+     "to": [
+      "evidence_id",
+      "claim_id"
+     ],
+     "deferred": false,
+     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+    }
+   ],
+   "src": "契约 v1.0.6 修订单第二项（§2.5）"
   }
  }
 }

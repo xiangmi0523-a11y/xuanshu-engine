@@ -1,0 +1,1726 @@
+{
+ "note": "独立规格补充出处表（E2-FIX D）：只补审核清单第 4 节未逐列写明之处，逐条注明契约 / 清单 / 授权书出处；“工程补充”指清单与契约未写、由工程方案补齐，验收报告逐条列明。本文件不得引用 DDL。",
+ "tables": {
+  "step_code_retirement": {
+   "supplement": {
+    "columns": [
+     "data_release",
+     "step_code"
+    ],
+    "source": "清单 §3.8 第 915 行：废止的步骤只追加废止标记"
+   },
+   "add_table": true,
+   "schema": "formal",
+   "required": [],
+   "src": "清单 §3.8：废止的步骤只追加废止标记（不在第 4 节表格中）",
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "src": "清单 §3.8；目标：清单 F01 data_release PK"
+    },
+    {
+     "table": "step_code",
+     "from": [
+      "step_code"
+     ],
+     "to": [
+      "step_code"
+     ],
+     "src": "清单 §3.8；目标：清单 F05 step_code PK"
+    }
+   ]
+  },
+  "blocker": {
+   "supplement": {
+    "columns": [
+     "allowed_during_block",
+     "b_mapping",
+     "blocked_effect",
+     "blocked_module",
+     "contract_ref",
+     "report_ref",
+     "scope_path",
+     "source_issue",
+     "state_s1",
+     "state_s2",
+     "state_s3",
+     "trigger",
+     "unblock_condition"
+    ],
+    "source": "清单 F41：§9.6 全部字段，其余文本字段必"
+   }
+  },
+  "approval_review": {
+   "supplement": {
+    "columns": [
+     "approval_id",
+     "review_id"
+    ],
+    "source": "清单 F38：approval_review(approval_id、review_id) 为主键列"
+   },
+   "fks": [
+    {
+     "table": "approval_record",
+     "from": [
+      "approval_id"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "src": "清单 F38（同上）；工程补充",
+     "deferred": true
+    },
+    {
+     "table": "review_record",
+     "from": [
+      "review_id"
+     ],
+     "to": [
+      "review_id"
+     ],
+     "src": "清单 F38 / F40；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "approval_revoke_reason": {
+   "supplement": {
+    "columns": [
+     "approval_id",
+     "reason_code"
+    ],
+    "source": "清单 F38：approval_revoke_reason(approval_id、reason_code) 为主键列"
+   },
+   "fks": [
+    {
+     "table": "approval_record",
+     "from": [
+      "approval_id"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "src": "清单 F38：revoke 至少一行（同上）；工程补充",
+     "deferred": true
+    },
+    {
+     "table": "revoke_reason_registry",
+     "from": [
+      "reason_code"
+     ],
+     "to": [
+      "code"
+     ],
+     "src": "清单 F38 / F39；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "config_param_value": {
+   "supplement": {
+    "columns": [
+     "apply_mode"
+    ],
+    "source": "实施授权书 Q-12：stored_only / applied 标记"
+   },
+   "enums": {
+    "value_source": {
+     "values": [
+      "user_selected",
+      "approved_default",
+      "follows_param",
+      "version_locked"
+     ],
+     "src": "契约 v1.0 §5.4 param_values.value_source",
+     "nullable": false
+    },
+    "apply_mode": {
+     "values": [
+      "applied",
+      "stored_only"
+     ],
+     "src": "实施授权书 Q-12 (a)：stored-only / not-applied 标记",
+     "nullable": false
+    }
+   },
+   "fks": [
+    {
+     "table": "calculation_config",
+     "from": [
+      "config_id",
+      "config_version"
+     ],
+     "to": [
+      "config_id",
+      "config_version"
+     ],
+     "src": "工程补充：配置行按 config_hash = sha256(jcs-1(params))（清单 §6 (2)）校验，取值行先写，外键延迟；清单 U05 未标 FK",
+     "deferred": true
+    }
+   ]
+  },
+  "calculation_snapshot": {
+   "supplement": {
+    "columns": [
+     "calc_status",
+     "canonicalization_version",
+     "config_hash",
+     "config_id",
+     "config_version",
+     "created_at",
+     "data_fingerprint",
+     "domain",
+     "engine_release_id",
+     "execution_trace_ref",
+     "formal_status",
+     "hash_algorithm",
+     "input_hash",
+     "input_id",
+     "owner_profile_id",
+     "research_scope",
+     "result_completeness",
+     "result_fingerprint",
+     "result_hash",
+     "result_payload",
+     "snapshot_id"
+    ],
+    "source": "清单 U07：第 6.1 节全部字段（recomputed_from_snapshot_id 可空）"
+   },
+   "enums": {
+    "domain": {
+     "values": [
+      "BAZI",
+      "LIUYAO",
+      "FENGSHUI",
+      "CALENDAR"
+     ],
+     "src": "契约 v1.0 §6.1 domain（清单 U07“第 6.1 节全部字段”）",
+     "nullable": false
+    },
+    "formal_status": {
+     "values": [
+      "FORMAL",
+      "NON_FORMAL"
+     ],
+     "src": "契约 v1.0 §6.3 formal_status",
+     "nullable": false
+    },
+    "calc_status": {
+     "values": [
+      "CALC_FORMAL",
+      "CALC_RESEARCH"
+     ],
+     "src": "契约 v1.0 §6.3 合法组合只有 CALC_FORMAL / CALC_RESEARCH（BLOCKED 不产生快照）",
+     "nullable": false
+    },
+    "research_scope": {
+     "values": [
+      "FORMAL",
+      "FORMAL_SCOPE_NON_FORMAL",
+      "PERSONAL_RESEARCH"
+     ],
+     "src": "契约 v1.0 §7.4 research_scope（【用户裁决 A-2】）",
+     "nullable": false
+    },
+    "result_completeness": {
+     "values": [
+      "COMPLETE",
+      "OK_WITH_DEGRADATION"
+     ],
+     "src": "契约 v1.0 §13.1、【用户裁决 N-1】；清单 §6 第 1851 行",
+     "nullable": false
+    }
+   },
+   "fks": [
+    {
+     "table": "profile",
+     "from": [
+      "owner_profile_id"
+     ],
+     "to": [
+      "owner_profile_id"
+     ],
+     "src": "契约 v1.0 §6.3；清单 U07；工程补充",
+     "deferred": false
+    },
+    {
+     "table": "calculation_input",
+     "from": [
+      "input_id"
+     ],
+     "to": [
+      "input_id"
+     ],
+     "src": "契约 v1.0 §6.2 input_ref",
+     "deferred": false
+    },
+    {
+     "table": "calculation_config",
+     "from": [
+      "config_id",
+      "config_version"
+     ],
+     "to": [
+      "config_id",
+      "config_version"
+     ],
+     "src": "契约 v1.0 §6.2 config_ref",
+     "deferred": false
+    },
+    {
+     "table": "calculation_snapshot",
+     "from": [
+      "recomputed_from_snapshot_id"
+     ],
+     "to": [
+      "snapshot_id"
+     ],
+     "src": "契约 v1.0 §6.3 自引用 snapshot_id【架构验收 二】",
+     "deferred": false
+    }
+   ]
+  },
+  "snapshot_non_formal_reason": {
+   "supplement": {
+    "columns": [
+     "step_code",
+     "upstream_hash",
+     "upstream_id",
+     "upstream_release"
+    ],
+    "source": "清单 U08：upstream 三元组必；原因所在步骤（Q-6、Q-16）"
+   },
+   "enums": {
+    "ri_segment": {
+     "values": [
+      "R-I-1",
+      "R-I-2",
+      "R-I-3",
+      "R-I-4",
+      "R-I-5",
+      "R-I-6",
+      "R-I-7",
+      "R-I-8"
+     ],
+     "src": "契约 v1.0 §7.3 R-I-1～R-I-8；清单 U08 ri_segment 条件必须",
+     "nullable": true
+    }
+   }
+  },
+  "snapshot_dependency": {
+   "supplement": {
+    "columns": [
+     "ref_id",
+     "ref_kind"
+    ],
+    "source": "清单 U10 / §6.4：引用对象 ID；ref_kind 区分正式 / 个人 / 用户快照（R-I-2、§7.4）"
+   },
+   "enums": {
+    "dep_type": {
+     "values": [
+      "rule_variant",
+      "edition",
+      "evidence",
+      "parameter",
+      "calendar_data",
+      "tz_data",
+      "place_data",
+      "engine",
+      "cross_domain"
+     ],
+     "src": "契约 v1.0 §6.4 dep_type 表（8 行，其中 edition / evidence 合为一行，值为 9 个；清单 U10 记“8 类”按行计）",
+     "nullable": false
+    },
+    "ref_kind": {
+     "values": [
+      "formal",
+      "personal",
+      "user_snapshot"
+     ],
+     "src": "清单 U10 / §6.4 与 §7.4：依赖对象分正式、个人、用户快照（R-I-2）；工程补充：值名为实现命名",
+     "nullable": false
+    }
+   }
+  },
+  "snapshot_gov_approval": {
+   "supplement": {
+    "columns": [
+     "approval_id",
+     "owner_profile_id",
+     "rule_variant_id",
+     "snapshot_id"
+    ],
+    "source": "清单 U11：三表内容均为必"
+   }
+  },
+  "snapshot_gov_blocker": {
+   "supplement": {
+    "columns": [
+     "block_id",
+     "owner_profile_id",
+     "snapshot_id",
+     "status"
+    ],
+    "source": "清单 U11：三表内容均为必"
+   },
+   "enums": {
+    "status": {
+     "values": [
+      "现行",
+      "已解除",
+      "无记录"
+     ],
+     "src": "契约 v1.0 §9.6 status 现行 / 已解除；“无记录”= 计算当时该阻断尚无变更记录（§6.5 记“当时状态”）。工程补充",
+     "nullable": false
+    }
+   }
+  },
+  "snapshot_gov_sequence": {
+   "supplement": {
+    "columns": [
+     "kind",
+     "max_sequence_no",
+     "owner_profile_id",
+     "snapshot_id"
+    ],
+    "source": "清单 U11：三表内容均为必"
+   },
+   "enums": {
+    "kind": {
+     "values": [
+      "evidence_status",
+      "admission",
+      "formal_status",
+      "approval",
+      "blocker_change"
+     ],
+     "src": "契约 v1.0 §6.5 governance_context：证据状态与准入状态序号；清单 §3.3 序号表（evidence_status_history、admission_record、formal_status_history、approval_record、blocker_change）",
+     "nullable": false
+    }
+   }
+  },
+  "execution_trace_step": {
+   "supplement": {
+    "columns": [
+     "exec_order"
+    ],
+    "source": "实现补充：清单 §3.8 执行顺序按 step_dependency，轨迹记录实际执行序"
+   }
+  },
+  "personal_edition": {
+   "supplement": {
+    "columns": [
+     "branch_id",
+     "confidence",
+     "edition_id",
+     "formal_status",
+     "source_hash",
+     "source_id",
+     "source_release",
+     "transcription_status"
+    ],
+    "source": "清单 U16：与正式同名表同构，对正式对象用三元组"
+   },
+   "isomorphic_of": "edition"
+  },
+  "personal_evidence": {
+   "supplement": {
+    "columns": [
+     "branch_id",
+     "claim_status",
+     "confidence",
+     "evidence_category",
+     "evidence_id",
+     "evidence_status",
+     "evidence_tier",
+     "formal_status",
+     "origin"
+    ],
+    "source": "清单 U16：与正式同名表同构（含 F16 必填列与 v_evidence_current 的状态列）"
+   },
+   "isomorphic_of": "evidence",
+   "enums": {
+    "evidence_status": {
+     "values": [
+      "UNVERIFIED",
+      "SINGLE_SOURCE",
+      "CROSS_CHECKED",
+      "PRIMARY_VERIFIED",
+      "DISPUTED",
+      "REJECTED"
+     ],
+     "src": "契约 v1.0 §2.4（个人证据直接存状态列）",
+     "nullable": false
+    },
+    "claim_status": {
+     "values": [
+      "已证实",
+      "推断",
+      "未知",
+      "已证伪"
+     ],
+     "src": "契约 v1.0 §2.4",
+     "nullable": false
+    }
+   }
+  },
+  "personal_rule_variant": {
+   "supplement": {
+    "columns": [
+     "branch_id",
+     "canonicalization_version",
+     "component_hash",
+     "component_id",
+     "component_release",
+     "confidence",
+     "content_hash",
+     "formal_status",
+     "hash_algorithm",
+     "non_formal_reason",
+     "rule_variant_id",
+     "version_no"
+    ],
+    "source": "清单 U16：与 F24 同构，个人变体须写 non_formal_reason"
+   },
+   "isomorphic_of": "rule_variant",
+   "enum_not_null": [
+    "non_formal_reason"
+   ]
+  },
+  "personal_text_variant": {
+   "supplement": {
+    "columns": [
+     "branch_id",
+     "edition_a_ref",
+     "edition_b_ref",
+     "formal_status",
+     "impact_level",
+     "type_code",
+     "variant_id"
+    ],
+    "source": "清单 U16：与 F13 同构，对正式对象用三元组文本；impact_level：契约 v1.0.6 修订单第一项（§2.3）"
+   },
+   "isomorphic_of": "text_variant"
+  },
+  "deletion_audit": {
+   "supplement": {
+    "columns": [
+     "app_version",
+     "audit_id",
+     "data_release",
+     "deleted_at",
+     "success",
+     "trigger"
+    ],
+    "source": "清单 U18：deletion_audit(...均必)"
+   },
+   "enums": {
+    "success": {
+     "values": [
+      0,
+      1
+     ],
+     "src": "清单 U18 success 均必（布尔）；工程补充：清单未写 bool",
+     "nullable": false
+    }
+   }
+  },
+  "deletion_audit_count": {
+   "supplement": {
+    "columns": [
+     "audit_id",
+     "count",
+     "object_type"
+    ],
+    "source": "清单 U18：deletion_audit_count(audit_id、object_type、count 均必)"
+   },
+   "enums": {
+    "object_type": {
+     "values": [
+      "profile",
+      "calculation_input",
+      "input_tz_resolution",
+      "profile_config_ref",
+      "calculation_config",
+      "config_param_value",
+      "calculation_snapshot",
+      "snapshot_non_formal_reason",
+      "snapshot_degradation_reason",
+      "snapshot_dependency",
+      "snapshot_gov_approval",
+      "snapshot_gov_blocker",
+      "snapshot_gov_sequence",
+      "snapshot_resolved_context",
+      "execution_trace_step",
+      "branch_base_snapshot_cleared"
+     ],
+     "src": "清单 §3.6 第 815 行“object_type 为 CHECK 枚举”；值 = 清单 §3.6 删除级联所涉用户库表（U01～U13）加 branch 置空事件（§10.2）。工程补充：清单未逐值列出",
+     "nullable": false
+    }
+   },
+   "fks": [
+    {
+     "table": "deletion_audit",
+     "from": [
+      "audit_id"
+     ],
+     "to": [
+      "audit_id"
+     ],
+     "src": "清单 U18；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "passage_fts": {
+   "drop": true,
+   "src": "清单 F11：FTS5 虚拟表，无列级约束"
+  },
+  "source": {
+   "enums": {
+    "attribution_claim_status": {
+     "values": [
+      "已证实",
+      "推断",
+      "未知",
+      "已证伪"
+     ],
+     "src": "契约 v1.0 §2.1：归属主张本身的已证实/推断/未知/已证伪（条件必须）",
+     "nullable": true
+    }
+   }
+  },
+  "edition": {
+   "enums": {
+    "transcription_status": {
+     "values": [
+      "原刊本",
+      "转录本（未与影印本对校）",
+      "个人校勘"
+     ],
+     "src": "契约 v1.0 §2.2 增两值；“原刊本”据清单 §2 第 218 行（契约写出的两值与“原刊本”，后者【待定】，随 Q-3）",
+     "nullable": false
+    }
+   }
+  },
+  "rule_variant": {
+   "enums": {
+    "non_formal_reason": {
+     "values": [
+      "实验规则",
+      "个人校勘",
+      "未核验",
+      "暂缓规则",
+      "依赖非正式",
+      "其他"
+     ],
+     "src": "契约 v1.0 §3.3 non_formal_reason（条件必须）",
+     "nullable": true
+    },
+    "confidence": {
+     "values": [
+      "A",
+      "B",
+      "C"
+     ],
+     "src": "契约 v1.0 §3.3 confidence A/B/C；清单 F24 写“confidence 必”未标 CHECK",
+     "nullable": false
+    }
+   },
+   "fks": [
+    {
+     "table": "system_school",
+     "from": [
+      "school_id"
+     ],
+     "to": [
+      "id"
+     ],
+     "src": "清单 F24 school_id 可；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "admission_record": {
+   "enums": {
+    "new_status": {
+     "values": [
+      "FORMAL_ALLOWED",
+      "CONDITIONAL",
+      "RESEARCH_ONLY",
+      "DEFERRED",
+      "PROHIBITED"
+     ],
+     "src": "契约 v1.0 §3.2 admission_calc 五档",
+     "nullable": false
+    },
+    "previous_status": {
+     "values": [
+      "FORMAL_ALLOWED",
+      "CONDITIONAL",
+      "RESEARCH_ONLY",
+      "DEFERRED",
+      "PROHIBITED"
+     ],
+     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）",
+     "nullable": true
+    }
+   },
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "src": "清单 F32；工程补充",
+     "deferred": false
+    },
+    {
+     "table": "rule_component",
+     "from": [
+      "component_id"
+     ],
+     "to": [
+      "component_id"
+     ],
+     "src": "清单 F32；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "parameter_registry": {
+   "enums": {
+    "registry_origin": {
+     "values": [
+      "第 8 章 §5 表内",
+      "补充来源登记"
+     ],
+     "src": "契约 v1.0 §5.1 registry_origin",
+     "nullable": false
+    },
+    "module": {
+     "values": [
+      "BAZI",
+      "LIUYAO",
+      "CALENDAR",
+      "FENGSHUI",
+      "TEXT"
+     ],
+     "src": "契约 v1.0 §5.1 module",
+     "nullable": false
+    },
+    "registry_status": {
+     "values": [
+      "ACTIVE",
+      "VERSION_LOCKED"
+     ],
+     "src": "清单 §10 Q-8（第 2407 行）registry_status ∈ {ACTIVE, VERSION_LOCKED}；实施授权书 Q-8 同意",
+     "nullable": false
+    }
+   }
+  },
+  "approval_record": {
+   "enums": {
+    "decision": {
+     "values": [
+      "approve",
+      "approve_conditional",
+      "reject",
+      "revoke"
+     ],
+     "src": "契约 v1.0 §8.2 decision",
+     "nullable": false
+    }
+   },
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "src": "清单 F37；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "calculation_input": {
+   "enums": {
+    "domain": {
+     "values": [
+      "BAZI",
+      "LIUYAO",
+      "FENGSHUI",
+      "CALENDAR"
+     ],
+     "src": "契约 v1.0 §6.1 domain",
+     "nullable": false
+    },
+    "gender": {
+     "values": [
+      "MALE",
+      "FEMALE",
+      "UNKNOWN"
+     ],
+     "src": "契约 v1.0 §6.1 raw_payload 性别 gender（MALE / FEMALE / UNKNOWN）；【用户裁决 G-1】",
+     "nullable": true
+    },
+    "time_precision": {
+     "values": [
+      "MINUTE",
+      "SHICHEN",
+      "UNKNOWN"
+     ],
+     "src": "契约 v1.0 §6.1 time_precision（MINUTE / SHICHEN / UNKNOWN）；【用户裁决 G-2】；清单 U02 条件必须",
+     "nullable": true
+    }
+   }
+  },
+  "snapshot_degradation_reason": {
+   "enums": {
+    "reason_code": {
+     "values": [
+      "MISSING_GENDER",
+      "HOUR_UNKNOWN"
+     ],
+     "src": "契约 v1.0 §13.1～§13.3 已列原因码（清单 U09“契约已列者”）",
+     "nullable": false
+    }
+   }
+  },
+  "branch_status_history": {
+   "enums": {
+    "new_status": {
+     "values": [
+      "active",
+      "promoted",
+      "merged",
+      "abandoned"
+     ],
+     "src": "契约 v1.0 §7.1 status（历史表）",
+     "nullable": false
+    },
+    "previous_status": {
+     "values": [
+      "active",
+      "promoted",
+      "merged",
+      "abandoned"
+     ],
+     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）",
+     "nullable": true
+    }
+   }
+  },
+  "step_code": {
+   "enums": {
+    "module": {
+     "values": [
+      "BAZI",
+      "LIUYAO",
+      "FENGSHUI",
+      "CALENDAR",
+      "TEXT"
+     ],
+     "src": "契约 v1.0 §6.6 步骤编号表 module；工程补充：清单 F05 未标 CHECK（§1.4“枚举字段一律加 CHECK”）",
+     "nullable": false
+    }
+   }
+  },
+  "rule_component": {
+   "enums": {
+    "is_calendar_anchor": {
+     "values": [
+      0,
+      1
+     ],
+     "src": "契约 v1.0 §3.2 is_calendar_anchor（布尔，条件必须）；清单 F21 条件必须",
+     "nullable": true
+    },
+    "evidence_category": {
+     "values": [
+      "C-A",
+      "C-B",
+      "C-C",
+      "C-D",
+      "C-E",
+      "C-F",
+      "C-G"
+     ],
+     "src": "契约 v1.0 §3.2 / §2.4 evidence_category C-A～C-G；清单 F21 写“evidence_category 必”未标 CHECK",
+     "nullable": false
+    }
+   }
+  },
+  "evidence": {
+   "enums": {
+    "confidence": {
+     "values": [
+      "A",
+      "B",
+      "C"
+     ],
+     "src": "契约 v1.0 §2.4 confidence A/B/C；清单 F16 写“confidence 必”未标 CHECK",
+     "nullable": false
+    }
+   }
+  },
+  "param_allowed_value": {
+   "enums": {
+    "evidence_status": {
+     "values": [
+      "UNVERIFIED",
+      "SINGLE_SOURCE",
+      "CROSS_CHECKED",
+      "PRIMARY_VERIFIED",
+      "DISPUTED",
+      "REJECTED"
+     ],
+     "src": "契约 v1.0 §2.4 evidence_status；清单 F35 未标 CHECK",
+     "nullable": false
+    },
+    "claim_status": {
+     "values": [
+      "已证实",
+      "推断",
+      "未知",
+      "已证伪"
+     ],
+     "src": "契约 v1.0 §2.4 claim_status；清单 F35 未标 CHECK",
+     "nullable": false
+    }
+   }
+  },
+  "calculation_config": {
+   "enums": {
+    "module": {
+     "values": [
+      "BAZI",
+      "LIUYAO",
+      "FENGSHUI",
+      "CALENDAR"
+     ],
+     "src": "契约 v1.0 §5.4 配置所属域，与 §6.1 domain 同值；清单 U04 未标 CHECK",
+     "nullable": false
+    }
+   }
+  },
+  "blocked_audit_event": {
+   "enums": {
+    "module": {
+     "values": [
+      "BAZI",
+      "LIUYAO",
+      "FENGSHUI",
+      "CALENDAR"
+     ],
+     "src": "契约 v1.0 §6.3 阻断审计按计算域记录（与 §6.1 domain 同值）；工程补充：清单 U17 未标 CHECK",
+     "nullable": false
+    }
+   }
+  },
+  "engine_function_source": {
+   "fks": [
+    {
+     "table": "engine_function",
+     "from": [
+      "engine_release_id",
+      "calc_function_id"
+     ],
+     "to": [
+      "engine_release_id",
+      "calc_function_id"
+     ],
+     "src": "清单 F04：impl_hash 由 engine_function_source 计算（§3.8）；工程补充：清单未标 FK",
+     "deferred": false
+    }
+   ]
+  },
+  "approval_basis": {
+   "fks": [
+    {
+     "table": "approval_record",
+     "from": [
+      "approval_id"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "src": "清单 F38：每条批准至少一行（批准行 BEFORE INSERT 检查子行，子行先写，故延迟）；工程补充：清单未标 FK",
+     "deferred": true
+    }
+   ]
+  },
+  "term": {
+   "fks": [
+    {
+     "table": "system_school",
+     "from": [
+      "system_id"
+     ],
+     "to": [
+      "id"
+     ],
+     "src": "清单 F28 / F30；工程补充",
+     "deferred": false
+    },
+    {
+     "table": "term",
+     "from": [
+      "homonym_of"
+     ],
+     "to": [
+      "term_id"
+     ],
+     "src": "清单 F28 homonym_of 可（同名异义指向另一术语）；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "term_alias": {
+   "fks": [
+    {
+     "table": "term",
+     "from": [
+      "term_id"
+     ],
+     "to": [
+      "term_id"
+     ],
+     "src": "清单 F28；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "judgment": {
+   "fks": [
+    {
+     "table": "evidence",
+     "from": [
+      "basis_evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "src": "清单 F30；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "system_school": {
+   "fks": [
+    {
+     "table": "system_school",
+     "from": [
+      "parent_id"
+     ],
+     "to": [
+      "id"
+     ],
+     "src": "清单 F30 parent_id 可；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "dispute_claim": {
+   "fks": [
+    {
+     "table": "dispute",
+     "from": [
+      "dispute_id"
+     ],
+     "to": [
+      "dispute_id"
+     ],
+     "src": "清单 F29；工程补充",
+     "deferred": false
+    },
+    {
+     "table": "evidence",
+     "from": [
+      "evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "src": "清单 F29；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "blocker_step_map": {
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "src": "清单 F07 data_release 必；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "component_default": {
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "src": "清单 F23；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "variant_supersedes": {
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "src": "清单 F26；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "param_variant_map": {
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "src": "清单 F27；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "evidence_status_history": {
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "src": "清单 F31；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "formal_status_history": {
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "src": "清单 F33；工程补充",
+     "deferred": false
+    }
+   ],
+   "enums": {
+    "previous_value": {
+     "values": [
+      "FORMAL",
+      "NON_FORMAL"
+     ],
+     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）",
+     "nullable": true
+    },
+    "target_type": {
+     "constraint": "DB-F-20",
+     "constraint_src": "清单 §5 DB-F-20 失败定位"
+    }
+   }
+  },
+  "blocker_change": {
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "src": "清单 F42；工程补充",
+     "deferred": false
+    }
+   ],
+   "enums": {
+    "previous_status": {
+     "values": [
+      "现行",
+      "已解除"
+     ],
+     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）",
+     "nullable": true
+    }
+   }
+  },
+  "profile_config_ref": {
+   "fks": [
+    {
+     "table": "calculation_config",
+     "from": [
+      "config_id",
+      "config_version"
+     ],
+     "to": [
+      "config_id",
+      "config_version"
+     ],
+     "src": "清单 U06 PK(三列)；工程补充",
+     "deferred": false
+    }
+   ]
+  },
+  "evidence_link": {
+   "replace": true,
+   "schema": "formal",
+   "required": [
+    "evidence_id",
+    "claim_id",
+    "directness"
+   ],
+   "src": "契约 v1.0.6 修订单第二项（§2.5）",
+   "enums": {
+    "directness": {
+     "values": [
+      "direct",
+      "indirect"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "nullable": false
+    }
+   },
+   "fks": [
+    {
+     "table": "evidence",
+     "from": [
+      "evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "deferred": false
+    },
+    {
+     "table": "claim",
+     "from": [
+      "claim_id"
+     ],
+     "to": [
+      "claim_id"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "deferred": false
+    }
+   ]
+  },
+  "claim": {
+   "add_table": true,
+   "schema": "formal",
+   "required": [
+    "claim_id",
+    "component_id",
+    "statement"
+   ],
+   "src": "契约 v1.0.6 修订单第二项（§2.5）",
+   "fks": [
+    {
+     "table": "rule_component",
+     "from": [
+      "component_id"
+     ],
+     "to": [
+      "component_id"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "deferred": false
+    }
+   ]
+  },
+  "evidence_link_role": {
+   "add_table": true,
+   "schema": "formal",
+   "required": [
+    "evidence_id",
+    "claim_id",
+    "role",
+    "role_note"
+   ],
+   "src": "契约 v1.0.6 修订单第二项（§2.5）",
+   "enums": {
+    "role": {
+     "values": [
+      "支持",
+      "反证"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "nullable": false
+    }
+   },
+   "fks": [
+    {
+     "table": "evidence_link",
+     "from": [
+      "evidence_id",
+      "claim_id"
+     ],
+     "to": [
+      "evidence_id",
+      "claim_id"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "deferred": false
+    }
+   ]
+  },
+  "search_record": {
+   "add_table": true,
+   "schema": "formal",
+   "required": [
+    "search_id",
+    "claim_id",
+    "search_scope",
+    "search_terms",
+    "searched_at",
+    "expected_find_premise",
+    "outcome"
+   ],
+   "src": "契约 v1.0.6 修订单第二项（§2.5）",
+   "enums": {
+    "outcome": {
+     "values": [
+      "未找到",
+      "找到"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "nullable": false
+    }
+   },
+   "fks": [
+    {
+     "table": "claim",
+     "from": [
+      "claim_id"
+     ],
+     "to": [
+      "claim_id"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "deferred": false
+    }
+   ]
+  },
+  "citation_record": {
+   "add_table": true,
+   "schema": "formal",
+   "required": [
+    "citation_id",
+    "passage_id",
+    "cited_ref",
+    "verdict"
+   ],
+   "src": "契约 v1.0.6 修订单第二项（§2.5）",
+   "enums": {
+    "verdict": {
+     "values": [
+      "属实",
+      "不属实",
+      "未核验"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "nullable": false
+    }
+   },
+   "fks": [
+    {
+     "table": "passage",
+     "from": [
+      "passage_id"
+     ],
+     "to": [
+      "passage_id"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "deferred": false
+    },
+    {
+     "table": "evidence",
+     "from": [
+      "basis_evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "deferred": false
+    }
+   ]
+  },
+  "text_variant_evidence": {
+   "add_table": true,
+   "schema": "formal",
+   "required": [
+    "variant_id",
+    "evidence_id"
+   ],
+   "src": "契约 v1.0.6 修订单第一项（§2.3）",
+   "fks": [
+    {
+     "table": "text_variant",
+     "from": [
+      "variant_id"
+     ],
+     "to": [
+      "variant_id"
+     ],
+     "src": "契约 v1.0.6 修订单第一项（§2.3）",
+     "deferred": false
+    },
+    {
+     "table": "evidence",
+     "from": [
+      "evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "src": "契约 v1.0.6 修订单第一项（§2.3）",
+     "deferred": false
+    }
+   ]
+  },
+  "text_variant": {
+   "required_override": {
+    "cols": [
+     "variant_id",
+     "type_code",
+     "edition_a",
+     "edition_b",
+     "impact_level"
+    ],
+    "src": "契约 v1.0.6 修订单第一项（§2.3）"
+   },
+   "enums": {
+    "preferred_reading": {
+     "values": [
+      "a",
+      "b"
+     ],
+     "src": "契约 v1.0.6 修订单第一项（§2.3）",
+     "nullable": true
+    },
+    "impact_level": {
+     "values": [
+      "none",
+      "wording_only",
+      "calculation"
+     ],
+     "src": "契约 v1.0.6 修订单第一项（§2.3）",
+     "nullable": false
+    }
+   }
+  },
+  "personal_evidence_link": {
+   "replace": true,
+   "schema": "main",
+   "required": [
+    "evidence_id",
+    "claim_release",
+    "claim_id",
+    "claim_hash",
+    "directness",
+    "branch_id"
+   ],
+   "src": "契约 v1.0.6 修订单第二项（§2.5）（个人链接同构，三元组）",
+   "enums": {
+    "directness": {
+     "values": [
+      "direct",
+      "indirect"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "nullable": false
+    }
+   },
+   "fks": [
+    {
+     "table": "personal_evidence",
+     "from": [
+      "evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "deferred": false
+    },
+    {
+     "table": "branch",
+     "from": [
+      "branch_id"
+     ],
+     "to": [
+      "branch_id"
+     ],
+     "src": "清单 U16",
+     "deferred": false
+    }
+   ]
+  },
+  "personal_evidence_link_role": {
+   "add_table": true,
+   "schema": "main",
+   "required": [
+    "evidence_id",
+    "claim_id",
+    "role",
+    "role_note"
+   ],
+   "src": "契约 v1.0.6 修订单第二项（§2.5）",
+   "enums": {
+    "role": {
+     "values": [
+      "支持",
+      "反证"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "nullable": false
+    }
+   },
+   "fks": [
+    {
+     "table": "personal_evidence_link",
+     "from": [
+      "evidence_id",
+      "claim_id"
+     ],
+     "to": [
+      "evidence_id",
+      "claim_id"
+     ],
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "deferred": false
+    }
+   ]
+  }
+ },
+ "fk_targets": {
+  "component_id": {
+   "table": "rule_component",
+   "to": [
+    "component_id"
+   ],
+   "src": "清单 F21：rule_component.component_id 为 PK"
+  },
+  "snapshot_id": {
+   "table": "calculation_snapshot",
+   "to": [
+    "snapshot_id"
+   ],
+   "src": "契约 v1.0 §6.3 CalculationSnapshot.snapshot_id"
+  },
+  "input_id": {
+   "table": "calculation_input",
+   "to": [
+    "input_id"
+   ],
+   "src": "清单 U02：calculation_input.input_id 为 PK"
+  },
+  "audit_id": {
+   "table": "deletion_audit",
+   "to": [
+    "audit_id"
+   ],
+   "src": "清单 U18：deletion_audit.audit_id"
+  },
+  "step_dependency.depends_on": {
+   "table": "step_code",
+   "to": [
+    "step_code"
+   ],
+   "src": "清单 F05：step_dependency(depends_on 必 FK)，指向步骤编号"
+  },
+  "edition.parent_edition_id": {
+   "table": "edition",
+   "to": [
+    "edition_id"
+   ],
+   "src": "契约 v1.0 §2.2 parent_edition_id 指向底本"
+  },
+  "text_variant.passage_a": {
+   "table": "passage",
+   "to": [
+    "passage_id"
+   ],
+   "src": "契约 v1.0 §2.3 passage_a 写明所属段"
+  },
+  "text_variant.passage_b": {
+   "table": "passage",
+   "to": [
+    "passage_id"
+   ],
+   "src": "契约 v1.0 §2.3"
+  },
+  "text_variant.edition_a": {
+   "table": "edition",
+   "to": [
+    "edition_id"
+   ],
+   "src": "契约 v1.0 §2.3 各自写明所属 Edition"
+  },
+  "text_variant.edition_b": {
+   "table": "edition",
+   "to": [
+    "edition_id"
+   ],
+   "src": "契约 v1.0 §2.3"
+  },
+  "text_variant_component.variant_id": {
+   "table": "text_variant",
+   "to": [
+    "variant_id"
+   ],
+   "src": "清单 F13：text_variant.variant_id"
+  },
+  "rule.system_id": {
+   "table": "system_school",
+   "to": [
+    "id"
+   ],
+   "src": "清单 F30：system_school(id 必)"
+  },
+  "rule.school_id": {
+   "table": "system_school",
+   "to": [
+    "id"
+   ],
+   "src": "清单 F30：system_school(id 必)"
+  },
+  "approval_ref": {
+   "table": "approval_record",
+   "to": [
+    "approval_id"
+   ],
+   "src": "清单 F23 / F26：approval_ref 指批准记录（F37 approval_id）"
+  },
+  "variant_supersedes.old_variant_id": {
+   "table": "rule_variant",
+   "to": [
+    "rule_variant_id"
+   ],
+   "src": "清单 F26；F24 rule_variant_id PK"
+  },
+  "variant_supersedes.new_variant_id": {
+   "table": "rule_variant",
+   "to": [
+    "rule_variant_id"
+   ],
+   "src": "清单 F26；F24 rule_variant_id PK"
+  },
+  "parameter_registry.follows_param": {
+   "table": "parameter_registry",
+   "to": [
+    "param_id"
+   ],
+   "src": "清单 F34：跟随另一参数"
+  },
+  "parameter_registry.parent_param": {
+   "table": "parameter_registry",
+   "to": [
+    "param_id"
+   ],
+   "src": "清单 F34"
+  },
+  "param_dependency.depends_on": {
+   "table": "parameter_registry",
+   "to": [
+    "param_id"
+   ],
+   "src": "清单 F36"
+  },
+  "approval_record.target_id": {
+   "table": "rule_variant",
+   "to": [
+    "rule_variant_id"
+   ],
+   "src": "清单 F37：target_type = rule_variant"
+  },
+  "approval_record.supersedes_approval_id": {
+   "table": "approval_record",
+   "to": [
+    "approval_id"
+   ],
+   "src": "清单 F37：须指向同一 target 的较早记录"
+  },
+  "branch.parent_branch_id": {
+   "table": "branch",
+   "to": [
+    "branch_id"
+   ],
+   "src": "清单 U14"
+  },
+  "branch.base_snapshot_id": {
+   "table": "calculation_snapshot",
+   "to": [
+    "snapshot_id"
+   ],
+   "src": "清单 U14：base_snapshot_id 可 FK（不级联）"
+  },
+  "reason_code": {
+   "table": "revoke_reason_registry",
+   "to": [
+    "code"
+   ],
+   "src": "清单 F38 / F39：撤销原因码注册表"
+  },
+  "rule_variant.canonicalization_version": {
+   "table": "canonicalization_version",
+   "to": [
+    "version"
+   ],
+   "src": "清单 F06：canonicalization_version.version 为 PK"
+  }
+ },
+ "deferred": {
+  "snapshot_non_formal_reason.snapshot_id": "清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED",
+  "snapshot_degradation_reason.snapshot_id": "清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED",
+  "snapshot_dependency.snapshot_id": "清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED",
+  "snapshot_resolved_context.snapshot_id": "清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED",
+  "execution_trace_step.snapshot_id": "清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED"
+ }
+}

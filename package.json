@@ -13,12 +13,14 @@
     "check:forbidden": "node scripts/check-forbidden.mjs",
     "check:isolation": "node scripts/check-isolation.mjs",
     "check:data": "node scripts/check-data.mjs",
-    "ci": "npm run check:forbidden && npm run check:isolation && npm run check:data && npm run check:core && npm run build && npm run check:ddl && npm test",
+    "ci": "npm run check:forbidden && npm run check:isolation && npm run check:data && npm run check:core && npm run build && npm run check:ddl && npm run check:spec && npm test",
     "check:core": "tsc -p tsconfig.core.json",
     "mutate": "node scripts/mutate-static.mjs",
     "gen:ddl": "tsc -p tsconfig.json && node dist/db/gen.js",
     "check:ddl": "node dist/db/gen.js --check",
-    "gen:simlist": "npm run build && node scripts/gen-sim-list.mjs"
+    "gen:simlist": "npm run build && node scripts/gen-sim-list.mjs",
+    "gen:spec": "node scripts/gen-spec.mjs",
+    "check:spec": "node scripts/gen-spec.mjs --check"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

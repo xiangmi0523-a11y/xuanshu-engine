@@ -62,15 +62,28 @@ export function currentRelease(db: DatabaseSync): string {
   return one<{ r: string }>(db, "SELECT data_release AS r FROM formal.data_release ORDER BY release_seq DESC LIMIT 1")?.r ?? "";
 }
 
-/** 子项的选定变体：现行默认（丙类）；无默认且只登记一个变体时取该变体（判定其批准状态）；多个且无默认 → 未选 */
-function selectedVariant(db: DatabaseSync, component: string): VariantRow | "UNSELECTED" | undefined {
+/**
+ * 子项的变体状态（逐子项判定，不以他子项代替）：
+ * - DEFAULT：有现行默认（丙类）；
+ * - SINGLE：无默认、恰登记一个变体（判定其批准状态）；
+ * - UNSELECTED：登记多个变体而无默认，须选择；
+ * - NONE：没有任何变体。
+ */
+export type VariantState =
+  | { state: "DEFAULT" | "SINGLE"; variant: VariantRow }
+  | { state: "UNSELECTED"; count: number }
+  | { state: "NONE" };
+export function variantState(db: DatabaseSync, component: string): VariantState {
   const d = one<VariantRow>(db, `SELECT v.rule_variant_id, v.component_id, v.version_no, v.content_hash
     FROM formal.v_current_default d JOIN formal.rule_variant v ON v.rule_variant_id = d.rule_variant_id WHERE d.component_id = ?`, component);
-  if (d) return d;
-  const vs = all<VariantRow>(db, `SELECT rule_variant_id, component_id, version_no, content_hash FROM formal.rule_variant WHERE component_id = ?`, component);
-  if (vs.length === 1) return vs[0];
-  return vs.length === 0 ? undefined : "UNSELECTED";
+  if (d) return { state: "DEFAULT", variant: d };
+  const vs = all<VariantRow>(db, "SELECT rule_variant_id, component_id, version_no, content_hash FROM formal.rule_variant WHERE component_id = ? ORDER BY version_no", component);
+  if (vs.length === 1) return { state: "SINGLE", variant: vs[0]! };
+  return vs.length === 0 ? { state: "NONE" } : { state: "UNSELECTED", count: vs.length };
 }
+const selectable = (v: VariantState): v is { state: "DEFAULT" | "SINGLE"; variant: VariantRow } => v.state === "DEFAULT" || v.state === "SINGLE";
+const componentsOf = (db: DatabaseSync, fn: string) =>
+  all<{ component_id: string }>(db, "SELECT component_id FROM formal.rule_component WHERE calc_function_id = ? ORDER BY component_id", fn).map((c) => c.component_id);
 
 export function judge(db: DatabaseSync, plan: Plan): Judgment {
   const executed = plan.steps.filter((s) => s.status === "完成");
@@ -82,16 +95,25 @@ export function judge(db: DatabaseSync, plan: Plan): Judgment {
   for (const s of executed) for (const m of stepBlockers(db, s.step_code)) {
     if (m.status === "现行" && m.effect === "BLOCKED-HARD") return blocked("BLOCKED-HARD", `BLOCKER_HARD:${m.block_id}:${s.step_code}`, s.step_code);
   }
-  // 2 争议未裁决且无可选变体；缺必选参数
+  // 2 争议未裁决且无可选变体；变体缺失或未选；缺必选参数（逐子项检查，任一必需子项不可用即阻断，不以他子项掩盖）
   for (const s of executed) {
     for (const fn of s.rule_functions) {
-      const comps = all<{ component_id: string }>(db, "SELECT component_id FROM formal.rule_component WHERE calc_function_id = ? ORDER BY component_id", fn);
-      const hasSelectable = comps.some((c) => { const v = selectedVariant(db, c.component_id); return v !== undefined && v !== "UNSELECTED"; });
-      const refs = [`function:${fn}`, ...comps.map((c) => `component:${c.component_id}`)];
-      for (const r of refs) for (const d of disputesFor(db, r)) {
-        if (d.status === "未裁决" && !hasSelectable) return blocked("BLOCKED-FORMAL", `DISPUTE_UNRESOLVED:${d.dispute_id}:${s.step_code}`, s.step_code);
+      const comps = componentsOf(db, fn);
+      const states = new Map(comps.map((c) => [c, variantState(db, c)] as const));
+      const allSelectable = comps.length > 0 && comps.every((c) => selectable(states.get(c)!));
+      // 函数级争议：只要该函数没有登记子项、或任一子项不可选，即阻断
+      for (const d of disputesFor(db, `function:${fn}`)) {
+        if (d.status === "未裁决" && !allSelectable) return blocked("BLOCKED-FORMAL", `DISPUTE_UNRESOLVED:${d.dispute_id}:${s.step_code}`, s.step_code);
       }
-      for (const c of comps) if (selectedVariant(db, c.component_id) === "UNSELECTED") return blocked("BLOCKED-FORMAL", `VARIANT_UNSELECTED:${c.component_id}:${s.step_code}`, s.step_code);
+      for (const c of comps) {
+        const st = states.get(c)!;
+        // 子项级争议：该子项本身不可选即阻断
+        for (const d of disputesFor(db, `component:${c}`)) {
+          if (d.status === "未裁决" && !selectable(st)) return blocked("BLOCKED-FORMAL", `DISPUTE_UNRESOLVED:${d.dispute_id}:${s.step_code}`, s.step_code);
+        }
+        if (st.state === "NONE") return blocked("BLOCKED-FORMAL", `VARIANT_MISSING:${c}:${s.step_code}`, s.step_code, c);
+        if (st.state === "UNSELECTED") return blocked("BLOCKED-FORMAL", `VARIANT_UNSELECTED:${c}:${s.step_code}`, s.step_code, c);
+      }
     }
     for (const p of s.params) {
       const cp = plan.config.find((x) => x.param_id === p);
@@ -102,10 +124,14 @@ export function judge(db: DatabaseSync, plan: Plan): Judgment {
   const variants: UsedVariant[] = [];
   const reasons: Reason[] = [];
   for (const s of executed) for (const fn of s.rule_functions) {
-    const comps = all<{ component_id: string }>(db, "SELECT component_id FROM formal.rule_component WHERE calc_function_id = ? ORDER BY component_id", fn);
+    const comps = componentsOf(db, fn);
     if (comps.length === 0) return blocked("BLOCKED-FORMAL", `RULE_UNREGISTERED:${fn}:${s.step_code}`, s.step_code);
-    for (const c of comps) {
-      const v = selectedVariant(db, c.component_id) as VariantRow;
+    for (const cid of comps) {
+      const st = variantState(db, cid);
+      // 第 2 步已逐子项拦截 NONE / UNSELECTED；此处再断言一次，杜绝隐式回退（不得因异常、默认值生成正式快照）
+      if (!selectable(st)) return blocked("BLOCKED-FORMAL", `VARIANT_${st.state === "NONE" ? "MISSING" : "UNSELECTED"}:${cid}:${s.step_code}`, s.step_code, cid);
+      const v = st.variant;
+      const c = { component_id: cid };
       const appr = one<{ approval_id: string | null; formal_status: string }>(db,
         "SELECT current_approval_id AS approval_id, formal_status FROM formal.v_variant_formal WHERE rule_variant_id = ?", v.rule_variant_id);
       const adm = one<{ status: string; conditions: string | null }>(db, "SELECT status, conditions FROM formal.v_admission_current WHERE component_id = ? AND purpose = 'calc'", c.component_id);

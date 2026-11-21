@@ -297,17 +297,35 @@ CREATE TABLE personal_text_variant (
   edition_a_ref  TEXT NOT NULL,
   passage_b_ref  TEXT,
   edition_b_ref  TEXT NOT NULL,
+  reading_a         TEXT,
+  reading_b         TEXT,
+  preferred_reading TEXT CONSTRAINT "DB-E-personal_text_variant.preferred_reading" CHECK (preferred_reading IS NULL OR preferred_reading IN ('a','b')),
+  preferred_basis   TEXT,
+  impact_level      TEXT NOT NULL CONSTRAINT "DB-E-personal_text_variant.impact_level" CHECK (impact_level IN ('none','wording_only','calculation')),
+  impact_note       TEXT,
   formal_status  TEXT NOT NULL CONSTRAINT "DB-U-14-text_variant" CHECK (formal_status = 'NON_FORMAL'),
-  CONSTRAINT "DB-F-13-personal" CHECK (passage_a_ref IS NOT NULL OR passage_b_ref IS NOT NULL)
+  CONSTRAINT "DB-F-13-personal" CHECK (passage_a_ref IS NOT NULL OR passage_b_ref IS NOT NULL),
+  CONSTRAINT "DB-F-13b-personal" CHECK (reading_a IS NOT NULL OR reading_b IS NOT NULL),
+  CONSTRAINT "DB-F-13c-personal" CHECK (preferred_reading IS NULL OR preferred_basis IS NOT NULL)
 ) STRICT;
+-- 个人证据链接（v1.0.6）：与正式同构；链到正式主张用三元组（claim_hash 计算对象【待定】）
 CREATE TABLE personal_evidence_link (
-  evidence_id       TEXT NOT NULL REFERENCES personal_evidence(evidence_id),
-  component_release TEXT NOT NULL,
-  component_id      TEXT NOT NULL,
-  component_hash    TEXT NOT NULL,
-  evidence_role     TEXT NOT NULL CONSTRAINT "DB-E-personal_evidence_link.evidence_role" CHECK (evidence_role IN ('支持','反证','限定','异文记录')),
-  branch_id         TEXT NOT NULL REFERENCES branch(branch_id),
-  PRIMARY KEY (evidence_id, component_id, evidence_role)
+  evidence_id   TEXT NOT NULL REFERENCES personal_evidence(evidence_id),
+  claim_release TEXT NOT NULL,
+  claim_id      TEXT NOT NULL,
+  claim_hash    TEXT NOT NULL,
+  directness    TEXT NOT NULL CONSTRAINT "DB-E-personal_evidence_link.directness" CHECK (directness IN ('direct','indirect')),
+  scope_note    TEXT,
+  branch_id     TEXT NOT NULL REFERENCES branch(branch_id),
+  PRIMARY KEY (evidence_id, claim_id)
+) STRICT;
+CREATE TABLE personal_evidence_link_role (
+  evidence_id TEXT NOT NULL,
+  claim_id    TEXT NOT NULL,
+  role        TEXT NOT NULL CONSTRAINT "DB-E-personal_evidence_link_role.role" CHECK (role IN ('支持','反证')),
+  role_note   TEXT NOT NULL CONSTRAINT "DB-F-18b-personal" CHECK (length(trim(role_note)) > 0),
+  PRIMARY KEY (evidence_id, claim_id, role),
+  FOREIGN KEY (evidence_id, claim_id) REFERENCES personal_evidence_link(evidence_id, claim_id)
 ) STRICT;
 
 -- ===================================================================== 审计与删除入口

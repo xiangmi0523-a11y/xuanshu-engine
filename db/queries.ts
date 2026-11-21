@@ -44,8 +44,10 @@ export const releaseChecks = {
   "Q-F-24d": (db: DatabaseSync) => q(db, `
     SELECT v.rule_variant_id, eh.data_release, eh.target_id AS evidence_id
     FROM formal.formal_status_history eh JOIN formal.data_release er ON er.data_release = eh.data_release
-    JOIN formal.evidence_link l ON l.evidence_id = eh.target_id AND l.evidence_role = '支持' AND l.branch_id IS NULL
-    JOIN formal.rule_variant v ON v.component_id = l.component_id
+    JOIN formal.evidence_link_role lr ON lr.evidence_id = eh.target_id AND lr.role = '支持'
+    JOIN formal.evidence_link l ON l.evidence_id = lr.evidence_id AND l.claim_id = lr.claim_id AND l.branch_id IS NULL
+    JOIN formal.claim c ON c.claim_id = l.claim_id
+    JOIN formal.rule_variant v ON v.component_id = c.component_id
     WHERE eh.target_type = 'Evidence' AND eh.new_value = 'NON_FORMAL' AND (
       SELECT h.new_value FROM formal.formal_status_history h JOIN formal.data_release hr ON hr.data_release = h.data_release
       WHERE h.target_type = 'RuleVariant' AND h.target_id = v.rule_variant_id AND hr.release_seq <= er.release_seq ORDER BY h.sequence_no DESC LIMIT 1) = 'FORMAL'`),
@@ -64,11 +66,16 @@ export const releaseChecks = {
     SELECT DISTINCT ep.evidence_id FROM formal.evidence_passage ep JOIN formal.passage p ON p.passage_id = ep.passage_id
     JOIN formal.v_formal_status_current fe ON fe.target_type = 'Edition' AND fe.target_id = p.edition_id AND fe.value = 'NON_FORMAL'
     JOIN formal.v_formal_status_current fv ON fv.target_type = 'Evidence' AND fv.target_id = ep.evidence_id AND fv.value = 'FORMAL'`),
-  /** Q-C-09 R-I-4：支持类证据 NON_FORMAL 而变体（按 §8.2 推出）为 FORMAL；反证、限定、异文记录不触发 */
+  /**
+   * Q-C-09 R-I-4（v1.0.6）：证据对变体所属子项下任一主张具有“支持”角色且为 NON_FORMAL，而变体（按 §8.2 推出）为 FORMAL。
+   * 只要有一个支持角色即触发（兼有反证也触发）；只有反证不触发；异文、检索记录、引用记录、可信度不在角色表内，结构上不能充当支持。
+   */
   "Q-C-09": (db: DatabaseSync) => q(db, `
-    SELECT DISTINCT vf.rule_variant_id FROM formal.v_variant_formal vf
-    JOIN formal.evidence_link l ON l.component_id = vf.component_id AND l.evidence_role = '支持' AND l.branch_id IS NULL
-    JOIN formal.v_formal_status_current fe ON fe.target_type = 'Evidence' AND fe.target_id = l.evidence_id AND fe.value = 'NON_FORMAL'
+    SELECT DISTINCT vf.rule_variant_id, lr.evidence_id, lr.claim_id FROM formal.v_variant_formal vf
+    JOIN formal.claim c ON c.component_id = vf.component_id
+    JOIN formal.evidence_link l ON l.claim_id = c.claim_id AND l.branch_id IS NULL
+    JOIN formal.evidence_link_role lr ON lr.evidence_id = l.evidence_id AND lr.claim_id = l.claim_id AND lr.role = '支持'
+    JOIN formal.v_formal_status_current fe ON fe.target_type = 'Evidence' AND fe.target_id = lr.evidence_id AND fe.value = 'NON_FORMAL'
     WHERE vf.formal_status = 'FORMAL'`),
 };
 
@@ -93,13 +100,22 @@ export const evidenceChecks = {
   "Q-X-05-6": (db: DatabaseSync) => q(db, `SELECT 'edition' AS t, edition_id AS id FROM formal.edition WHERE branch_id IS NOT NULL
                                            UNION ALL SELECT 'evidence', evidence_id FROM formal.evidence WHERE branch_id IS NOT NULL
                                            UNION ALL SELECT 'rule_variant', rule_variant_id FROM formal.rule_variant WHERE branch_id IS NOT NULL
-                                           UNION ALL SELECT 'evidence_link', evidence_id FROM formal.evidence_link WHERE branch_id IS NOT NULL`),
+                                           UNION ALL SELECT 'evidence_link', evidence_id FROM formal.evidence_link WHERE branch_id IS NOT NULL
+                                           UNION ALL SELECT 'claim', claim_id FROM formal.claim WHERE branch_id IS NOT NULL`),
   /** 个人对象缺 branch_id */
   "Q-X-05-7": (db: DatabaseSync) => q(db, `SELECT 'personal_edition' AS t, edition_id AS id FROM main.personal_edition WHERE branch_id IS NULL
                                            UNION ALL SELECT 'personal_evidence', evidence_id FROM main.personal_evidence WHERE branch_id IS NULL
                                            UNION ALL SELECT 'personal_rule_variant', rule_variant_id FROM main.personal_rule_variant WHERE branch_id IS NULL
                                            UNION ALL SELECT 'personal_text_variant', variant_id FROM main.personal_text_variant WHERE branch_id IS NULL
                                            UNION ALL SELECT 'personal_evidence_link', evidence_id FROM main.personal_evidence_link WHERE branch_id IS NULL`),
+  /** v1.0.6：证据链接没有任何论证角色（正式、个人） */
+  "Q-X-05-8": (db: DatabaseSync) => q(db, `SELECT 'evidence_link' AS t, l.evidence_id || '|' || l.claim_id AS id FROM formal.evidence_link l
+                                           WHERE NOT EXISTS (SELECT 1 FROM formal.evidence_link_role r WHERE r.evidence_id = l.evidence_id AND r.claim_id = l.claim_id)
+                                           UNION ALL SELECT 'personal_evidence_link', l.evidence_id || '|' || l.claim_id FROM main.personal_evidence_link l
+                                           WHERE NOT EXISTS (SELECT 1 FROM main.personal_evidence_link_role r WHERE r.evidence_id = l.evidence_id AND r.claim_id = l.claim_id)`),
+  /** v1.0.6（§2.3）：impact_level = calculation 的异文未关联 RuleComponent */
+  "Q-X-05-9": (db: DatabaseSync) => q(db, `SELECT v.variant_id FROM formal.text_variant v WHERE v.impact_level = 'calculation'
+                                           AND NOT EXISTS (SELECT 1 FROM formal.text_variant_component c WHERE c.variant_id = v.variant_id)`),
 };
 
 // ---------------------------------------------------------------- 用户库与跨库复核（可按快照过滤）

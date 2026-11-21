@@ -122,15 +122,23 @@ CREATE TABLE formal.variant_type (
   label             TEXT NOT NULL
 ) STRICT;
 
--- F13 text_variant（§2.3）
+-- F13 text_variant（§2.3；v1.0.6 E2-FIX A-5：读法、首选读法、影响等级；异文不作证据角色）
 CREATE TABLE formal.text_variant (
-  variant_id TEXT NOT NULL PRIMARY KEY,
-  type_code  TEXT NOT NULL REFERENCES variant_type(type_code),
-  passage_a  TEXT REFERENCES passage(passage_id),
-  edition_a  TEXT NOT NULL REFERENCES edition(edition_id),
-  passage_b  TEXT REFERENCES passage(passage_id),
-  edition_b  TEXT NOT NULL REFERENCES edition(edition_id),
-  CONSTRAINT "DB-F-13" CHECK (passage_a IS NOT NULL OR passage_b IS NOT NULL)
+  variant_id        TEXT NOT NULL PRIMARY KEY,
+  type_code         TEXT NOT NULL REFERENCES variant_type(type_code),
+  passage_a         TEXT REFERENCES passage(passage_id),
+  edition_a         TEXT NOT NULL REFERENCES edition(edition_id),
+  passage_b         TEXT REFERENCES passage(passage_id),
+  edition_b         TEXT NOT NULL REFERENCES edition(edition_id),
+  reading_a         TEXT,
+  reading_b         TEXT,
+  preferred_reading TEXT CONSTRAINT "DB-E-text_variant.preferred_reading" CHECK (preferred_reading IS NULL OR preferred_reading IN ('a','b')),
+  preferred_basis   TEXT,
+  impact_level      TEXT NOT NULL CONSTRAINT "DB-E-text_variant.impact_level" CHECK (impact_level IN ('none','wording_only','calculation')),
+  impact_note       TEXT,
+  CONSTRAINT "DB-F-13" CHECK (passage_a IS NOT NULL OR passage_b IS NOT NULL),
+  CONSTRAINT "DB-F-13b" CHECK (reading_a IS NOT NULL OR reading_b IS NOT NULL),
+  CONSTRAINT "DB-F-13c" CHECK (preferred_reading IS NULL OR preferred_basis IS NOT NULL)
 ) STRICT;
 
 -- F15 annotation_layer / annotation（§2.3）
@@ -206,13 +214,60 @@ CREATE TABLE formal.rule_component (
   CONSTRAINT "DB-F-12" CHECK (evidence_category <> 'C-A' OR is_calendar_anchor IS NOT NULL)
 ) STRICT;
 
--- F18 evidence_link（§2.5、R-I-4；evidence_role 四值暂按 Q-7）
+-- F18 证据—主张模型（§2.5、R-I-4；v1.0.6 E2-FIX A，取代 v1.0 的 evidence_link 四值角色）
+-- claim：可独立评价的具体主张，挂在子项下；condition 写命题成立条件（一般例外、条件不得写成反证）
+CREATE TABLE formal.claim (
+  claim_id     TEXT NOT NULL PRIMARY KEY,
+  component_id TEXT NOT NULL REFERENCES rule_component(component_id),
+  statement    TEXT NOT NULL,
+  condition    TEXT,
+  branch_id    TEXT CONSTRAINT "DB-F-03-claim" CHECK (branch_id IS NULL)
+) STRICT;
+CREATE INDEX formal.claim_component ON claim(component_id);
+-- evidence_link：Evidence ↔ claim，每个（证据, 主张）一行；直接 / 间接与论证角色是两个独立维度；适用范围在链接上，可信度用 evidence.confidence
 CREATE TABLE formal.evidence_link (
-  evidence_id   TEXT NOT NULL REFERENCES evidence(evidence_id),
-  component_id  TEXT NOT NULL REFERENCES rule_component(component_id),
-  evidence_role TEXT NOT NULL CONSTRAINT "DB-E-evidence_link.evidence_role" CHECK (evidence_role IN ('支持','反证','限定','异文记录')),
-  branch_id     TEXT CONSTRAINT "DB-F-03-evidence_link" CHECK (branch_id IS NULL),
-  PRIMARY KEY (evidence_id, component_id, evidence_role)
+  evidence_id TEXT NOT NULL REFERENCES evidence(evidence_id),
+  claim_id    TEXT NOT NULL REFERENCES claim(claim_id),
+  directness  TEXT NOT NULL CONSTRAINT "DB-E-evidence_link.directness" CHECK (directness IN ('direct','indirect')),
+  scope_note  TEXT,
+  branch_id   TEXT CONSTRAINT "DB-F-03-evidence_link" CHECK (branch_id IS NULL),
+  PRIMARY KEY (evidence_id, claim_id)
+) STRICT;
+-- evidence_link_role：一条链接可有多个论证角色（只有 支持 / 反证），各附说明
+CREATE TABLE formal.evidence_link_role (
+  evidence_id TEXT NOT NULL,
+  claim_id    TEXT NOT NULL,
+  role        TEXT NOT NULL CONSTRAINT "DB-E-evidence_link_role.role" CHECK (role IN ('支持','反证')),
+  role_note   TEXT NOT NULL CONSTRAINT "DB-F-18b" CHECK (length(trim(role_note)) > 0),
+  PRIMARY KEY (evidence_id, claim_id, role),
+  FOREIGN KEY (evidence_id, claim_id) REFERENCES evidence_link(evidence_id, claim_id)
+) STRICT;
+CREATE INDEX formal.evidence_link_role_claim ON evidence_link_role(claim_id, role);
+-- search_record：缺席检索（“未见”）；不是证据角色，不能充当支持或反证
+CREATE TABLE formal.search_record (
+  search_id             TEXT NOT NULL PRIMARY KEY,
+  claim_id              TEXT NOT NULL REFERENCES claim(claim_id),
+  search_scope          TEXT NOT NULL,
+  search_terms          TEXT NOT NULL,
+  searched_at           TEXT NOT NULL,
+  expected_find_premise TEXT NOT NULL,
+  outcome               TEXT NOT NULL CONSTRAINT "DB-E-search_record.outcome" CHECK (outcome IN ('未找到','找到')),
+  outcome_note          TEXT
+) STRICT;
+-- citation_record：引用行为记录；只评价引用本身，不改变被引主张的状态
+CREATE TABLE formal.citation_record (
+  citation_id       TEXT NOT NULL PRIMARY KEY,
+  passage_id        TEXT NOT NULL REFERENCES passage(passage_id),
+  cited_ref         TEXT NOT NULL,
+  verdict           TEXT NOT NULL CONSTRAINT "DB-E-citation_record.verdict" CHECK (verdict IN ('属实','不属实','未核验')),
+  basis_evidence_id TEXT REFERENCES evidence(evidence_id),
+  note              TEXT
+) STRICT;
+-- text_variant_evidence：异文登记所引用的证据（不进 evidence_link，不充当支持）
+CREATE TABLE formal.text_variant_evidence (
+  variant_id  TEXT NOT NULL REFERENCES text_variant(variant_id),
+  evidence_id TEXT NOT NULL REFERENCES evidence(evidence_id),
+  PRIMARY KEY (variant_id, evidence_id)
 ) STRICT;
 
 -- F14 text_variant_component（§2.3）
@@ -821,8 +876,18 @@ CREATE TRIGGER formal.rule_no_update BEFORE UPDATE ON rule BEGIN SELECT RAISE(AB
 CREATE TRIGGER formal.rule_no_delete BEFORE DELETE ON rule BEGIN SELECT RAISE(ABORT, '[DB-I-rule] 正式库只读、只追加，拒绝 DELETE'); END;
 CREATE TRIGGER formal.rule_component_no_update BEFORE UPDATE ON rule_component BEGIN SELECT RAISE(ABORT, '[DB-I-rule_component] 正式库只读、只追加，拒绝 UPDATE'); END;
 CREATE TRIGGER formal.rule_component_no_delete BEFORE DELETE ON rule_component BEGIN SELECT RAISE(ABORT, '[DB-I-rule_component] 正式库只读、只追加，拒绝 DELETE'); END;
+CREATE TRIGGER formal.claim_no_update BEFORE UPDATE ON claim BEGIN SELECT RAISE(ABORT, '[DB-I-claim] 正式库只读、只追加，拒绝 UPDATE'); END;
+CREATE TRIGGER formal.claim_no_delete BEFORE DELETE ON claim BEGIN SELECT RAISE(ABORT, '[DB-I-claim] 正式库只读、只追加，拒绝 DELETE'); END;
 CREATE TRIGGER formal.evidence_link_no_update BEFORE UPDATE ON evidence_link BEGIN SELECT RAISE(ABORT, '[DB-I-evidence_link] 正式库只读、只追加，拒绝 UPDATE'); END;
 CREATE TRIGGER formal.evidence_link_no_delete BEFORE DELETE ON evidence_link BEGIN SELECT RAISE(ABORT, '[DB-I-evidence_link] 正式库只读、只追加，拒绝 DELETE'); END;
+CREATE TRIGGER formal.evidence_link_role_no_update BEFORE UPDATE ON evidence_link_role BEGIN SELECT RAISE(ABORT, '[DB-I-evidence_link_role] 正式库只读、只追加，拒绝 UPDATE'); END;
+CREATE TRIGGER formal.evidence_link_role_no_delete BEFORE DELETE ON evidence_link_role BEGIN SELECT RAISE(ABORT, '[DB-I-evidence_link_role] 正式库只读、只追加，拒绝 DELETE'); END;
+CREATE TRIGGER formal.search_record_no_update BEFORE UPDATE ON search_record BEGIN SELECT RAISE(ABORT, '[DB-I-search_record] 正式库只读、只追加，拒绝 UPDATE'); END;
+CREATE TRIGGER formal.search_record_no_delete BEFORE DELETE ON search_record BEGIN SELECT RAISE(ABORT, '[DB-I-search_record] 正式库只读、只追加，拒绝 DELETE'); END;
+CREATE TRIGGER formal.citation_record_no_update BEFORE UPDATE ON citation_record BEGIN SELECT RAISE(ABORT, '[DB-I-citation_record] 正式库只读、只追加，拒绝 UPDATE'); END;
+CREATE TRIGGER formal.citation_record_no_delete BEFORE DELETE ON citation_record BEGIN SELECT RAISE(ABORT, '[DB-I-citation_record] 正式库只读、只追加，拒绝 DELETE'); END;
+CREATE TRIGGER formal.text_variant_evidence_no_update BEFORE UPDATE ON text_variant_evidence BEGIN SELECT RAISE(ABORT, '[DB-I-text_variant_evidence] 正式库只读、只追加，拒绝 UPDATE'); END;
+CREATE TRIGGER formal.text_variant_evidence_no_delete BEFORE DELETE ON text_variant_evidence BEGIN SELECT RAISE(ABORT, '[DB-I-text_variant_evidence] 正式库只读、只追加，拒绝 DELETE'); END;
 CREATE TRIGGER formal.text_variant_component_no_update BEFORE UPDATE ON text_variant_component BEGIN SELECT RAISE(ABORT, '[DB-I-text_variant_component] 正式库只读、只追加，拒绝 UPDATE'); END;
 CREATE TRIGGER formal.text_variant_component_no_delete BEFORE DELETE ON text_variant_component BEGIN SELECT RAISE(ABORT, '[DB-I-text_variant_component] 正式库只读、只追加，拒绝 DELETE'); END;
 CREATE TRIGGER formal.blocker_no_update BEFORE UPDATE ON blocker BEGIN SELECT RAISE(ABORT, '[DB-I-blocker] 正式库只读、只追加，拒绝 UPDATE'); END;

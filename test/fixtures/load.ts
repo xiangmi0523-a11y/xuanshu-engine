@@ -6,7 +6,7 @@ import type { EngineContext } from "../../db/pipeline.js";
 import { loadStatic, loadTables, readRepo, sha256Of } from "../helpers/load.js";
 
 type Row = Record<string, string | number | null>;
-interface Rec {
+export interface Rec {
   t: string; r: Row; sim?: string | null; note?: string; content?: Record<string, unknown>; variant?: string; basis?: string[];
   replaces?: { t: string; match: Row };
 }
@@ -75,12 +75,15 @@ const ins = (db: DatabaseSync, schema: string, t: string, row: Row) => {
   db.prepare(`INSERT INTO ${schema}.${t} (${cols.map((c) => `"${c}"`).join(", ")}) VALUES (${cols.map(() => "?").join(", ")})`).run(...cols.map((c) => row[c]!));
 };
 
+/** 测试变造：排除某些夹具记录、追加记录（只用于构造反向用例） */
+export interface WorldEdit { exclude?: (rec: { t: string; r: Row }) => boolean; extra?: Rec[] }
+
 /** 建一个场景的隔离内存库并加载夹具 */
-export function loadWorld(scenario: string, db: DatabaseSync = openMemoryDb()): LoadedWorld {
+export function loadWorld(scenario: string, db: DatabaseSync = openMemoryDb(), edit: WorldEdit = {}): LoadedWorld {
   if (!isMemoryDb(db)) throw new Error("[DB-G-03] 夹具只允许写入 :memory: 库");
   const w = world();
   const sc = w.scenarios[scenario]!;
-  const recs = selectRecords(w, scenario);
+  const recs = [...selectRecords(w, scenario).filter((r) => !edit.exclude?.(r)), ...(edit.extra ?? [])];
   for (const rel of w.releases.filter((r) => sc.releases.includes(String(r["data_release"])))) ins(db, "formal", "data_release", rel);
   const contents = new Map<string, Record<string, unknown>>();
   const sims: LoadedWorld["sims"] = [];

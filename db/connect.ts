@@ -35,17 +35,22 @@ export interface OpenOptions {
   empty?: boolean;
   /** 只建表（去掉触发器与视图）：供 DB-N / DB-E / DB-K 生成矩阵单独检验列级约束（触发器另有专门用例） */
   tablesOnly?: boolean;
+  /** 只供变异测试：以改写后的 DDL 文本建库（仍为内存库），用于证明矩阵与双向比对在约束被删除时会失败 */
+  sql?: { formal: string; user: string };
 }
 const stripToTables = (sqlText: string) =>
   sqlText.replace(/^CREATE TRIGGER[\s\S]*?END;$/gm, "").replace(/^CREATE (?:TEMP )?VIEW[\s\S]*?;$/gm, "");
 
 /** 打开一个测试用内存库：main = 用户库，formal = 正式库（同为内存库）。 */
+/** 读取当前 DDL 文本（变异测试据此改写） */
+export const ddlText = (): { formal: string; user: string } => ({ ...sql() });
+
 export function openMemoryDb(opts: OpenOptions = {}): DatabaseSync {
   const db = new DatabaseSync(":memory:", { enableForeignKeyConstraints: true, allowExtension: false, enableDoubleQuotedStringLiterals: false });
   db.exec("PRAGMA temp_store = MEMORY");
   db.exec("ATTACH DATABASE ':memory:' AS formal");
   if (!opts.empty) {
-    const s = sql();
+    const s = opts.sql ?? sql();
     db.exec(opts.tablesOnly ? stripToTables(s.formal) : s.formal);
     db.exec(opts.tablesOnly ? stripToTables(s.user) : s.user);
     if (!opts.tablesOnly) db.exec(TEMP_VIEWS);
