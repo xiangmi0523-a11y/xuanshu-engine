@@ -1,0 +1,169 @@
+{
+ "version": "jcs-1",
+ "spec": "E2 审核清单 §6.2、§6.4",
+ "independent": "数据仓库独立实现生成，不调用引擎代码",
+ "vectors": [
+  {
+   "id": "GV-01",
+   "desc": "键序：ASCII、CJK、补充平面键混排（UTF-16 码元序：补充平面键排在 U+E000 以上键之前）",
+   "input": "{\"z\": 1, \"a\": 2, \"中\": 3, \"𠀀\": 4, \"ａ\": 5, \"A\": 6, \"é\": 7, \"aa\": 8, \"\": 9}",
+   "set_paths": [],
+   "canonical": "{\"\":9,\"A\":6,\"a\":2,\"aa\":8,\"z\":1,\"é\":7,\"中\":3,\"𠀀\":4,\"ａ\":5}",
+   "sha256": "2e7904069e793f47fc70f1d5e02ff1125d3976ef466fcabc7c8cdcfcd7cbd3f5"
+  },
+  {
+   "id": "GV-02",
+   "desc": "Unicode：预组合与分解形式、CJK 兼容字均原样保留，不做规范化",
+   "input": "{\"precomposed\": \"é\", \"decomposed\": \"é\", \"compat\": \"﨑\", \"é\": \"key-precomposed\", \"é\": \"key-decomposed\"}",
+   "set_paths": [],
+   "canonical": "{\"compat\":\"﨑\",\"decomposed\":\"é\",\"é\":\"key-decomposed\",\"precomposed\":\"é\",\"é\":\"key-precomposed\"}",
+   "sha256": "56862e7d241f03828c4edab01181d0934be143faca82f56befcc40510a30bb59"
+  },
+  {
+   "id": "GV-03",
+   "desc": "转义：引号、反斜杠、控制字符；DEL、U+2028、U+2029、/ 不转义",
+   "input": "{\"s\": \"q\\\" b\\\\ \\u0000\\u0001\\b\\t\\n\\u000b\\f\\r\\u001f \\u007f    /\"}",
+   "set_paths": [],
+   "canonical": "{\"s\":\"q\\\" b\\\\ \\u0000\\u0001\\b\\t\\n\\u000b\\f\\r\\u001f     /\"}",
+   "sha256": "fc0c0331e1a60c2d67bc260d9bd659ea3a25268ebb6a8b710e62a1181b34c030"
+  },
+  {
+   "id": "GV-04",
+   "desc": "数值：安全整数边界与零；小数一律以定标十进制字符串表示 dec(1/3/6)",
+   "input": "{\"max\": 9007199254740991, \"min\": -9007199254740991, \"zero\": 0, \"dec1\": \"4.5\", \"dec3\": \"0.125\", \"dec6\": \"116.400000\"}",
+   "set_paths": [],
+   "canonical": "{\"dec1\":\"4.5\",\"dec3\":\"0.125\",\"dec6\":\"116.400000\",\"max\":9007199254740991,\"min\":-9007199254740991,\"zero\":0}",
+   "sha256": "9068c0c39781a276cee9e600ab6dffacaef856cc3e3c389a00f884d23f752e5c"
+  },
+  {
+   "id": "GV-05",
+   "desc": "null 与省略：契约明定为 null 的字段写 null；不适用的字段省略（省略不等于写 null）",
+   "input": "{\"luck_cycle\": {\"value\": null, \"status\": \"DEGRADED_LUCK_OMITTED\", \"reason\": \"MISSING_GENDER\"}, \"a\": null}",
+   "set_paths": [],
+   "canonical": "{\"a\":null,\"luck_cycle\":{\"reason\":\"MISSING_GENDER\",\"status\":\"DEGRADED_LUCK_OMITTED\",\"value\":null}}",
+   "sha256": "a439d9ff454db637860377d69c103678208b4b2d3b4b87067622eb475127413f"
+  },
+  {
+   "id": "GV-06",
+   "desc": "有序与集合数组：ordered 保持原序；set 按元素规范化文本升序",
+   "input": "{\"ordered\": [3, 1, 2], \"set\": [\"丙\", \"乙\", \"甲\", \"10\", \"9\"]}",
+   "set_paths": [
+    [
+     "set"
+    ]
+   ],
+   "canonical": "{\"ordered\":[3,1,2],\"set\":[\"10\",\"9\",\"丙\",\"乙\",\"甲\"]}",
+   "sha256": "8d9b4750e40ebac541ed2e17ca621725056ff1c400274702fe40f16f23304d46"
+  },
+  {
+   "id": "GV-07",
+   "desc": "E2E-BZ-1 完整 input 对象（input_hash）",
+   "input": "{\n  \"tz_resolution\": {\n    \"offset_source\": \"契约 §11.1 内地夏令时区间（1990-04-15～09-16）\",\n    \"tz_table_version\": \"未记录\",\n    \"tzdata_version\": \"未记录\",\n    \"dst_flag\": true,\n    \"utc_offset_seconds\": 32400,\n    \"tz_id\": \"Asia/Shanghai\"\n  },\n  \"normalizer_version\": \"e2-norm-1\",\n  \"normalized_payload\": {\n    \"utc8_civil\": \"1990-06-15T13:30\",\n    \"utc_instant\": \"1990-06-15T05:30:00.000Z\",\n    \"v\": 1\n  },\n  \"raw_payload\": {\n    \"place_name\": \"北京\",\n    \"latitude\": \"39.900000\",\n    \"longitude\": \"116.400000\",\n    \"dst_included\": true,\n    \"tz_id\": \"Asia/Shanghai\",\n    \"gender\": \"UNKNOWN\",\n    \"time_precision\": \"MINUTE\",\n    \"civil_datetime\": \"1990-06-15T14:30\",\n    \"v\": 1\n  },\n  \"domain\": \"BAZI\",\n  \"v\": 1\n}",
+   "set_paths": [],
+   "canonical": "{\"domain\":\"BAZI\",\"normalized_payload\":{\"utc8_civil\":\"1990-06-15T13:30\",\"utc_instant\":\"1990-06-15T05:30:00.000Z\",\"v\":1},\"normalizer_version\":\"e2-norm-1\",\"raw_payload\":{\"civil_datetime\":\"1990-06-15T14:30\",\"dst_included\":true,\"gender\":\"UNKNOWN\",\"latitude\":\"39.900000\",\"longitude\":\"116.400000\",\"place_name\":\"北京\",\"time_precision\":\"MINUTE\",\"tz_id\":\"Asia/Shanghai\",\"v\":1},\"tz_resolution\":{\"dst_flag\":true,\"offset_source\":\"契约 §11.1 内地夏令时区间（1990-04-15～09-16）\",\"tz_id\":\"Asia/Shanghai\",\"tz_table_version\":\"未记录\",\"tzdata_version\":\"未记录\",\"utc_offset_seconds\":32400},\"v\":1}",
+   "sha256": "c4f16ea67898c151c6270f0e0372b30164662d5a8c5966fcb4b24732e5ef33ce"
+  },
+  {
+   "id": "GV-08",
+   "desc": "E2E-LY-1 完整 input 对象（input_hash）",
+   "input": "{\n  \"tz_resolution\": {\n    \"offset_source\": \"契约 §11.1 境内 UTC+8\",\n    \"tz_table_version\": \"未记录\",\n    \"tzdata_version\": \"未记录\",\n    \"dst_flag\": false,\n    \"utc_offset_seconds\": 28800,\n    \"tz_id\": \"Asia/Shanghai\"\n  },\n  \"normalizer_version\": \"e2-norm-1\",\n  \"normalized_payload\": {\n    \"utc8_civil\": \"2026-11-21T12:00\",\n    \"utc_instant\": \"2026-11-21T04:00:00.000Z\",\n    \"v\": 1\n  },\n  \"raw_payload\": {\n    \"yao\": [\n      7,\n      8,\n      9,\n      6,\n      7,\n      8\n    ],\n    \"method\": \"coins\",\n    \"tz_id\": \"Asia/Shanghai\",\n    \"cast_datetime\": \"2026-11-21T12:00\",\n    \"v\": 1\n  },\n  \"domain\": \"LIUYAO\",\n  \"v\": 1\n}",
+   "set_paths": [],
+   "canonical": "{\"domain\":\"LIUYAO\",\"normalized_payload\":{\"utc8_civil\":\"2026-11-21T12:00\",\"utc_instant\":\"2026-11-21T04:00:00.000Z\",\"v\":1},\"normalizer_version\":\"e2-norm-1\",\"raw_payload\":{\"cast_datetime\":\"2026-11-21T12:00\",\"method\":\"coins\",\"tz_id\":\"Asia/Shanghai\",\"v\":1,\"yao\":[7,8,9,6,7,8]},\"tz_resolution\":{\"dst_flag\":false,\"offset_source\":\"契约 §11.1 境内 UTC+8\",\"tz_id\":\"Asia/Shanghai\",\"tz_table_version\":\"未记录\",\"tzdata_version\":\"未记录\",\"utc_offset_seconds\":28800},\"v\":1}",
+   "sha256": "7e1fb524a025a0fde5aa9d63c68953974dd012bec4a4c539cc1be6ce14fe54d9"
+  },
+  {
+   "id": "GV-09",
+   "desc": "E2E-BZ-1 config 对象（config_hash；params 按 param_id 升序，含 Q-12 apply_mode）",
+   "input": "{\n  \"params\": [\n    {\n      \"apply_mode\": \"applied\",\n      \"value_source\": \"version_locked\",\n      \"value\": \"ye_zi_b\",\n      \"param_id\": \"CFG-01\"\n    },\n    {\n      \"apply_mode\": \"applied\",\n      \"value_source\": \"follows_param\",\n      \"value\": \"clock\",\n      \"param_id\": \"CFG-01T\"\n    },\n    {\n      \"apply_mode\": \"applied\",\n      \"value_source\": \"user_selected\",\n      \"value\": \"false\",\n      \"param_id\": \"CFG-02\"\n    },\n    {\n      \"apply_mode\": \"applied\",\n      \"value_source\": \"approved_default\",\n      \"value\": \"lichun\",\n      \"param_id\": \"CFG-03\"\n    },\n    {\n      \"apply_mode\": \"stored_only\",\n      \"value_source\": \"user_selected\",\n      \"value\": \"yh_yuelu\",\n      \"param_id\": \"CFG-04\"\n    },\n    {\n      \"apply_mode\": \"stored_only\",\n      \"value_source\": \"approved_default\",\n      \"value\": \"jieqi_day_1\",\n      \"param_id\": \"CFG-04C\"\n    },\n    {\n      \"apply_mode\": \"applied\",\n      \"value_source\": \"approved_default\",\n      \"value\": \"yuan_hai_static\",\n      \"param_id\": \"CFG-05\"\n    },\n    {\n      \"apply_mode\": \"applied\",\n      \"value_source\": \"approved_default\",\n      \"value\": \"wu\",\n      \"param_id\": \"CFG-05S\"\n    },\n    {\n      \"apply_mode\": \"applied\",\n      \"value_source\": \"approved_default\",\n      \"value\": \"none\",\n      \"param_id\": \"CFG-05W\"\n    },\n    {\n      \"apply_mode\": \"applied\",\n      \"value_source\": \"approved_default\",\n      \"value\": \"iana\",\n      \"param_id\": \"CFG-14\"\n    },\n    {\n      \"apply_mode\": \"applied\",\n      \"value_source\": \"approved_default\",\n      \"value\": \"iana\",\n      \"param_id\": \"CFG-15\"\n    }\n  ],\n  \"registry_version\": \"contract-v1.0-P-8\",\n  \"module\": \"BAZI\",\n  \"v\": 1\n}",
+   "set_paths": [],
+   "canonical": "{\"module\":\"BAZI\",\"params\":[{\"apply_mode\":\"applied\",\"param_id\":\"CFG-01\",\"value\":\"ye_zi_b\",\"value_source\":\"version_locked\"},{\"apply_mode\":\"applied\",\"param_id\":\"CFG-01T\",\"value\":\"clock\",\"value_source\":\"follows_param\"},{\"apply_mode\":\"applied\",\"param_id\":\"CFG-02\",\"value\":\"false\",\"value_source\":\"user_selected\"},{\"apply_mode\":\"applied\",\"param_id\":\"CFG-03\",\"value\":\"lichun\",\"value_source\":\"approved_default\"},{\"apply_mode\":\"stored_only\",\"param_id\":\"CFG-04\",\"value\":\"yh_yuelu\",\"value_source\":\"user_selected\"},{\"apply_mode\":\"stored_only\",\"param_id\":\"CFG-04C\",\"value\":\"jieqi_day_1\",\"value_source\":\"approved_default\"},{\"apply_mode\":\"applied\",\"param_id\":\"CFG-05\",\"value\":\"yuan_hai_static\",\"value_source\":\"approved_default\"},{\"apply_mode\":\"applied\",\"param_id\":\"CFG-05S\",\"value\":\"wu\",\"value_source\":\"approved_default\"},{\"apply_mode\":\"applied\",\"param_id\":\"CFG-05W\",\"value\":\"none\",\"value_source\":\"approved_default\"},{\"apply_mode\":\"applied\",\"param_id\":\"CFG-14\",\"value\":\"iana\",\"value_source\":\"approved_default\"},{\"apply_mode\":\"applied\",\"param_id\":\"CFG-15\",\"value\":\"iana\",\"value_source\":\"approved_default\"}],\"registry_version\":\"contract-v1.0-P-8\",\"v\":1}",
+   "sha256": "4e77efeebc91be7ce94e0d11efa63947dfd46fa981c86a8650e372f33f45df2b"
+  },
+  {
+   "id": "GV-10",
+   "desc": "E2E-LY-1 config 对象（空参数集写 []，config_hash）",
+   "input": "{\n  \"params\": [],\n  \"registry_version\": \"contract-v1.0-P-8\",\n  \"module\": \"LIUYAO\",\n  \"v\": 1\n}",
+   "set_paths": [],
+   "canonical": "{\"module\":\"LIUYAO\",\"params\":[],\"registry_version\":\"contract-v1.0-P-8\",\"v\":1}",
+   "sha256": "817fb18b46a65d477fdb05909449dda3629f2794a690a4cd4fff8a7352ed1463"
+  },
+  {
+   "id": "GV-11",
+   "desc": "八字 result_payload 样例（result_hash）",
+   "input": "{\n  \"year_pillar\": {\n    \"value\": \"庚午\",\n    \"ambiguous\": false\n  },\n  \"v\": 1,\n  \"shishen\": {\n    \"year\": {\n      \"stem\": \"劫财\",\n      \"hidden\": [\n        \"七杀\",\n        \"偏印\"\n      ]\n    },\n    \"month\": {\n      \"stem\": \"伤官\",\n      \"hidden\": [\n        \"七杀\",\n        \"偏印\"\n      ]\n    },\n    \"hour\": {\n      \"stem\": \"偏财\",\n      \"hidden\": [\n        \"偏印\",\n        \"七杀\",\n        \"偏财\"\n      ]\n    },\n    \"day\": {\n      \"stem\": \"日主\",\n      \"hidden\": [\n        \"伤官\",\n        \"正财\"\n      ]\n    }\n  },\n  \"result_scope\": [\n    \"canggan\",\n    \"changsheng\",\n    \"luck_cycle\",\n    \"pillars\",\n    \"shishen\"\n  ],\n  \"requires_user_confirmation\": false,\n  \"notices\": [],\n  \"month_pillar\": {\n    \"value\": \"壬午\",\n    \"ambiguous\": false\n  },\n  \"luck_cycle\": {\n    \"value\": null,\n    \"status\": \"DEGRADED_LUCK_OMITTED\",\n    \"reason\": \"MISSING_GENDER\"\n  },\n  \"hour_pillar\": {\n    \"value\": \"乙未\",\n    \"ambiguous\": false\n  },\n  \"day_pillar\": {\n    \"value\": \"辛亥\",\n    \"ambiguous\": false\n  },\n  \"changsheng\": {\n    \"year\": \"病\",\n    \"month\": \"病\",\n    \"layer\": \"术数传承层\",\n    \"hour\": \"衰\",\n    \"day\": \"沐浴\"\n  },\n  \"canggan\": {\n    \"year\": [\n      \"丁\",\n      \"己\"\n    ],\n    \"month\": [\n      \"丁\",\n      \"己\"\n    ],\n    \"layer\": \"现代整理层\",\n    \"hour\": [\n      \"己\",\n      \"丁\",\n      \"乙\"\n    ],\n    \"day\": [\n      \"壬\",\n      \"甲\"\n    ]\n  }\n}",
+   "set_paths": [],
+   "canonical": "{\"canggan\":{\"day\":[\"壬\",\"甲\"],\"hour\":[\"己\",\"丁\",\"乙\"],\"layer\":\"现代整理层\",\"month\":[\"丁\",\"己\"],\"year\":[\"丁\",\"己\"]},\"changsheng\":{\"day\":\"沐浴\",\"hour\":\"衰\",\"layer\":\"术数传承层\",\"month\":\"病\",\"year\":\"病\"},\"day_pillar\":{\"ambiguous\":false,\"value\":\"辛亥\"},\"hour_pillar\":{\"ambiguous\":false,\"value\":\"乙未\"},\"luck_cycle\":{\"reason\":\"MISSING_GENDER\",\"status\":\"DEGRADED_LUCK_OMITTED\",\"value\":null},\"month_pillar\":{\"ambiguous\":false,\"value\":\"壬午\"},\"notices\":[],\"requires_user_confirmation\":false,\"result_scope\":[\"canggan\",\"changsheng\",\"luck_cycle\",\"pillars\",\"shishen\"],\"shishen\":{\"day\":{\"hidden\":[\"伤官\",\"正财\"],\"stem\":\"日主\"},\"hour\":{\"hidden\":[\"偏印\",\"七杀\",\"偏财\"],\"stem\":\"偏财\"},\"month\":{\"hidden\":[\"七杀\",\"偏印\"],\"stem\":\"伤官\"},\"year\":{\"hidden\":[\"七杀\",\"偏印\"],\"stem\":\"劫财\"}},\"v\":1,\"year_pillar\":{\"ambiguous\":false,\"value\":\"庚午\"}}",
+   "sha256": "9bd05a1d41b42ae84004ee28915bf3abb57f5133b8650f83e9c72f0aa69d735e"
+  },
+  {
+   "id": "GV-12",
+   "desc": "六爻 result_payload 样例（含变卦，result_hash）",
+   "input": "{\n  \"xunkong_branches\": [\n    \"辰\",\n    \"巳\"\n  ],\n  \"v\": 1,\n  \"result_scope\": [\n    \"bagong\",\n    \"bian\",\n    \"liuqin\",\n    \"liushen\",\n    \"najia\",\n    \"shiying\",\n    \"xunkong\"\n  ],\n  \"notices\": [],\n  \"day_ganzhi\": \"己亥\",\n  \"bian\": {\n    \"name\": \"泽雷随\",\n    \"lines\": [\n      {\n        \"yang\": true,\n        \"najia\": \"庚子\",\n        \"liuqin\": \"兄弟\"\n      },\n      {\n        \"yang\": false,\n        \"najia\": \"庚寅\",\n        \"liuqin\": \"子孙\"\n      },\n      {\n        \"yang\": false,\n        \"najia\": \"庚辰\",\n        \"liuqin\": \"官鬼\"\n      },\n      {\n        \"yang\": true,\n        \"najia\": \"丁亥\",\n        \"liuqin\": \"兄弟\"\n      },\n      {\n        \"yang\": true,\n        \"najia\": \"丁酉\",\n        \"liuqin\": \"父母\"\n      },\n      {\n        \"yang\": false,\n        \"najia\": \"丁未\",\n        \"liuqin\": \"官鬼\"\n      }\n    ]\n  },\n  \"ben\": {\n    \"ying\": 6,\n    \"shi\": 3,\n    \"position\": \"三世\",\n    \"palace\": \"坎\",\n    \"name\": \"水火既济\",\n    \"lines\": [\n      {\n        \"yao\": 7,\n        \"xunkong\": false,\n        \"najia\": \"己卯\",\n        \"liushen\": \"螣蛇\",\n        \"liuqin\": \"子孙\"\n      },\n      {\n        \"yao\": 8,\n        \"xunkong\": false,\n        \"najia\": \"己丑\",\n        \"liushen\": \"白虎\",\n        \"liuqin\": \"官鬼\"\n      },\n      {\n        \"yao\": 9,\n        \"xunkong\": false,\n        \"najia\": \"己亥\",\n        \"liushen\": \"玄武\",\n        \"liuqin\": \"兄弟\"\n      },\n      {\n        \"yao\": 6,\n        \"xunkong\": false,\n        \"najia\": \"戊申\",\n        \"liushen\": \"青龙\",\n        \"liuqin\": \"父母\"\n      },\n      {\n        \"yao\": 7,\n        \"xunkong\": false,\n        \"najia\": \"戊戌\",\n        \"liushen\": \"朱雀\",\n        \"liuqin\": \"官鬼\"\n      },\n      {\n        \"yao\": 8,\n        \"xunkong\": false,\n        \"najia\": \"戊子\",\n        \"liushen\": \"勾陈\",\n        \"liuqin\": \"兄弟\"\n      }\n    ]\n  }\n}",
+   "set_paths": [],
+   "canonical": "{\"ben\":{\"lines\":[{\"liuqin\":\"子孙\",\"liushen\":\"螣蛇\",\"najia\":\"己卯\",\"xunkong\":false,\"yao\":7},{\"liuqin\":\"官鬼\",\"liushen\":\"白虎\",\"najia\":\"己丑\",\"xunkong\":false,\"yao\":8},{\"liuqin\":\"兄弟\",\"liushen\":\"玄武\",\"najia\":\"己亥\",\"xunkong\":false,\"yao\":9},{\"liuqin\":\"父母\",\"liushen\":\"青龙\",\"najia\":\"戊申\",\"xunkong\":false,\"yao\":6},{\"liuqin\":\"官鬼\",\"liushen\":\"朱雀\",\"najia\":\"戊戌\",\"xunkong\":false,\"yao\":7},{\"liuqin\":\"兄弟\",\"liushen\":\"勾陈\",\"najia\":\"戊子\",\"xunkong\":false,\"yao\":8}],\"name\":\"水火既济\",\"palace\":\"坎\",\"position\":\"三世\",\"shi\":3,\"ying\":6},\"bian\":{\"lines\":[{\"liuqin\":\"兄弟\",\"najia\":\"庚子\",\"yang\":true},{\"liuqin\":\"子孙\",\"najia\":\"庚寅\",\"yang\":false},{\"liuqin\":\"官鬼\",\"najia\":\"庚辰\",\"yang\":false},{\"liuqin\":\"兄弟\",\"najia\":\"丁亥\",\"yang\":true},{\"liuqin\":\"父母\",\"najia\":\"丁酉\",\"yang\":true},{\"liuqin\":\"官鬼\",\"najia\":\"丁未\",\"yang\":false}],\"name\":\"泽雷随\"},\"day_ganzhi\":\"己亥\",\"notices\":[],\"result_scope\":[\"bagong\",\"bian\",\"liuqin\",\"liushen\",\"najia\",\"shiying\",\"xunkong\"],\"v\":1,\"xunkong_branches\":[\"辰\",\"巳\"]}",
+   "sha256": "04a03eb2e6a69489f57c464444dac41d947604376561114f3eafec75968b1ce3"
+  },
+  {
+   "id": "GV-13",
+   "desc": "resolved_context 样例（按 item_kind、key 升序的数组，data_fingerprint）",
+   "input": "[\n  {\n    \"value\": \"小暑@1990-07-07T09:00:29.000Z\",\n    \"key\": \"jie\",\n    \"item_kind\": \"jieqi_next\"\n  },\n  {\n    \"value\": \"芒种@1990-06-05T22:46:18.000Z\",\n    \"key\": \"jie\",\n    \"item_kind\": \"jieqi_prev\"\n  },\n  {\n    \"content_hash\": \"374922ef04e105f61fc7fd5e16966b6ae4584d39bf1f1abe39d0b38dc0fc3d89\",\n    \"version\": \"B4-22\",\n    \"key\": \"day_pillar\",\n    \"item_kind\": \"table_version\"\n  },\n  {\n    \"content_hash\": \"69a3215524381f96b212bc682416a3da47d9de4f286fa4ef14ce9ed03ee616e4\",\n    \"version\": \"B4-22\",\n    \"key\": \"jieqi\",\n    \"item_kind\": \"table_version\"\n  }\n]",
+   "set_paths": [],
+   "canonical": "[{\"item_kind\":\"jieqi_next\",\"key\":\"jie\",\"value\":\"小暑@1990-07-07T09:00:29.000Z\"},{\"item_kind\":\"jieqi_prev\",\"key\":\"jie\",\"value\":\"芒种@1990-06-05T22:46:18.000Z\"},{\"content_hash\":\"374922ef04e105f61fc7fd5e16966b6ae4584d39bf1f1abe39d0b38dc0fc3d89\",\"item_kind\":\"table_version\",\"key\":\"day_pillar\",\"version\":\"B4-22\"},{\"content_hash\":\"69a3215524381f96b212bc682416a3da47d9de4f286fa4ef14ce9ed03ee616e4\",\"item_kind\":\"table_version\",\"key\":\"jieqi\",\"version\":\"B4-22\"}]",
+   "sha256": "459b86176449a7a651a014fccd60820a891f803eccedc74851c20e7307e6e9ce"
+  },
+  {
+   "id": "GV-14",
+   "desc": "拒绝集：重复键、孤立代理、NaN/Infinity、-0、超界整数、非整数",
+   "rejects": [
+    {
+     "input": "{\"a\": 1, \"a\": 2}",
+     "reason": "duplicate_key"
+    },
+    {
+     "input": "{\"x\": {\"k\": 1, \"k\": 1}}",
+     "reason": "duplicate_key"
+    },
+    {
+     "input": "{\"a\": \"\\ud800\"}",
+     "reason": "lone_surrogate"
+    },
+    {
+     "input": "{\"\\udc00\": 1}",
+     "reason": "lone_surrogate"
+    },
+    {
+     "input": "{\"a\": NaN}",
+     "reason": "nan_or_infinity"
+    },
+    {
+     "input": "{\"a\": Infinity}",
+     "reason": "nan_or_infinity"
+    },
+    {
+     "input": "{\"a\": -0}",
+     "reason": "negative_zero"
+    },
+    {
+     "input": "{\"a\": 9007199254740992}",
+     "reason": "unsafe_integer"
+    },
+    {
+     "input": "{\"a\": -9007199254740992}",
+     "reason": "unsafe_integer"
+    },
+    {
+     "input": "{\"a\": 1.5}",
+     "reason": "non_integer"
+    },
+    {
+     "input": "{\"a\": 1e2}",
+     "reason": "non_integer"
+    },
+    {
+     "input": "{\"a\": 1.0}",
+     "reason": "non_integer"
+    }
+   ]
+  }
+ ]
+}

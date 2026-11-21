@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 
 let bad = 0;
-for (const sub of ["frozen", "static"]) {
+for (const sub of ["frozen", "static", "contract"]) {
   const dir = new URL(`../data/${sub}/`, import.meta.url);
   const manifest = JSON.parse(readFileSync(new URL("MANIFEST.json", dir), "utf8"));
   for (const [name, entry] of Object.entries(manifest.files)) {
@@ -27,6 +27,16 @@ for (const sub of ["frozen", "static"]) {
     const got = createHash("sha256").update(readFileSync(new URL(`../${m.oracle.path}`, import.meta.url))).digest("hex");
     if (got === m.oracle.sha256) console.log(`✅ ${m.oracle.path} 独立基准哈希一致`);
     else { console.log(`❌ ${m.oracle.path} 独立基准哈希不符：登记 ${m.oracle.sha256.slice(0, 12)}… 实际 ${got.slice(0, 12)}…`); bad++; }
+  }
+}
+{
+  // jcs-1 金标向量（审核清单 §6.4(6)）：数据仓库独立生成，引擎逐字节复制
+  const m = JSON.parse(readFileSync(new URL("../data/contract/MANIFEST.json", import.meta.url), "utf8"));
+  if (!m.golden?.path || !m.golden?.sha256) { console.log("❌ contract/MANIFEST.json 未登记 jcs-1 金标 golden"); bad++; }
+  else {
+    const got = createHash("sha256").update(readFileSync(new URL(`../${m.golden.path}`, import.meta.url))).digest("hex");
+    if (got === m.golden.sha256) console.log(`✅ ${m.golden.path} jcs-1 金标哈希一致`);
+    else { console.log(`❌ ${m.golden.path} jcs-1 金标哈希不符：登记 ${m.golden.sha256.slice(0, 12)}… 实际 ${got.slice(0, 12)}…`); bad++; }
   }
 }
 process.exit(bad ? 1 : 0);

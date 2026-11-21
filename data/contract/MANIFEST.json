@@ -1,0 +1,15 @@
+{
+  "note": "契约常量副本（只读）：来自 xuanshu-data constants.toml，供 DDL 生成脚本读取 [cfg01] locked_value（审核清单 §8.1；E2 实施授权书 Q-8）。数据仓库 verify.py 核对该值与契约 §13.3、P-8.1 一致。",
+  "files": {
+    "constants.toml": {
+      "sha256": "bbf2758015e4ab085bc18c86de1a96d92a56d3ae7674bab42f920761daee4a18",
+      "decision": "N-6（[cfg01]）",
+      "source": "xuanshu-data 分支 e2-impl-data 82be36f"
+    }
+  },
+  "golden": {
+    "path": "vectors/golden_jcs1.json",
+    "sha256": "96e8fa780e21ef65fd97276c2e2f48d5a7ac4d2aee4278db2569e14feda38d55",
+    "source": "xuanshu-data 分支 e2-impl-data 8926500：crosscheck/jcs1/golden_jcs1.json（独立生成器 gen_golden_jcs1.py；verify.py check_golden_jcs1 重新生成核对）"
+  }
+}

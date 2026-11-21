@@ -3,7 +3,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const ROOTS = ["src", "test", "ddl", "migrations", "vectors"];
+const ROOTS = ["src", "db", "test", "ddl", "migrations", "vectors"];
 const RULES = [
   { name: "'ye_zi'（旧笼统夜子值）", re: /\bye_zi\b(?!_[bc])/ },
   { name: "DEFAULT 'zi_zheng'", re: /DEFAULT\s+['"]zi_zheng['"]/i },

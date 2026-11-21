@@ -1,0 +1,2803 @@
+{
+ "note": "机读规格（E2 实施授权书第七节第 4 项）。required 取自审核清单 §4 建表清单（基线 7388ffa）逐行提取的“必”列；supplement 为清单以引用方式写明而非逐列列出的必填列，逐表注明出处。enums、fks 取自 DDL，供 DB-E / DB-K 矩阵生成。DB-N2 以 required ∪ supplement 与 DDL 的 NOT NULL 集合双向比对。",
+ "tables": {
+  "data_release": {
+   "schema": "formal",
+   "required": [
+    "commit_sha",
+    "created_at",
+    "data_release",
+    "release_seq"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": []
+  },
+  "data_version": {
+   "schema": "formal",
+   "required": [
+    "data_release",
+    "kind",
+    "sha256",
+    "version"
+   ],
+   "supplement": null,
+   "enums": {
+    "kind": {
+     "constraint": "DB-E-data_version.kind",
+     "values": [
+      "tz",
+      "jieqi",
+      "place",
+      "eot",
+      "day_pillar"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "engine_release": {
+   "schema": "formal",
+   "required": [
+    "data_release",
+    "engine_release_id",
+    "version"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "engine_function": {
+   "schema": "formal",
+   "required": [
+    "calc_function_id",
+    "engine_release_id",
+    "function_version",
+    "impl_hash"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "engine_release",
+     "from": [
+      "engine_release_id"
+     ],
+     "to": [
+      "engine_release_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "engine_function_source": {
+   "schema": "formal",
+   "required": [
+    "calc_function_id",
+    "engine_release_id",
+    "file_sha256",
+    "path"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "engine_function",
+     "from": [
+      "engine_release_id",
+      "calc_function_id"
+     ],
+     "to": [
+      "engine_release_id",
+      "calc_function_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "step_code": {
+   "schema": "formal",
+   "required": [
+    "module",
+    "name",
+    "ordinal",
+    "step_code"
+   ],
+   "supplement": null,
+   "enums": {
+    "module": {
+     "constraint": "DB-E-step_code.module",
+     "values": [
+      "BAZI",
+      "LIUYAO",
+      "FENGSHUI",
+      "CALENDAR",
+      "TEXT"
+     ]
+    }
+   },
+   "fks": []
+  },
+  "step_dependency": {
+   "schema": "formal",
+   "required": [
+    "depends_on",
+    "step_code"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "step_code",
+     "from": [
+      "depends_on"
+     ],
+     "to": [
+      "step_code"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "step_code",
+     "from": [
+      "step_code"
+     ],
+     "to": [
+      "step_code"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "step_code_retirement": {
+   "schema": "formal",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "data_release",
+     "step_code"
+    ],
+    "source": "清单 §3.8 第 915 行：废止的步骤只追加废止标记"
+   },
+   "enums": {},
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "step_code",
+     "from": [
+      "step_code"
+     ],
+     "to": [
+      "step_code"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "canonicalization_version": {
+   "schema": "formal",
+   "required": [
+    "frozen_at",
+    "golden_vectors_sha256",
+    "spec_ref",
+    "version"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": []
+  },
+  "source": {
+   "schema": "formal",
+   "required": [
+    "attribution_status",
+    "human_id",
+    "source_id"
+   ],
+   "supplement": null,
+   "enums": {
+    "attribution_status": {
+     "constraint": "DB-E-source.attribution_status",
+     "values": [
+      "确定",
+      "存疑",
+      "系名"
+     ]
+    }
+   },
+   "fks": []
+  },
+  "edition": {
+   "schema": "formal",
+   "required": [
+    "confidence",
+    "edition_id",
+    "source_id",
+    "transcription_status"
+   ],
+   "supplement": null,
+   "enums": {
+    "transcription_status": {
+     "constraint": "DB-E-edition.transcription_status",
+     "values": [
+      "原刊本",
+      "转录本（未与影印本对校）",
+      "个人校勘"
+     ]
+    },
+    "confidence": {
+     "constraint": "DB-E-edition.confidence",
+     "values": [
+      "A",
+      "B",
+      "C"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "edition",
+     "from": [
+      "parent_edition_id"
+     ],
+     "to": [
+      "edition_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "source",
+     "from": [
+      "source_id"
+     ],
+     "to": [
+      "source_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "passage": {
+   "schema": "formal",
+   "required": [
+    "chapter_label",
+    "edition_id",
+    "paragraph_no",
+    "passage_id",
+    "text",
+    "volume_page"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "edition",
+     "from": [
+      "edition_id"
+     ],
+     "to": [
+      "edition_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "variant_type": {
+   "schema": "formal",
+   "required": [
+    "applies_to_domain",
+    "label",
+    "type_code"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": []
+  },
+  "text_variant": {
+   "schema": "formal",
+   "required": [
+    "edition_a",
+    "edition_b",
+    "type_code",
+    "variant_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "edition",
+     "from": [
+      "edition_b"
+     ],
+     "to": [
+      "edition_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "passage",
+     "from": [
+      "passage_b"
+     ],
+     "to": [
+      "passage_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "edition",
+     "from": [
+      "edition_a"
+     ],
+     "to": [
+      "edition_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "passage",
+     "from": [
+      "passage_a"
+     ],
+     "to": [
+      "passage_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "variant_type",
+     "from": [
+      "type_code"
+     ],
+     "to": [
+      "type_code"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "annotation_layer": {
+   "schema": "formal",
+   "required": [
+    "layer_code"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": []
+  },
+  "annotation": {
+   "schema": "formal",
+   "required": [
+    "annotation_id",
+    "layer_code",
+    "passage_id",
+    "text"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "annotation_layer",
+     "from": [
+      "layer_code"
+     ],
+     "to": [
+      "layer_code"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "passage",
+     "from": [
+      "passage_id"
+     ],
+     "to": [
+      "passage_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "evidence": {
+   "schema": "formal",
+   "required": [
+    "confidence",
+    "evidence_category",
+    "evidence_id",
+    "evidence_tier",
+    "human_id",
+    "origin"
+   ],
+   "supplement": null,
+   "enums": {
+    "evidence_tier": {
+     "constraint": "DB-E-evidence.evidence_tier",
+     "values": [
+      "E1",
+      "E2",
+      "E3",
+      "E4",
+      "E5"
+     ]
+    },
+    "evidence_category": {
+     "constraint": "DB-E-evidence.evidence_category",
+     "values": [
+      "C-A",
+      "C-B",
+      "C-C",
+      "C-D",
+      "C-E",
+      "C-F",
+      "C-G"
+     ]
+    },
+    "confidence": {
+     "constraint": "DB-E-evidence.confidence",
+     "values": [
+      "A",
+      "B",
+      "C"
+     ]
+    },
+    "origin": {
+     "constraint": "DB-E-evidence.origin",
+     "values": [
+      "human",
+      "ai_output"
+     ]
+    }
+   },
+   "fks": []
+  },
+  "evidence_passage": {
+   "schema": "formal",
+   "required": [
+    "evidence_id",
+    "passage_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "passage",
+     "from": [
+      "passage_id"
+     ],
+     "to": [
+      "passage_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "evidence",
+     "from": [
+      "evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "manual_check_record": {
+   "schema": "formal",
+   "required": [
+    "check_id",
+    "checked_at",
+    "checked_by",
+    "evidence_id",
+    "page_range"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "evidence",
+     "from": [
+      "evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "system_school": {
+   "schema": "formal",
+   "required": [
+    "id",
+    "name"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "system_school",
+     "from": [
+      "parent_id"
+     ],
+     "to": [
+      "id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "rule": {
+   "schema": "formal",
+   "required": [
+    "default_scope",
+    "rule_id",
+    "tier",
+    "track"
+   ],
+   "supplement": null,
+   "enums": {
+    "track": {
+     "constraint": "DB-E-rule.track",
+     "values": [
+      "A",
+      "B",
+      "C",
+      "D"
+     ]
+    },
+    "tier": {
+     "constraint": "DB-E-rule.tier",
+     "values": [
+      "T0",
+      "T1",
+      "T2"
+     ]
+    },
+    "default_scope": {
+     "constraint": "DB-E-rule.default_scope",
+     "values": [
+      "进默认",
+      "多版本",
+      "暂缓"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "system_school",
+     "from": [
+      "school_id"
+     ],
+     "to": [
+      "id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "system_school",
+     "from": [
+      "system_id"
+     ],
+     "to": [
+      "id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "rule_component": {
+   "schema": "formal",
+   "required": [
+    "component_id",
+    "evidence_category",
+    "rule_id"
+   ],
+   "supplement": null,
+   "enums": {
+    "evidence_category": {
+     "constraint": "DB-E-rule_component.evidence_category",
+     "values": [
+      "C-A",
+      "C-B",
+      "C-C",
+      "C-D",
+      "C-E",
+      "C-F",
+      "C-G"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "rule",
+     "from": [
+      "rule_id"
+     ],
+     "to": [
+      "rule_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "evidence_link": {
+   "schema": "formal",
+   "required": [
+    "component_id",
+    "evidence_id",
+    "evidence_role"
+   ],
+   "supplement": null,
+   "enums": {
+    "evidence_role": {
+     "constraint": "DB-E-evidence_link.evidence_role",
+     "values": [
+      "支持",
+      "反证",
+      "限定",
+      "异文记录"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "rule_component",
+     "from": [
+      "component_id"
+     ],
+     "to": [
+      "component_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "evidence",
+     "from": [
+      "evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "text_variant_component": {
+   "schema": "formal",
+   "required": [
+    "component_id",
+    "variant_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "rule_component",
+     "from": [
+      "component_id"
+     ],
+     "to": [
+      "component_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "text_variant",
+     "from": [
+      "variant_id"
+     ],
+     "to": [
+      "variant_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "blocker": {
+   "schema": "formal",
+   "required": [
+    "block_id",
+    "scope"
+   ],
+   "supplement": {
+    "columns": [
+     "allowed_during_block",
+     "b_mapping",
+     "blocked_effect",
+     "blocked_module",
+     "contract_ref",
+     "report_ref",
+     "scope_path",
+     "source_issue",
+     "state_s1",
+     "state_s2",
+     "state_s3",
+     "trigger",
+     "unblock_condition"
+    ],
+    "source": "清单 F41：§9.6 全部字段，其余文本字段必"
+   },
+   "enums": {
+    "scope": {
+     "constraint": "DB-E-blocker.scope",
+     "values": [
+      "GLOBAL",
+      "MODULE",
+      "PATH"
+     ]
+    }
+   },
+   "fks": []
+  },
+  "component_blocker": {
+   "schema": "formal",
+   "required": [
+    "block_id",
+    "component_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "blocker",
+     "from": [
+      "block_id"
+     ],
+     "to": [
+      "block_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "rule_component",
+     "from": [
+      "component_id"
+     ],
+     "to": [
+      "component_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "blocker_step_map": {
+   "schema": "formal",
+   "required": [
+    "basis_ref",
+    "block_id",
+    "data_release",
+    "effect",
+    "step_code"
+   ],
+   "supplement": null,
+   "enums": {
+    "effect": {
+     "constraint": "DB-E-blocker_step_map.effect",
+     "values": [
+      "BLOCKED-HARD",
+      "BLOCKED-FORMAL",
+      "NON_FORMAL"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "step_code",
+     "from": [
+      "step_code"
+     ],
+     "to": [
+      "step_code"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "blocker",
+     "from": [
+      "block_id"
+     ],
+     "to": [
+      "block_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "rule_variant": {
+   "schema": "formal",
+   "required": [
+    "canonicalization_version",
+    "component_id",
+    "confidence",
+    "content_hash",
+    "hash_algorithm",
+    "rule_variant_id",
+    "version_no"
+   ],
+   "supplement": null,
+   "enums": {
+    "confidence": {
+     "constraint": "DB-E-rule_variant.confidence",
+     "values": [
+      "A",
+      "B",
+      "C"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "system_school",
+     "from": [
+      "school_id"
+     ],
+     "to": [
+      "id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "canonicalization_version",
+     "from": [
+      "canonicalization_version"
+     ],
+     "to": [
+      "version"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "rule_component",
+     "from": [
+      "component_id"
+     ],
+     "to": [
+      "component_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "rule_variant_edition": {
+   "schema": "formal",
+   "required": [
+    "edition_id",
+    "rule_variant_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "edition",
+     "from": [
+      "edition_id"
+     ],
+     "to": [
+      "edition_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "rule_variant",
+     "from": [
+      "rule_variant_id"
+     ],
+     "to": [
+      "rule_variant_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "revoke_reason_registry": {
+   "schema": "formal",
+   "required": [
+    "code",
+    "label"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": []
+  },
+  "review_record": {
+   "schema": "formal",
+   "required": [
+    "body",
+    "created_at",
+    "review_id",
+    "role",
+    "target_id",
+    "target_type"
+   ],
+   "supplement": null,
+   "enums": {
+    "role": {
+     "constraint": "DB-E-review_record.role",
+     "values": [
+      "research",
+      "architecture",
+      "revocation_trigger"
+     ]
+    }
+   },
+   "fks": []
+  },
+  "approval_record": {
+   "schema": "formal",
+   "required": [
+    "approval_id",
+    "data_release",
+    "decided_at",
+    "decided_by",
+    "decision",
+    "scope",
+    "sequence_no",
+    "target_content_hash",
+    "target_id",
+    "target_type"
+   ],
+   "supplement": null,
+   "enums": {
+    "decision": {
+     "constraint": "DB-E-approval_record.decision",
+     "values": [
+      "approve",
+      "approve_conditional",
+      "reject",
+      "revoke"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "approval_record",
+     "from": [
+      "supersedes_approval_id"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "rule_variant",
+     "from": [
+      "target_id"
+     ],
+     "to": [
+      "rule_variant_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "approval_basis": {
+   "schema": "formal",
+   "required": [
+    "approval_id",
+    "basis_ref"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "approval_record",
+     "from": [
+      "approval_id"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "deferred": true
+    }
+   ]
+  },
+  "approval_review": {
+   "schema": "formal",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "approval_id",
+     "review_id"
+    ],
+    "source": "清单 F38：approval_review(approval_id、review_id) 为主键列"
+   },
+   "enums": {},
+   "fks": [
+    {
+     "table": "review_record",
+     "from": [
+      "review_id"
+     ],
+     "to": [
+      "review_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "approval_record",
+     "from": [
+      "approval_id"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "deferred": true
+    }
+   ]
+  },
+  "approval_revoke_reason": {
+   "schema": "formal",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "approval_id",
+     "reason_code"
+    ],
+    "source": "清单 F38：approval_revoke_reason(approval_id、reason_code) 为主键列"
+   },
+   "enums": {},
+   "fks": [
+    {
+     "table": "revoke_reason_registry",
+     "from": [
+      "reason_code"
+     ],
+     "to": [
+      "code"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "approval_record",
+     "from": [
+      "approval_id"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "deferred": true
+    }
+   ]
+  },
+  "component_default": {
+   "schema": "formal",
+   "required": [
+    "applicable_scope",
+    "approval_ref",
+    "component_id",
+    "data_release",
+    "rule_variant_id",
+    "sequence_no"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "approval_record",
+     "from": [
+      "approval_ref"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "rule_variant",
+     "from": [
+      "rule_variant_id"
+     ],
+     "to": [
+      "rule_variant_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "rule_component",
+     "from": [
+      "component_id"
+     ],
+     "to": [
+      "component_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "variant_supersedes": {
+   "schema": "formal",
+   "required": [
+    "applicable_scope",
+    "data_release",
+    "new_variant_id",
+    "old_variant_id",
+    "reason"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "approval_record",
+     "from": [
+      "approval_ref"
+     ],
+     "to": [
+      "approval_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "rule_variant",
+     "from": [
+      "new_variant_id"
+     ],
+     "to": [
+      "rule_variant_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "rule_variant",
+     "from": [
+      "old_variant_id"
+     ],
+     "to": [
+      "rule_variant_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "parameter_registry": {
+   "schema": "formal",
+   "required": [
+    "has_default",
+    "module",
+    "param_id",
+    "registry_origin",
+    "registry_status",
+    "registry_version",
+    "value_kind"
+   ],
+   "supplement": null,
+   "enums": {
+    "registry_origin": {
+     "constraint": "DB-E-parameter_registry.registry_origin",
+     "values": [
+      "第 8 章 §5 表内",
+      "补充来源登记"
+     ]
+    },
+    "module": {
+     "constraint": "DB-E-parameter_registry.module",
+     "values": [
+      "BAZI",
+      "LIUYAO",
+      "CALENDAR",
+      "FENGSHUI",
+      "TEXT"
+     ]
+    },
+    "value_kind": {
+     "constraint": "DB-E-parameter_registry.value_kind",
+     "values": [
+      "enum",
+      "numeric",
+      "bool"
+     ]
+    },
+    "has_default": {
+     "constraint": "DB-E-parameter_registry.has_default",
+     "values": [
+      0,
+      1
+     ]
+    },
+    "registry_status": {
+     "constraint": "DB-E-parameter_registry.registry_status",
+     "values": [
+      "ACTIVE",
+      "VERSION_LOCKED"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "parameter_registry",
+     "from": [
+      "parent_param"
+     ],
+     "to": [
+      "param_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "parameter_registry",
+     "from": [
+      "follows_param"
+     ],
+     "to": [
+      "param_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "param_allowed_value": {
+   "schema": "formal",
+   "required": [
+    "claim_status",
+    "evidence_status",
+    "param_id",
+    "value"
+   ],
+   "supplement": null,
+   "enums": {
+    "evidence_status": {
+     "constraint": "DB-E-param_allowed_value.evidence_status",
+     "values": [
+      "UNVERIFIED",
+      "SINGLE_SOURCE",
+      "CROSS_CHECKED",
+      "PRIMARY_VERIFIED",
+      "DISPUTED",
+      "REJECTED"
+     ]
+    },
+    "claim_status": {
+     "constraint": "DB-E-param_allowed_value.claim_status",
+     "values": [
+      "已证实",
+      "推断",
+      "未知",
+      "已证伪"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "parameter_registry",
+     "from": [
+      "param_id"
+     ],
+     "to": [
+      "param_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "param_dependency": {
+   "schema": "formal",
+   "required": [
+    "depends_on",
+    "param_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "parameter_registry",
+     "from": [
+      "depends_on"
+     ],
+     "to": [
+      "param_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "parameter_registry",
+     "from": [
+      "param_id"
+     ],
+     "to": [
+      "param_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "param_variant_map": {
+   "schema": "formal",
+   "required": [
+    "applicable_scope",
+    "data_release",
+    "param_id",
+    "param_value",
+    "rule_variant_id",
+    "selection_rule"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "rule_variant",
+     "from": [
+      "rule_variant_id"
+     ],
+     "to": [
+      "rule_variant_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "parameter_registry",
+     "from": [
+      "param_id"
+     ],
+     "to": [
+      "param_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "term": {
+   "schema": "formal",
+   "required": [
+    "name",
+    "system_id",
+    "term_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "term",
+     "from": [
+      "homonym_of"
+     ],
+     "to": [
+      "term_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "system_school",
+     "from": [
+      "system_id"
+     ],
+     "to": [
+      "id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "term_alias": {
+   "schema": "formal",
+   "required": [
+    "alias",
+    "term_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "term",
+     "from": [
+      "term_id"
+     ],
+     "to": [
+      "term_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "dispute": {
+   "schema": "formal",
+   "required": [
+    "dispute_id",
+    "object_ref",
+    "status"
+   ],
+   "supplement": null,
+   "enums": {
+    "status": {
+     "constraint": "DB-E-dispute.status",
+     "values": [
+      "未裁决",
+      "已裁决"
+     ]
+    }
+   },
+   "fks": []
+  },
+  "dispute_claim": {
+   "schema": "formal",
+   "required": [
+    "claim",
+    "dispute_id",
+    "evidence_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "evidence",
+     "from": [
+      "evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "dispute",
+     "from": [
+      "dispute_id"
+     ],
+     "to": [
+      "dispute_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "judgment": {
+   "schema": "formal",
+   "required": [
+    "actor_role",
+    "basis_evidence_id",
+    "conclusion",
+    "decided_at",
+    "judgment_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "evidence",
+     "from": [
+      "basis_evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "evidence_status_history": {
+   "schema": "formal",
+   "required": [
+    "data_release",
+    "field",
+    "new_value",
+    "sequence_no",
+    "target_id",
+    "target_type"
+   ],
+   "supplement": null,
+   "enums": {
+    "target_type": {
+     "constraint": "DB-E-evidence_status_history.target_type",
+     "values": [
+      "Evidence",
+      "RuleComponent"
+     ]
+    },
+    "field": {
+     "constraint": "DB-E-evidence_status_history.field",
+     "values": [
+      "evidence_status",
+      "claim_status"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "admission_record": {
+   "schema": "formal",
+   "required": [
+    "admission_id",
+    "basis_ref",
+    "component_id",
+    "data_release",
+    "decided_by",
+    "new_status",
+    "purpose",
+    "sequence_no"
+   ],
+   "supplement": null,
+   "enums": {
+    "purpose": {
+     "constraint": "DB-E-admission_record.purpose",
+     "values": [
+      "calc",
+      "text",
+      "qualitative"
+     ]
+    },
+    "new_status": {
+     "constraint": "DB-E-admission_record.new_status",
+     "values": [
+      "FORMAL_ALLOWED",
+      "CONDITIONAL",
+      "RESEARCH_ONLY",
+      "DEFERRED",
+      "PROHIBITED"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "rule_component",
+     "from": [
+      "component_id"
+     ],
+     "to": [
+      "component_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "formal_status_history": {
+   "schema": "formal",
+   "required": [
+    "data_release",
+    "new_value",
+    "sequence_no",
+    "target_id",
+    "target_type"
+   ],
+   "supplement": null,
+   "enums": {
+    "target_type": {
+     "constraint": "DB-F-20",
+     "values": [
+      "Source",
+      "Edition",
+      "Evidence",
+      "RuleVariant"
+     ]
+    },
+    "new_value": {
+     "constraint": "DB-E-formal_status_history.new_value",
+     "values": [
+      "FORMAL",
+      "NON_FORMAL"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "blocker_change": {
+   "schema": "formal",
+   "required": [
+    "block_id",
+    "change_id",
+    "data_release",
+    "new_status",
+    "sequence_no",
+    "user_ruling_ref"
+   ],
+   "supplement": null,
+   "enums": {
+    "new_status": {
+     "constraint": "DB-E-blocker_change.new_status",
+     "values": [
+      "现行",
+      "已解除"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "data_release",
+     "from": [
+      "data_release"
+     ],
+     "to": [
+      "data_release"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "blocker",
+     "from": [
+      "block_id"
+     ],
+     "to": [
+      "block_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "profile": {
+   "schema": "main",
+   "required": [
+    "created_at",
+    "owner_profile_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": []
+  },
+  "calculation_input": {
+   "schema": "main",
+   "required": [
+    "domain",
+    "input_hash",
+    "input_id",
+    "normalized_payload",
+    "normalizer_version",
+    "owner_profile_id",
+    "raw_payload"
+   ],
+   "supplement": null,
+   "enums": {
+    "domain": {
+     "constraint": "DB-E-calculation_input.domain",
+     "values": [
+      "BAZI",
+      "LIUYAO",
+      "FENGSHUI",
+      "CALENDAR"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "profile",
+     "from": [
+      "owner_profile_id"
+     ],
+     "to": [
+      "owner_profile_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "input_tz_resolution": {
+   "schema": "main",
+   "required": [
+    "dst_flag",
+    "input_id",
+    "offset_source",
+    "owner_profile_id",
+    "tz_id",
+    "tz_table_version",
+    "tzdata_version",
+    "utc_offset_seconds"
+   ],
+   "supplement": null,
+   "enums": {
+    "dst_flag": {
+     "constraint": "DB-E-input_tz_resolution.dst_flag",
+     "values": [
+      0,
+      1
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "calculation_input",
+     "from": [
+      "input_id"
+     ],
+     "to": [
+      "input_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "calculation_config": {
+   "schema": "main",
+   "required": [
+    "canonicalization_version",
+    "config_hash",
+    "config_id",
+    "config_version",
+    "hash_algorithm",
+    "module",
+    "registry_version"
+   ],
+   "supplement": null,
+   "enums": {
+    "module": {
+     "constraint": "DB-E-calculation_config.module",
+     "values": [
+      "BAZI",
+      "LIUYAO",
+      "FENGSHUI",
+      "CALENDAR"
+     ]
+    }
+   },
+   "fks": []
+  },
+  "config_param_value": {
+   "schema": "main",
+   "required": [
+    "config_id",
+    "config_version",
+    "param_id",
+    "value",
+    "value_source"
+   ],
+   "supplement": {
+    "columns": [
+     "apply_mode"
+    ],
+    "source": "实施授权书 Q-12：stored_only / applied 标记"
+   },
+   "enums": {
+    "value_source": {
+     "constraint": "DB-E-config_param_value.value_source",
+     "values": [
+      "user_selected",
+      "approved_default",
+      "follows_param",
+      "version_locked"
+     ]
+    },
+    "apply_mode": {
+     "constraint": "DB-E-config_param_value.apply_mode",
+     "values": [
+      "applied",
+      "stored_only"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "calculation_config",
+     "from": [
+      "config_id",
+      "config_version"
+     ],
+     "to": [
+      "config_id",
+      "config_version"
+     ],
+     "deferred": true
+    }
+   ]
+  },
+  "profile_config_ref": {
+   "schema": "main",
+   "required": [
+    "config_id",
+    "config_version",
+    "owner_profile_id"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "calculation_config",
+     "from": [
+      "config_id",
+      "config_version"
+     ],
+     "to": [
+      "config_id",
+      "config_version"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "profile",
+     "from": [
+      "owner_profile_id"
+     ],
+     "to": [
+      "owner_profile_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "calculation_snapshot": {
+   "schema": "main",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "calc_status",
+     "canonicalization_version",
+     "config_hash",
+     "config_id",
+     "config_version",
+     "created_at",
+     "data_fingerprint",
+     "domain",
+     "engine_release_id",
+     "execution_trace_ref",
+     "formal_status",
+     "hash_algorithm",
+     "input_hash",
+     "input_id",
+     "owner_profile_id",
+     "research_scope",
+     "result_completeness",
+     "result_fingerprint",
+     "result_hash",
+     "result_payload",
+     "snapshot_id"
+    ],
+    "source": "清单 U07：第 6.1 节全部字段（recomputed_from_snapshot_id 可空）"
+   },
+   "enums": {
+    "domain": {
+     "constraint": "DB-E-calculation_snapshot.domain",
+     "values": [
+      "BAZI",
+      "LIUYAO",
+      "FENGSHUI",
+      "CALENDAR"
+     ]
+    },
+    "formal_status": {
+     "constraint": "DB-E-calculation_snapshot.formal_status",
+     "values": [
+      "FORMAL",
+      "NON_FORMAL"
+     ]
+    },
+    "calc_status": {
+     "constraint": "DB-E-calculation_snapshot.calc_status",
+     "values": [
+      "CALC_FORMAL",
+      "CALC_RESEARCH"
+     ]
+    },
+    "research_scope": {
+     "constraint": "DB-E-calculation_snapshot.research_scope",
+     "values": [
+      "FORMAL",
+      "FORMAL_SCOPE_NON_FORMAL",
+      "PERSONAL_RESEARCH"
+     ]
+    },
+    "result_completeness": {
+     "constraint": "DB-E-calculation_snapshot.result_completeness",
+     "values": [
+      "COMPLETE",
+      "OK_WITH_DEGRADATION"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "calculation_config",
+     "from": [
+      "config_id",
+      "config_version"
+     ],
+     "to": [
+      "config_id",
+      "config_version"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "calculation_snapshot",
+     "from": [
+      "recomputed_from_snapshot_id"
+     ],
+     "to": [
+      "snapshot_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "calculation_input",
+     "from": [
+      "input_id"
+     ],
+     "to": [
+      "input_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "profile",
+     "from": [
+      "owner_profile_id"
+     ],
+     "to": [
+      "owner_profile_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "snapshot_non_formal_reason": {
+   "schema": "main",
+   "required": [
+    "note",
+    "ord",
+    "owner_profile_id",
+    "reason_kind",
+    "snapshot_id"
+   ],
+   "supplement": {
+    "columns": [
+     "step_code",
+     "upstream_hash",
+     "upstream_id",
+     "upstream_release"
+    ],
+    "source": "清单 U08：upstream 三元组必；原因所在步骤（Q-6、Q-16）"
+   },
+   "enums": {
+    "reason_kind": {
+     "constraint": "DB-E-snapshot_non_formal_reason.reason_kind",
+     "values": [
+      "R-I",
+      "PARAM_PROVISIONAL",
+      "RULE_PROVISIONAL",
+      "BLOCKER_PATH",
+      "RESEARCH_ONLY"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "calculation_snapshot",
+     "from": [
+      "snapshot_id"
+     ],
+     "to": [
+      "snapshot_id"
+     ],
+     "deferred": true
+    }
+   ]
+  },
+  "snapshot_degradation_reason": {
+   "schema": "main",
+   "required": [
+    "owner_profile_id",
+    "reason_code",
+    "snapshot_id"
+   ],
+   "supplement": null,
+   "enums": {
+    "reason_code": {
+     "constraint": "DB-E-snapshot_degradation_reason.reason_code",
+     "values": [
+      "MISSING_GENDER",
+      "HOUR_UNKNOWN"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "calculation_snapshot",
+     "from": [
+      "snapshot_id"
+     ],
+     "to": [
+      "snapshot_id"
+     ],
+     "deferred": true
+    }
+   ]
+  },
+  "snapshot_dependency": {
+   "schema": "main",
+   "required": [
+    "dep_type",
+    "ord",
+    "owner_profile_id",
+    "snapshot_id"
+   ],
+   "supplement": {
+    "columns": [
+     "ref_id",
+     "ref_kind"
+    ],
+    "source": "清单 U10 / §6.4：引用对象 ID；ref_kind 区分正式 / 个人 / 用户快照（R-I-2、§7.4）"
+   },
+   "enums": {
+    "dep_type": {
+     "constraint": "DB-E-snapshot_dependency.dep_type",
+     "values": [
+      "rule_variant",
+      "edition",
+      "evidence",
+      "parameter",
+      "calendar_data",
+      "tz_data",
+      "place_data",
+      "engine",
+      "cross_domain"
+     ]
+    },
+    "ref_kind": {
+     "constraint": "DB-E-snapshot_dependency.ref_kind",
+     "values": [
+      "formal",
+      "personal",
+      "user_snapshot"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "calculation_snapshot",
+     "from": [
+      "snapshot_id"
+     ],
+     "to": [
+      "snapshot_id"
+     ],
+     "deferred": true
+    }
+   ]
+  },
+  "snapshot_gov_approval": {
+   "schema": "main",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "approval_id",
+     "owner_profile_id",
+     "rule_variant_id",
+     "snapshot_id"
+    ],
+    "source": "清单 U11：三表内容均为必"
+   },
+   "enums": {},
+   "fks": [
+    {
+     "table": "calculation_snapshot",
+     "from": [
+      "snapshot_id"
+     ],
+     "to": [
+      "snapshot_id"
+     ],
+     "deferred": true
+    }
+   ]
+  },
+  "snapshot_gov_blocker": {
+   "schema": "main",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "block_id",
+     "owner_profile_id",
+     "snapshot_id",
+     "status"
+    ],
+    "source": "清单 U11：三表内容均为必"
+   },
+   "enums": {
+    "status": {
+     "constraint": "DB-E-snapshot_gov_blocker.status",
+     "values": [
+      "现行",
+      "已解除",
+      "无记录"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "calculation_snapshot",
+     "from": [
+      "snapshot_id"
+     ],
+     "to": [
+      "snapshot_id"
+     ],
+     "deferred": true
+    }
+   ]
+  },
+  "snapshot_gov_sequence": {
+   "schema": "main",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "kind",
+     "max_sequence_no",
+     "owner_profile_id",
+     "snapshot_id"
+    ],
+    "source": "清单 U11：三表内容均为必"
+   },
+   "enums": {
+    "kind": {
+     "constraint": "DB-E-snapshot_gov_sequence.kind",
+     "values": [
+      "evidence_status",
+      "admission",
+      "formal_status",
+      "approval",
+      "blocker_change"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "calculation_snapshot",
+     "from": [
+      "snapshot_id"
+     ],
+     "to": [
+      "snapshot_id"
+     ],
+     "deferred": true
+    }
+   ]
+  },
+  "snapshot_resolved_context": {
+   "schema": "main",
+   "required": [
+    "item_kind",
+    "key",
+    "owner_profile_id",
+    "snapshot_id"
+   ],
+   "supplement": null,
+   "enums": {
+    "item_kind": {
+     "constraint": "DB-E-snapshot_resolved_context.item_kind",
+     "values": [
+      "jieqi_prev",
+      "jieqi_next",
+      "table_version"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "calculation_snapshot",
+     "from": [
+      "snapshot_id"
+     ],
+     "to": [
+      "snapshot_id"
+     ],
+     "deferred": true
+    }
+   ]
+  },
+  "execution_trace_step": {
+   "schema": "main",
+   "required": [
+    "owner_profile_id",
+    "snapshot_id",
+    "status",
+    "step_code"
+   ],
+   "supplement": {
+    "columns": [
+     "exec_order"
+    ],
+    "source": "实现补充：清单 §3.8 执行顺序按 step_dependency，轨迹记录实际执行序"
+   },
+   "enums": {
+    "status": {
+     "constraint": "DB-E-execution_trace_step.status",
+     "values": [
+      "完成",
+      "未执行"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "calculation_snapshot",
+     "from": [
+      "snapshot_id"
+     ],
+     "to": [
+      "snapshot_id"
+     ],
+     "deferred": true
+    }
+   ]
+  },
+  "branch": {
+   "schema": "main",
+   "required": [
+    "base_data_release",
+    "branch_id",
+    "branch_name",
+    "owner"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "calculation_snapshot",
+     "from": [
+      "base_snapshot_id"
+     ],
+     "to": [
+      "snapshot_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "branch",
+     "from": [
+      "parent_branch_id"
+     ],
+     "to": [
+      "branch_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "branch_status_history": {
+   "schema": "main",
+   "required": [
+    "branch_id",
+    "new_status",
+    "note",
+    "sequence_no"
+   ],
+   "supplement": null,
+   "enums": {
+    "new_status": {
+     "constraint": "DB-E-branch_status_history.new_status",
+     "values": [
+      "active",
+      "promoted",
+      "merged",
+      "abandoned"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "branch",
+     "from": [
+      "branch_id"
+     ],
+     "to": [
+      "branch_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "personal_edition": {
+   "schema": "main",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "branch_id",
+     "confidence",
+     "edition_id",
+     "formal_status",
+     "source_hash",
+     "source_id",
+     "source_release",
+     "transcription_status"
+    ],
+    "source": "清单 U16：与正式同名表同构，对正式对象用三元组"
+   },
+   "enums": {
+    "transcription_status": {
+     "constraint": "DB-E-personal_edition.transcription_status",
+     "values": [
+      "原刊本",
+      "转录本（未与影印本对校）",
+      "个人校勘"
+     ]
+    },
+    "confidence": {
+     "constraint": "DB-E-personal_edition.confidence",
+     "values": [
+      "A",
+      "B",
+      "C"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "branch",
+     "from": [
+      "branch_id"
+     ],
+     "to": [
+      "branch_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "personal_evidence": {
+   "schema": "main",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "branch_id",
+     "claim_status",
+     "confidence",
+     "evidence_category",
+     "evidence_id",
+     "evidence_status",
+     "evidence_tier",
+     "formal_status",
+     "origin"
+    ],
+    "source": "清单 U16：与正式同名表同构（含 F16 必填列与 v_evidence_current 的状态列）"
+   },
+   "enums": {
+    "evidence_tier": {
+     "constraint": "DB-E-personal_evidence.evidence_tier",
+     "values": [
+      "E1",
+      "E2",
+      "E3",
+      "E4",
+      "E5"
+     ]
+    },
+    "evidence_category": {
+     "constraint": "DB-E-personal_evidence.evidence_category",
+     "values": [
+      "C-A",
+      "C-B",
+      "C-C",
+      "C-D",
+      "C-E",
+      "C-F",
+      "C-G"
+     ]
+    },
+    "confidence": {
+     "constraint": "DB-E-personal_evidence.confidence",
+     "values": [
+      "A",
+      "B",
+      "C"
+     ]
+    },
+    "evidence_status": {
+     "constraint": "DB-E-personal_evidence.evidence_status",
+     "values": [
+      "UNVERIFIED",
+      "SINGLE_SOURCE",
+      "CROSS_CHECKED",
+      "PRIMARY_VERIFIED",
+      "DISPUTED",
+      "REJECTED"
+     ]
+    },
+    "claim_status": {
+     "constraint": "DB-E-personal_evidence.claim_status",
+     "values": [
+      "已证实",
+      "推断",
+      "未知",
+      "已证伪"
+     ]
+    },
+    "origin": {
+     "constraint": "DB-E-personal_evidence.origin",
+     "values": [
+      "human",
+      "ai_output"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "branch",
+     "from": [
+      "branch_id"
+     ],
+     "to": [
+      "branch_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "personal_rule_variant": {
+   "schema": "main",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "branch_id",
+     "canonicalization_version",
+     "component_hash",
+     "component_id",
+     "component_release",
+     "confidence",
+     "content_hash",
+     "formal_status",
+     "hash_algorithm",
+     "non_formal_reason",
+     "rule_variant_id",
+     "version_no"
+    ],
+    "source": "清单 U16：与 F24 同构，个人变体须写 non_formal_reason"
+   },
+   "enums": {
+    "confidence": {
+     "constraint": "DB-E-personal_rule_variant.confidence",
+     "values": [
+      "A",
+      "B",
+      "C"
+     ]
+    },
+    "non_formal_reason": {
+     "constraint": "DB-E-personal_rule_variant.non_formal_reason",
+     "values": [
+      "实验规则",
+      "个人校勘",
+      "未核验",
+      "暂缓规则",
+      "依赖非正式",
+      "其他"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "branch",
+     "from": [
+      "branch_id"
+     ],
+     "to": [
+      "branch_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "personal_text_variant": {
+   "schema": "main",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "branch_id",
+     "edition_a_ref",
+     "edition_b_ref",
+     "formal_status",
+     "type_code",
+     "variant_id"
+    ],
+    "source": "清单 U16：与 F13 同构，对正式对象用三元组文本"
+   },
+   "enums": {},
+   "fks": [
+    {
+     "table": "branch",
+     "from": [
+      "branch_id"
+     ],
+     "to": [
+      "branch_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "personal_evidence_link": {
+   "schema": "main",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "branch_id",
+     "component_hash",
+     "component_id",
+     "component_release",
+     "evidence_id",
+     "evidence_role"
+    ],
+    "source": "清单 U16：与 F18 同构，对正式子项用三元组"
+   },
+   "enums": {
+    "evidence_role": {
+     "constraint": "DB-E-personal_evidence_link.evidence_role",
+     "values": [
+      "支持",
+      "反证",
+      "限定",
+      "异文记录"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "branch",
+     "from": [
+      "branch_id"
+     ],
+     "to": [
+      "branch_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "personal_evidence",
+     "from": [
+      "evidence_id"
+     ],
+     "to": [
+      "evidence_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "blocked_audit_event": {
+   "schema": "main",
+   "required": [
+    "app_version",
+    "block_reason_code",
+    "data_release",
+    "event_id",
+    "module",
+    "occurred_at"
+   ],
+   "supplement": null,
+   "enums": {
+    "module": {
+     "constraint": "DB-E-blocked_audit_event.module",
+     "values": [
+      "BAZI",
+      "LIUYAO",
+      "FENGSHUI",
+      "CALENDAR"
+     ]
+    }
+   },
+   "fks": []
+  },
+  "deletion_audit": {
+   "schema": "main",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "app_version",
+     "audit_id",
+     "data_release",
+     "deleted_at",
+     "success",
+     "trigger"
+    ],
+    "source": "清单 U18：deletion_audit(...均必)"
+   },
+   "enums": {
+    "success": {
+     "constraint": "DB-E-deletion_audit.success",
+     "values": [
+      0,
+      1
+     ]
+    }
+   },
+   "fks": []
+  },
+  "deletion_audit_count": {
+   "schema": "main",
+   "required": [],
+   "supplement": {
+    "columns": [
+     "audit_id",
+     "count",
+     "object_type"
+    ],
+    "source": "清单 U18：deletion_audit_count(audit_id、object_type、count 均必)"
+   },
+   "enums": {
+    "object_type": {
+     "constraint": "DB-E-deletion_audit_count.object_type",
+     "values": [
+      "profile",
+      "calculation_input",
+      "input_tz_resolution",
+      "profile_config_ref",
+      "calculation_config",
+      "config_param_value",
+      "calculation_snapshot",
+      "snapshot_non_formal_reason",
+      "snapshot_degradation_reason",
+      "snapshot_dependency",
+      "snapshot_gov_approval",
+      "snapshot_gov_blocker",
+      "snapshot_gov_sequence",
+      "snapshot_resolved_context",
+      "execution_trace_step",
+      "branch_base_snapshot_cleared"
+     ]
+    }
+   },
+   "fks": [
+    {
+     "table": "deletion_audit",
+     "from": [
+      "audit_id"
+     ],
+     "to": [
+      "audit_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "branch_event": {
+   "schema": "main",
+   "required": [
+    "audit_id",
+    "branch_id",
+    "event_id",
+    "kind",
+    "occurred_at"
+   ],
+   "supplement": null,
+   "enums": {},
+   "fks": [
+    {
+     "table": "deletion_audit",
+     "from": [
+      "audit_id"
+     ],
+     "to": [
+      "audit_id"
+     ],
+     "deferred": false
+    },
+    {
+     "table": "branch",
+     "from": [
+      "branch_id"
+     ],
+     "to": [
+      "branch_id"
+     ],
+     "deferred": false
+    }
+   ]
+  },
+  "deletion_txn_marker": {
+   "schema": "main",
+   "required": [
+    "audit_id",
+    "grant_seq",
+    "id",
+    "kind",
+    "txn_token"
+   ],
+   "supplement": null,
+   "enums": {
+    "kind": {
+     "constraint": "DB-E-deletion_txn_marker.kind",
+     "values": [
+      "success",
+      "failure"
+     ]
+    }
+   },
+   "fks": []
+  }
+ }
+}

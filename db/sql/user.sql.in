@@ -1,0 +1,537 @@
+-- 玄枢用户库（user.sqlite）表结构模板 —— E2 数据库结构准备
+-- 依据：数据仓库 review/E2_结构与约束审核清单.md（基线 7388ffa）第 3、4.2、6.1、8.1 节；契约 v1.0 §1.2、§5.4、§6、§7、§10。
+-- 模板占位符由 db/gen.ts 替换：{{CFG01_LOCKED}} ← data/contract/constants.toml [cfg01] locked_value（清单 §8.1、Q-8）。
+-- 跨库引用一律三元组（ref_release, ref_id, ref_hash），不建外键（§1.2；清单 §3.10）。
+-- 用户库的 CHECK 与触发器只做同库可见的检查；需读正式库的检查由引擎预检 + 连接级查询复核（清单 §3.10）。
+
+-- ===================================================================== 档案与输入
+-- U01 profile（§6.1、§10.2；字段契约未定义，E2 临时定义，待契约补充，Q-2）
+CREATE TABLE profile (
+  owner_profile_id TEXT NOT NULL PRIMARY KEY,
+  created_at       TEXT NOT NULL
+) STRICT;
+
+-- U02 calculation_input（§6.1、G-1、G-2）
+CREATE TABLE calculation_input (
+  input_id           TEXT NOT NULL PRIMARY KEY,
+  input_hash         TEXT NOT NULL,
+  owner_profile_id   TEXT NOT NULL REFERENCES profile(owner_profile_id),
+  domain             TEXT NOT NULL CONSTRAINT "DB-E-calculation_input.domain" CHECK (domain IN ('BAZI','LIUYAO','FENGSHUI','CALENDAR')),
+  raw_payload        TEXT NOT NULL CONSTRAINT "DB-J-raw_payload" CHECK (json_valid(raw_payload) AND json_type(raw_payload) = 'object' AND json_type(raw_payload, '$.v') = 'integer' AND json_extract(raw_payload, '$.v') = 1),
+  gender             TEXT CONSTRAINT "DB-E-calculation_input.gender" CHECK (gender IS NULL OR gender IN ('MALE','FEMALE','UNKNOWN')),
+  time_precision     TEXT CONSTRAINT "DB-E-calculation_input.time_precision" CHECK (time_precision IS NULL OR time_precision IN ('MINUTE','SHICHEN','UNKNOWN')),
+  normalized_payload TEXT NOT NULL CONSTRAINT "DB-J-normalized_payload" CHECK (json_valid(normalized_payload) AND json_type(normalized_payload) = 'object' AND json_type(normalized_payload, '$.v') = 'integer' AND json_extract(normalized_payload, '$.v') = 1),
+  normalizer_version TEXT NOT NULL,
+  place_release      TEXT,
+  place_id           TEXT,
+  place_hash         TEXT,
+  CONSTRAINT "DB-U-03a" CHECK (domain <> 'BAZI' OR (gender IS NOT NULL AND time_precision IS NOT NULL)),
+  CONSTRAINT "DB-U-place" CHECK ((place_release IS NULL AND place_id IS NULL AND place_hash IS NULL) OR (place_release IS NOT NULL AND place_id IS NOT NULL AND place_hash IS NOT NULL))
+) STRICT;
+
+-- U03 input_tz_resolution（§6.1、§11.1）
+CREATE TABLE input_tz_resolution (
+  input_id            TEXT NOT NULL PRIMARY KEY REFERENCES calculation_input(input_id),
+  owner_profile_id    TEXT NOT NULL,
+  tz_id               TEXT NOT NULL,
+  utc_offset_seconds  INTEGER NOT NULL,
+  dst_flag            INTEGER NOT NULL CONSTRAINT "DB-E-input_tz_resolution.dst_flag" CHECK (dst_flag IN (0,1)),
+  tzdata_version      TEXT NOT NULL,
+  tz_table_version    TEXT NOT NULL,
+  offset_source       TEXT NOT NULL,
+  confirmation_record TEXT,
+  ambiguity_reason    TEXT
+) STRICT;
+
+-- ===================================================================== 配置（内容与档案引用分离，清单 P-23、Q-13）
+-- U04 calculation_config（§5.4、A-3；不含 owner_profile_id，不含可写 formal_status / research_scope，Q-6）
+CREATE TABLE calculation_config (
+  config_id                TEXT NOT NULL,
+  config_version           INTEGER NOT NULL,
+  config_hash              TEXT NOT NULL CONSTRAINT "DB-U-05c" UNIQUE,
+  module                   TEXT NOT NULL CONSTRAINT "DB-E-calculation_config.module" CHECK (module IN ('BAZI','LIUYAO','FENGSHUI','CALENDAR')),
+  registry_version         TEXT NOT NULL,
+  hash_algorithm           TEXT NOT NULL,
+  canonicalization_version TEXT NOT NULL,
+  PRIMARY KEY (config_id, config_version)
+) STRICT;
+
+-- U05 config_param_value（§5.4、N-6；apply_mode 依 Q-12 裁决：stored_only 只存储、不参与计算、纳入配置指纹）
+CREATE TABLE config_param_value (
+  config_id      TEXT NOT NULL,
+  config_version INTEGER NOT NULL,
+  param_id       TEXT NOT NULL,
+  value          TEXT NOT NULL,
+  value_source   TEXT NOT NULL CONSTRAINT "DB-E-config_param_value.value_source" CHECK (value_source IN ('user_selected','approved_default','follows_param','version_locked')),
+  apply_mode     TEXT NOT NULL CONSTRAINT "DB-E-config_param_value.apply_mode" CHECK (apply_mode IN ('applied','stored_only')),
+  PRIMARY KEY (config_id, config_version, param_id),
+  FOREIGN KEY (config_id, config_version) REFERENCES calculation_config(config_id, config_version) DEFERRABLE INITIALLY DEFERRED,
+  CONSTRAINT "ZR-DB-value" CHECK (param_id <> 'CFG-01' OR value = '{{CFG01_LOCKED}}'),
+  CONSTRAINT "ZR-DB-source" CHECK (param_id <> 'CFG-01' OR value_source = 'version_locked'),
+  CONSTRAINT "ZR-DB-apply" CHECK (param_id <> 'CFG-01' OR apply_mode = 'applied')
+) STRICT;
+
+-- U06 profile_config_ref（§10.2；Q-13）
+CREATE TABLE profile_config_ref (
+  owner_profile_id TEXT NOT NULL REFERENCES profile(owner_profile_id),
+  config_id        TEXT NOT NULL,
+  config_version   INTEGER NOT NULL,
+  PRIMARY KEY (owner_profile_id, config_id, config_version),
+  FOREIGN KEY (config_id, config_version) REFERENCES calculation_config(config_id, config_version)
+) STRICT;
+
+-- ===================================================================== 快照（清单 §3.5 封存协议：子行先写、快照行最后写）
+-- U07 calculation_snapshot（§6.3、§6.5、§7.4、§13.1、§13.6；清单 §6.1）
+CREATE TABLE calculation_snapshot (
+  snapshot_id                 TEXT NOT NULL PRIMARY KEY,
+  owner_profile_id            TEXT NOT NULL REFERENCES profile(owner_profile_id),
+  input_id                    TEXT NOT NULL REFERENCES calculation_input(input_id),
+  input_hash                  TEXT NOT NULL,
+  config_id                   TEXT NOT NULL,
+  config_version              INTEGER NOT NULL,
+  config_hash                 TEXT NOT NULL,
+  engine_release_id           TEXT NOT NULL,
+  domain                      TEXT NOT NULL CONSTRAINT "DB-E-calculation_snapshot.domain" CHECK (domain IN ('BAZI','LIUYAO','FENGSHUI','CALENDAR')),
+  result_payload              TEXT NOT NULL CONSTRAINT "DB-J-result_payload" CHECK (json_valid(result_payload) AND json_type(result_payload) = 'object' AND json_type(result_payload, '$.v') = 'integer' AND json_extract(result_payload, '$.v') = 1),
+  result_hash                 TEXT NOT NULL,
+  result_fingerprint          TEXT NOT NULL,
+  formal_status               TEXT NOT NULL CONSTRAINT "DB-E-calculation_snapshot.formal_status" CHECK (formal_status IN ('FORMAL','NON_FORMAL')),
+  calc_status                 TEXT NOT NULL CONSTRAINT "DB-E-calculation_snapshot.calc_status" CHECK (calc_status IN ('CALC_FORMAL','CALC_RESEARCH')),
+  research_scope              TEXT NOT NULL CONSTRAINT "DB-E-calculation_snapshot.research_scope" CHECK (research_scope IN ('FORMAL','FORMAL_SCOPE_NON_FORMAL','PERSONAL_RESEARCH')),
+  result_completeness         TEXT NOT NULL CONSTRAINT "DB-E-calculation_snapshot.result_completeness" CHECK (result_completeness IN ('COMPLETE','OK_WITH_DEGRADATION')),
+  data_fingerprint            TEXT NOT NULL,
+  hash_algorithm              TEXT NOT NULL,
+  canonicalization_version    TEXT NOT NULL,
+  execution_trace_ref         TEXT NOT NULL,
+  recomputed_from_snapshot_id TEXT REFERENCES calculation_snapshot(snapshot_id),
+  created_at                  TEXT NOT NULL,
+  FOREIGN KEY (config_id, config_version) REFERENCES calculation_config(config_id, config_version),
+  CONSTRAINT "DB-U-08" CHECK ((formal_status = 'FORMAL' AND calc_status = 'CALC_FORMAL') OR (formal_status = 'NON_FORMAL' AND calc_status = 'CALC_RESEARCH')),
+  CONSTRAINT "DB-U-10a" CHECK ((formal_status = 'FORMAL') = (research_scope = 'FORMAL')),
+  CONSTRAINT "DB-S-trace_ref" CHECK (execution_trace_ref = snapshot_id)
+) STRICT;
+
+-- U08 snapshot_non_formal_reason（§6.3、§5.3；Q-6 五类原因）
+CREATE TABLE snapshot_non_formal_reason (
+  snapshot_id      TEXT NOT NULL REFERENCES calculation_snapshot(snapshot_id) DEFERRABLE INITIALLY DEFERRED,
+  owner_profile_id TEXT NOT NULL,
+  ord              INTEGER NOT NULL,
+  reason_kind      TEXT NOT NULL CONSTRAINT "DB-E-snapshot_non_formal_reason.reason_kind" CHECK (reason_kind IN ('R-I','PARAM_PROVISIONAL','RULE_PROVISIONAL','BLOCKER_PATH','RESEARCH_ONLY')),
+  ri_segment       TEXT CONSTRAINT "DB-E-snapshot_non_formal_reason.ri_segment" CHECK (ri_segment IS NULL OR ri_segment IN ('R-I-1','R-I-2','R-I-3','R-I-4','R-I-5','R-I-6','R-I-7','R-I-8')),
+  step_code        TEXT NOT NULL,
+  upstream_release TEXT NOT NULL,
+  upstream_id      TEXT NOT NULL,
+  upstream_hash    TEXT NOT NULL,
+  note             TEXT NOT NULL,
+  PRIMARY KEY (snapshot_id, ord),
+  CONSTRAINT "DB-U-ri_segment" CHECK ((reason_kind = 'R-I') = (ri_segment IS NOT NULL))
+) STRICT;
+
+-- U09 snapshot_degradation_reason（§13.1～§13.3）
+CREATE TABLE snapshot_degradation_reason (
+  snapshot_id      TEXT NOT NULL REFERENCES calculation_snapshot(snapshot_id) DEFERRABLE INITIALLY DEFERRED,
+  owner_profile_id TEXT NOT NULL,
+  reason_code      TEXT NOT NULL CONSTRAINT "DB-E-snapshot_degradation_reason.reason_code" CHECK (reason_code IN ('MISSING_GENDER','HOUR_UNKNOWN')),
+  PRIMARY KEY (snapshot_id, reason_code)
+) STRICT;
+
+-- U10 snapshot_dependency（§6.4：一项一行；只存 ID 不存版本与哈希的行无效）
+CREATE TABLE snapshot_dependency (
+  snapshot_id              TEXT NOT NULL REFERENCES calculation_snapshot(snapshot_id) DEFERRABLE INITIALLY DEFERRED,
+  owner_profile_id         TEXT NOT NULL,
+  ord                      INTEGER NOT NULL,
+  dep_type                 TEXT NOT NULL CONSTRAINT "DB-E-snapshot_dependency.dep_type" CHECK (dep_type IN ('rule_variant','edition','evidence','parameter','calendar_data','tz_data','place_data','engine','cross_domain')),
+  ref_kind                 TEXT NOT NULL CONSTRAINT "DB-E-snapshot_dependency.ref_kind" CHECK (ref_kind IN ('formal','personal','user_snapshot')),
+  ref_release              TEXT,
+  ref_id                   TEXT NOT NULL,
+  ref_version              TEXT,
+  ref_hash                 TEXT,
+  approval_id              TEXT,
+  param_value              TEXT,
+  value_source             TEXT,
+  registry_version         TEXT,
+  normalizer_version       TEXT,
+  hash_algorithm           TEXT,
+  canonicalization_version TEXT,
+  step_code                TEXT,
+  PRIMARY KEY (snapshot_id, ord),
+  CONSTRAINT "DB-U-12a" CHECK (dep_type NOT IN ('rule_variant','edition','evidence','calendar_data','place_data','cross_domain')
+                               OR (ref_version IS NOT NULL AND ref_version <> '' AND ref_hash IS NOT NULL AND ref_hash <> '' AND ref_release IS NOT NULL)),
+  CONSTRAINT "DB-U-12c" CHECK (dep_type <> 'rule_variant' OR ref_kind <> 'formal' OR approval_id IS NOT NULL),
+  CONSTRAINT "DB-U-12d" CHECK (dep_type <> 'parameter' OR (param_value IS NOT NULL AND value_source IS NOT NULL AND registry_version IS NOT NULL)),
+  CONSTRAINT "DB-U-12b" CHECK (dep_type <> 'tz_data' OR (ref_version IS NOT NULL AND ref_version <> '')),
+  CONSTRAINT "DB-U-12e" CHECK (dep_type <> 'engine' OR (normalizer_version IS NOT NULL AND hash_algorithm IS NOT NULL AND canonicalization_version IS NOT NULL))
+) STRICT;
+
+-- U11 governance_context（§6.5；不进入结果指纹）
+CREATE TABLE snapshot_gov_approval (
+  snapshot_id      TEXT NOT NULL REFERENCES calculation_snapshot(snapshot_id) DEFERRABLE INITIALLY DEFERRED,
+  owner_profile_id TEXT NOT NULL,
+  rule_variant_id  TEXT NOT NULL,
+  approval_id      TEXT NOT NULL,
+  PRIMARY KEY (snapshot_id, rule_variant_id)
+) STRICT;
+CREATE TABLE snapshot_gov_blocker (
+  snapshot_id      TEXT NOT NULL REFERENCES calculation_snapshot(snapshot_id) DEFERRABLE INITIALLY DEFERRED,
+  owner_profile_id TEXT NOT NULL,
+  block_id         TEXT NOT NULL,
+  status           TEXT NOT NULL CONSTRAINT "DB-E-snapshot_gov_blocker.status" CHECK (status IN ('现行','已解除','无记录')),
+  PRIMARY KEY (snapshot_id, block_id)
+) STRICT;
+CREATE TABLE snapshot_gov_sequence (
+  snapshot_id      TEXT NOT NULL REFERENCES calculation_snapshot(snapshot_id) DEFERRABLE INITIALLY DEFERRED,
+  owner_profile_id TEXT NOT NULL,
+  kind             TEXT NOT NULL CONSTRAINT "DB-E-snapshot_gov_sequence.kind" CHECK (kind IN ('evidence_status','admission','formal_status','approval','blocker_change')),
+  max_sequence_no  INTEGER NOT NULL,
+  PRIMARY KEY (snapshot_id, kind)
+) STRICT;
+
+-- U12 snapshot_resolved_context（§13.6；清单 §6.3）
+CREATE TABLE snapshot_resolved_context (
+  snapshot_id      TEXT NOT NULL REFERENCES calculation_snapshot(snapshot_id) DEFERRABLE INITIALLY DEFERRED,
+  owner_profile_id TEXT NOT NULL,
+  item_kind        TEXT NOT NULL CONSTRAINT "DB-E-snapshot_resolved_context.item_kind" CHECK (item_kind IN ('jieqi_prev','jieqi_next','table_version')),
+  key              TEXT NOT NULL,
+  version          TEXT,
+  content_hash     TEXT,
+  value            TEXT,
+  PRIMARY KEY (snapshot_id, item_kind, key),
+  CONSTRAINT "DB-U-rc" CHECK ((item_kind = 'table_version' AND version IS NOT NULL AND content_hash IS NOT NULL AND value IS NULL)
+                              OR (item_kind <> 'table_version' AND value IS NOT NULL AND version IS NULL AND content_hash IS NULL))
+) STRICT;
+
+-- U13 execution_trace_step（§6.6；清单 P-34、P-39、Q-10）
+CREATE TABLE execution_trace_step (
+  snapshot_id      TEXT NOT NULL REFERENCES calculation_snapshot(snapshot_id) DEFERRABLE INITIALLY DEFERRED,
+  owner_profile_id TEXT NOT NULL,
+  step_code        TEXT NOT NULL,
+  exec_order       INTEGER NOT NULL,
+  status           TEXT NOT NULL CONSTRAINT "DB-E-execution_trace_step.status" CHECK (status IN ('完成','未执行')),
+  skip_kind        TEXT CONSTRAINT "DB-E-execution_trace_step.skip_kind" CHECK (skip_kind IS NULL OR skip_kind IN ('范围外','输入缺失','按规则跳过')),
+  reason           TEXT,
+  calc_function_id TEXT,
+  function_version TEXT,
+  impl_hash        TEXT,
+  input_summary    TEXT,
+  output_summary   TEXT,
+  PRIMARY KEY (snapshot_id, step_code),
+  CONSTRAINT "DB-T-02" CHECK (status <> '未执行' OR (skip_kind IS NOT NULL AND reason IS NOT NULL AND reason <> '')),
+  CONSTRAINT "DB-T-03" CHECK (status <> '完成' OR (calc_function_id IS NOT NULL AND function_version IS NOT NULL AND impl_hash IS NOT NULL
+                                                  AND input_summary IS NOT NULL AND output_summary IS NOT NULL AND skip_kind IS NULL))
+) STRICT;
+
+-- ===================================================================== 个人研究
+-- U14 branch（§7.1、A-12；只许删除入口内置空 base_snapshot_id，清单 §3.6 第 (6) 条）
+CREATE TABLE branch (
+  branch_id         TEXT NOT NULL PRIMARY KEY,
+  branch_name       TEXT NOT NULL,
+  parent_branch_id  TEXT REFERENCES branch(branch_id),
+  base_data_release TEXT NOT NULL,
+  base_snapshot_id  TEXT REFERENCES calculation_snapshot(snapshot_id),
+  owner             TEXT NOT NULL CONSTRAINT "DB-U-15-owner" CHECK (owner = 'OWNER'),
+  branch_note       TEXT
+) STRICT;
+
+-- U15 branch_status_history（§7.1；清单 §3.3 甲类）
+CREATE TABLE branch_status_history (
+  branch_id       TEXT NOT NULL REFERENCES branch(branch_id),
+  previous_status TEXT CONSTRAINT "DB-E-branch_status_history.previous_status" CHECK (previous_status IS NULL OR previous_status IN ('active','promoted','merged','abandoned')),
+  new_status      TEXT NOT NULL CONSTRAINT "DB-E-branch_status_history.new_status" CHECK (new_status IN ('active','promoted','merged','abandoned')),
+  data_release    TEXT,
+  note            TEXT NOT NULL,
+  sequence_no     INTEGER NOT NULL UNIQUE,
+  CONSTRAINT "DB-U-15c" CHECK (new_status <> 'merged' OR data_release IS NOT NULL)
+) STRICT;
+
+-- U16 个人研究对象（§1.3、R-I-2、§7.2：branch_id 必填；formal_status 只能为 NON_FORMAL；对正式对象用三元组）
+CREATE TABLE personal_edition (
+  edition_id           TEXT NOT NULL PRIMARY KEY,
+  branch_id            TEXT NOT NULL REFERENCES branch(branch_id),
+  source_release       TEXT NOT NULL,
+  source_id            TEXT NOT NULL,
+  source_hash          TEXT NOT NULL,
+  parent_edition_id    TEXT,
+  base_text            TEXT,
+  transcription_status TEXT NOT NULL CONSTRAINT "DB-E-personal_edition.transcription_status" CHECK (transcription_status IN ('原刊本','转录本（未与影印本对校）','个人校勘')),
+  confidence           TEXT NOT NULL CONSTRAINT "DB-E-personal_edition.confidence" CHECK (confidence IN ('A','B','C')),
+  formal_status        TEXT NOT NULL CONSTRAINT "DB-U-14-edition" CHECK (formal_status = 'NON_FORMAL'),
+  CONSTRAINT "DB-F-04-personal" CHECK (transcription_status <> '转录本（未与影印本对校）' OR confidence <> 'A')
+) STRICT;
+CREATE TABLE personal_evidence (
+  evidence_id         TEXT NOT NULL PRIMARY KEY,
+  branch_id           TEXT NOT NULL REFERENCES branch(branch_id),
+  evidence_tier       TEXT NOT NULL CONSTRAINT "DB-E-personal_evidence.evidence_tier" CHECK (evidence_tier IN ('E1','E2','E3','E4','E5')),
+  evidence_category   TEXT NOT NULL CONSTRAINT "DB-E-personal_evidence.evidence_category" CHECK (evidence_category IN ('C-A','C-B','C-C','C-D','C-E','C-F','C-G')),
+  confidence          TEXT NOT NULL CONSTRAINT "DB-E-personal_evidence.confidence" CHECK (confidence IN ('A','B','C')),
+  evidence_status     TEXT NOT NULL CONSTRAINT "DB-E-personal_evidence.evidence_status" CHECK (evidence_status IN ('UNVERIFIED','SINGLE_SOURCE','CROSS_CHECKED','PRIMARY_VERIFIED','DISPUTED','REJECTED')),
+  claim_status        TEXT NOT NULL CONSTRAINT "DB-E-personal_evidence.claim_status" CHECK (claim_status IN ('已证实','推断','未知','已证伪')),
+  verification_method TEXT,
+  origin              TEXT NOT NULL CONSTRAINT "DB-E-personal_evidence.origin" CHECK (origin IN ('human','ai_output')),
+  formal_status       TEXT NOT NULL CONSTRAINT "DB-U-14-evidence" CHECK (formal_status = 'NON_FORMAL')
+) STRICT;
+CREATE TABLE personal_rule_variant (
+  rule_variant_id          TEXT NOT NULL PRIMARY KEY,
+  branch_id                TEXT NOT NULL REFERENCES branch(branch_id),
+  component_release        TEXT NOT NULL,
+  component_id             TEXT NOT NULL,
+  component_hash           TEXT NOT NULL,
+  version_no               INTEGER NOT NULL,
+  content_hash             TEXT NOT NULL,
+  hash_algorithm           TEXT NOT NULL,
+  canonicalization_version TEXT NOT NULL,
+  confidence               TEXT NOT NULL CONSTRAINT "DB-E-personal_rule_variant.confidence" CHECK (confidence IN ('A','B','C')),
+  non_formal_reason        TEXT NOT NULL CONSTRAINT "DB-E-personal_rule_variant.non_formal_reason" CHECK (non_formal_reason IN ('实验规则','个人校勘','未核验','暂缓规则','依赖非正式','其他')),
+  experiment_hypothesis    TEXT,
+  experiment_status        TEXT,
+  experiment_promotion_path TEXT,
+  experiment_valid_until   TEXT,
+  formal_status            TEXT NOT NULL CONSTRAINT "DB-U-14-variant" CHECK (formal_status = 'NON_FORMAL'),
+  CONSTRAINT "DB-F-09c-personal" CHECK (non_formal_reason <> '实验规则' OR (experiment_hypothesis IS NOT NULL AND experiment_status IS NOT NULL
+    AND experiment_promotion_path IS NOT NULL AND experiment_valid_until IS NOT NULL))
+) STRICT;
+CREATE TABLE personal_text_variant (
+  variant_id     TEXT NOT NULL PRIMARY KEY,
+  branch_id      TEXT NOT NULL REFERENCES branch(branch_id),
+  type_code      TEXT NOT NULL,
+  passage_a_ref  TEXT,
+  edition_a_ref  TEXT NOT NULL,
+  passage_b_ref  TEXT,
+  edition_b_ref  TEXT NOT NULL,
+  formal_status  TEXT NOT NULL CONSTRAINT "DB-U-14-text_variant" CHECK (formal_status = 'NON_FORMAL'),
+  CONSTRAINT "DB-F-13-personal" CHECK (passage_a_ref IS NOT NULL OR passage_b_ref IS NOT NULL)
+) STRICT;
+CREATE TABLE personal_evidence_link (
+  evidence_id       TEXT NOT NULL REFERENCES personal_evidence(evidence_id),
+  component_release TEXT NOT NULL,
+  component_id      TEXT NOT NULL,
+  component_hash    TEXT NOT NULL,
+  evidence_role     TEXT NOT NULL CONSTRAINT "DB-E-personal_evidence_link.evidence_role" CHECK (evidence_role IN ('支持','反证','限定','异文记录')),
+  branch_id         TEXT NOT NULL REFERENCES branch(branch_id),
+  PRIMARY KEY (evidence_id, component_id, evidence_role)
+) STRICT;
+
+-- ===================================================================== 审计与删除入口
+-- U17 blocked_audit_event（§6.3、K-4：不含结果与个人可识别内容；E2 临时定义，Q-2）
+CREATE TABLE blocked_audit_event (
+  event_id          TEXT NOT NULL PRIMARY KEY,
+  occurred_at       TEXT NOT NULL,
+  module            TEXT NOT NULL CONSTRAINT "DB-E-blocked_audit_event.module" CHECK (module IN ('BAZI','LIUYAO','FENGSHUI','CALENDAR')),
+  block_reason_code TEXT NOT NULL,
+  app_version       TEXT NOT NULL,
+  data_release      TEXT NOT NULL
+) STRICT;
+
+-- U18 deletion_audit / deletion_audit_count（§10.4；永不可改删；插入须审计写入授权，清单 §3.6 第 (7) 条）
+CREATE TABLE deletion_audit (
+  audit_id     TEXT NOT NULL PRIMARY KEY,
+  deleted_at   TEXT NOT NULL,
+  "trigger"    TEXT NOT NULL CONSTRAINT "DB-E-deletion_audit.trigger" CHECK ("trigger" = '用户操作'),
+  app_version  TEXT NOT NULL CONSTRAINT "DB-D-audit-format-app" CHECK (app_version GLOB '[0-9A-Za-z]*' AND app_version NOT GLOB '*[^0-9A-Za-z._-]*'),
+  data_release TEXT NOT NULL CONSTRAINT "DB-D-audit-format-release" CHECK (data_release GLOB '[0-9A-Za-z]*' AND data_release NOT GLOB '*[^0-9A-Za-z._-]*'),
+  success      INTEGER NOT NULL CONSTRAINT "DB-E-deletion_audit.success" CHECK (success IN (0,1))
+) STRICT;
+CREATE TABLE deletion_audit_count (
+  audit_id    TEXT NOT NULL REFERENCES deletion_audit(audit_id),
+  object_type TEXT NOT NULL CONSTRAINT "DB-E-deletion_audit_count.object_type" CHECK (object_type IN (
+                'profile','calculation_input','input_tz_resolution','profile_config_ref','calculation_config','config_param_value',
+                'calculation_snapshot','snapshot_non_formal_reason','snapshot_degradation_reason','snapshot_dependency',
+                'snapshot_gov_approval','snapshot_gov_blocker','snapshot_gov_sequence','snapshot_resolved_context','execution_trace_step',
+                'branch_base_snapshot_cleared')),
+  count       INTEGER NOT NULL CONSTRAINT "DB-D-audit-count-range" CHECK (count >= 0),
+  PRIMARY KEY (audit_id, object_type)
+) STRICT;
+
+-- U19 branch_event（§10.2“分支状态说明”；不含快照 ID、档案 ID、哈希；E2 临时定义，Q-2）
+CREATE TABLE branch_event (
+  event_id    TEXT NOT NULL PRIMARY KEY,
+  branch_id   TEXT NOT NULL REFERENCES branch(branch_id),
+  kind        TEXT NOT NULL CONSTRAINT "DB-E-branch_event.kind" CHECK (kind = 'base_snapshot_cleared'),
+  occurred_at TEXT NOT NULL,
+  audit_id    TEXT NOT NULL REFERENCES deletion_audit(audit_id)
+) STRICT;
+
+-- U20 deletion_txn_marker（清单 §3.6 第 (2) 条：至多一行；值对 SQL 可见，不是凭证；只用于把触发器调用绑定到本次事务）
+CREATE TABLE deletion_txn_marker (
+  id        INTEGER NOT NULL PRIMARY KEY CONSTRAINT "DB-D-marker-single" CHECK (id = 1),
+  txn_token TEXT NOT NULL,
+  audit_id  TEXT NOT NULL,
+  grant_seq INTEGER NOT NULL,
+  kind      TEXT NOT NULL CONSTRAINT "DB-E-deletion_txn_marker.kind" CHECK (kind IN ('success','failure'))
+) STRICT;
+
+-- ===================================================================== 行级触发器（同库）
+-- 输入：raw_payload 中的性别、精度与独立列一致（DB-U-03c）；时区解析的档案与输入一致
+CREATE TRIGGER calculation_input_bi BEFORE INSERT ON calculation_input BEGIN
+  SELECT RAISE(ABORT, '[DB-U-03c] gender / time_precision 与 raw_payload 不一致')
+    WHERE NEW.domain = 'BAZI' AND NEW.gender IN ('MALE','FEMALE','UNKNOWN') AND NEW.time_precision IS NOT NULL -- 缺值、越界交给 DB-U-03a / DB-E
+      AND (json_extract(NEW.raw_payload, '$.gender') IS NOT NEW.gender
+                                   OR json_extract(NEW.raw_payload, '$.time_precision') IS NOT NEW.time_precision);
+END;
+CREATE TRIGGER input_tz_resolution_bi BEFORE INSERT ON input_tz_resolution BEGIN
+  SELECT RAISE(ABORT, '[DB-U-owner] owner_profile_id 与所属输入不一致')
+    WHERE (SELECT owner_profile_id FROM calculation_input WHERE input_id = NEW.input_id) IS NOT NEW.owner_profile_id;
+END;
+
+-- 配置：同一 config_id 内版本递增（DB-U-05b）；取值行先写、配置行后写，配置写入后不得追加取值（DB-R-02）
+CREATE TRIGGER calculation_config_bi BEFORE INSERT ON calculation_config BEGIN
+  SELECT RAISE(ABORT, '[DB-U-05c] config_hash 重复')
+    WHERE EXISTS (SELECT 1 FROM calculation_config WHERE config_hash = NEW.config_hash);
+  SELECT RAISE(ABORT, '[DB-U-05b] 同一 config_id 内 config_version 未递增')
+    WHERE EXISTS (SELECT 1 FROM calculation_config WHERE config_id = NEW.config_id AND config_version > NEW.config_version);
+END;
+CREATE TRIGGER config_param_value_bi BEFORE INSERT ON config_param_value BEGIN
+  SELECT RAISE(ABORT, '[DB-R-02] 配置已写入，不得追加取值')
+    WHERE EXISTS (SELECT 1 FROM calculation_config WHERE config_id = NEW.config_id AND config_version = NEW.config_version);
+END;
+
+-- 快照子表：快照已写入即拒绝追加（DB-R-02）
+CREATE TRIGGER snapshot_non_formal_reason_bi BEFORE INSERT ON snapshot_non_formal_reason BEGIN
+  SELECT RAISE(ABORT, '[DB-R-02] 快照已封存，不得追加子行') WHERE EXISTS (SELECT 1 FROM calculation_snapshot WHERE snapshot_id = NEW.snapshot_id);
+END;
+CREATE TRIGGER snapshot_degradation_reason_bi BEFORE INSERT ON snapshot_degradation_reason BEGIN
+  SELECT RAISE(ABORT, '[DB-R-02] 快照已封存，不得追加子行') WHERE EXISTS (SELECT 1 FROM calculation_snapshot WHERE snapshot_id = NEW.snapshot_id);
+END;
+CREATE TRIGGER snapshot_dependency_bi BEFORE INSERT ON snapshot_dependency BEGIN
+  SELECT RAISE(ABORT, '[DB-R-02] 快照已封存，不得追加子行') WHERE EXISTS (SELECT 1 FROM calculation_snapshot WHERE snapshot_id = NEW.snapshot_id);
+END;
+CREATE TRIGGER snapshot_gov_approval_bi BEFORE INSERT ON snapshot_gov_approval BEGIN
+  SELECT RAISE(ABORT, '[DB-R-02] 快照已封存，不得追加子行') WHERE EXISTS (SELECT 1 FROM calculation_snapshot WHERE snapshot_id = NEW.snapshot_id);
+END;
+CREATE TRIGGER snapshot_gov_blocker_bi BEFORE INSERT ON snapshot_gov_blocker BEGIN
+  SELECT RAISE(ABORT, '[DB-R-02] 快照已封存，不得追加子行') WHERE EXISTS (SELECT 1 FROM calculation_snapshot WHERE snapshot_id = NEW.snapshot_id);
+END;
+CREATE TRIGGER snapshot_gov_sequence_bi BEFORE INSERT ON snapshot_gov_sequence BEGIN
+  SELECT RAISE(ABORT, '[DB-R-02] 快照已封存，不得追加子行') WHERE EXISTS (SELECT 1 FROM calculation_snapshot WHERE snapshot_id = NEW.snapshot_id);
+END;
+CREATE TRIGGER snapshot_resolved_context_bi BEFORE INSERT ON snapshot_resolved_context BEGIN
+  SELECT RAISE(ABORT, '[DB-R-02] 快照已封存，不得追加子行') WHERE EXISTS (SELECT 1 FROM calculation_snapshot WHERE snapshot_id = NEW.snapshot_id);
+END;
+CREATE TRIGGER execution_trace_step_bi BEFORE INSERT ON execution_trace_step BEGIN
+  SELECT RAISE(ABORT, '[DB-R-02] 快照已封存，不得追加子行') WHERE EXISTS (SELECT 1 FROM calculation_snapshot WHERE snapshot_id = NEW.snapshot_id);
+END;
+
+-- 快照封存（清单 §3.5 第 2 条；只做同库可见的检查）
+CREATE TRIGGER calculation_snapshot_seal BEFORE INSERT ON calculation_snapshot BEGIN
+  SELECT RAISE(ABORT, '[DB-U-07a] input_hash 与所引输入不一致')
+    WHERE NOT EXISTS (SELECT 1 FROM calculation_input i WHERE i.input_id = NEW.input_id AND i.input_hash = NEW.input_hash);
+  SELECT RAISE(ABORT, '[DB-U-07b] config_hash 与所引配置不一致')
+    WHERE NOT EXISTS (SELECT 1 FROM calculation_config c WHERE c.config_id = NEW.config_id AND c.config_version = NEW.config_version AND c.config_hash = NEW.config_hash);
+  SELECT RAISE(ABORT, '[DB-U-07c] 快照档案与输入档案不一致')
+    WHERE (SELECT owner_profile_id FROM calculation_input WHERE input_id = NEW.input_id) IS NOT NEW.owner_profile_id;
+  SELECT RAISE(ABORT, '[DB-U-07d] 档案未引用该配置（profile_config_ref）')
+    WHERE NOT EXISTS (SELECT 1 FROM profile_config_ref r WHERE r.owner_profile_id = NEW.owner_profile_id AND r.config_id = NEW.config_id AND r.config_version = NEW.config_version);
+  SELECT RAISE(ABORT, '[DB-U-07e] 快照领域与输入或配置不一致')
+    WHERE (SELECT domain FROM calculation_input WHERE input_id = NEW.input_id) IS NOT NEW.domain
+       OR (SELECT module FROM calculation_config WHERE config_id = NEW.config_id AND config_version = NEW.config_version) IS NOT NEW.domain;
+  SELECT RAISE(ABORT, '[ZR-DB-missing] BAZI 配置缺 CFG-01，不得持久化为命盘快照（B2）')
+    WHERE NEW.domain = 'BAZI' AND NOT EXISTS (SELECT 1 FROM config_param_value p WHERE p.config_id = NEW.config_id AND p.config_version = NEW.config_version AND p.param_id = 'CFG-01');
+  SELECT RAISE(ABORT, '[DB-U-09a] NON_FORMAL 快照缺非正式原因')
+    WHERE NEW.formal_status = 'NON_FORMAL' AND NOT EXISTS (SELECT 1 FROM snapshot_non_formal_reason WHERE snapshot_id = NEW.snapshot_id);
+  SELECT RAISE(ABORT, '[DB-U-09b] FORMAL 快照不得有非正式原因')
+    WHERE NEW.formal_status = 'FORMAL' AND EXISTS (SELECT 1 FROM snapshot_non_formal_reason WHERE snapshot_id = NEW.snapshot_id);
+  SELECT RAISE(ABORT, '[DB-U-11a] COMPLETE 却有降级原因')
+    WHERE NEW.result_completeness = 'COMPLETE' AND EXISTS (SELECT 1 FROM snapshot_degradation_reason WHERE snapshot_id = NEW.snapshot_id);
+  SELECT RAISE(ABORT, '[DB-U-11b] OK_WITH_DEGRADATION 却无降级原因')
+    WHERE NEW.result_completeness = 'OK_WITH_DEGRADATION' AND NOT EXISTS (SELECT 1 FROM snapshot_degradation_reason WHERE snapshot_id = NEW.snapshot_id);
+  SELECT RAISE(ABORT, '[DB-S-engine] 依赖行缺 engine 一类')
+    WHERE NOT EXISTS (SELECT 1 FROM snapshot_dependency WHERE snapshot_id = NEW.snapshot_id AND dep_type = 'engine');
+  SELECT RAISE(ABORT, '[DB-C-02] FORMAL 快照的依赖含个人对象')
+    WHERE NEW.formal_status = 'FORMAL' AND EXISTS (SELECT 1 FROM snapshot_dependency WHERE snapshot_id = NEW.snapshot_id AND ref_kind = 'personal');
+  SELECT RAISE(ABORT, '[DB-U-10b] research_scope 与依赖闭包中的分支不符（§7.4）')
+    WHERE NEW.formal_status = 'NON_FORMAL' AND
+      (EXISTS (SELECT 1 FROM snapshot_dependency WHERE snapshot_id = NEW.snapshot_id AND ref_kind = 'personal')) <> (NEW.research_scope = 'PERSONAL_RESEARCH');
+  SELECT RAISE(ABORT, '[DB-U-owner] 子行档案与快照档案不一致')
+    WHERE EXISTS (SELECT 1 FROM snapshot_non_formal_reason  WHERE snapshot_id = NEW.snapshot_id AND owner_profile_id IS NOT NEW.owner_profile_id)
+       OR EXISTS (SELECT 1 FROM snapshot_degradation_reason WHERE snapshot_id = NEW.snapshot_id AND owner_profile_id IS NOT NEW.owner_profile_id)
+       OR EXISTS (SELECT 1 FROM snapshot_dependency         WHERE snapshot_id = NEW.snapshot_id AND owner_profile_id IS NOT NEW.owner_profile_id)
+       OR EXISTS (SELECT 1 FROM snapshot_gov_approval       WHERE snapshot_id = NEW.snapshot_id AND owner_profile_id IS NOT NEW.owner_profile_id)
+       OR EXISTS (SELECT 1 FROM snapshot_gov_blocker        WHERE snapshot_id = NEW.snapshot_id AND owner_profile_id IS NOT NEW.owner_profile_id)
+       OR EXISTS (SELECT 1 FROM snapshot_gov_sequence       WHERE snapshot_id = NEW.snapshot_id AND owner_profile_id IS NOT NEW.owner_profile_id)
+       OR EXISTS (SELECT 1 FROM snapshot_resolved_context   WHERE snapshot_id = NEW.snapshot_id AND owner_profile_id IS NOT NEW.owner_profile_id)
+       OR EXISTS (SELECT 1 FROM execution_trace_step        WHERE snapshot_id = NEW.snapshot_id AND owner_profile_id IS NOT NEW.owner_profile_id);
+  SELECT RAISE(ABORT, '[DB-S-09] resolved_context 的表版本行与依赖行不一致')
+    WHERE EXISTS (SELECT 1 FROM snapshot_resolved_context r WHERE r.snapshot_id = NEW.snapshot_id AND r.item_kind = 'table_version'
+                    AND NOT EXISTS (SELECT 1 FROM snapshot_dependency d WHERE d.snapshot_id = NEW.snapshot_id AND d.dep_type IN ('rule_variant','calendar_data')
+                                      AND d.ref_id = r.key AND d.ref_version = r.version AND d.ref_hash = r.content_hash))
+       OR EXISTS (SELECT 1 FROM snapshot_dependency d WHERE d.snapshot_id = NEW.snapshot_id AND d.dep_type IN ('rule_variant','calendar_data')
+                    AND NOT EXISTS (SELECT 1 FROM snapshot_resolved_context r WHERE r.snapshot_id = NEW.snapshot_id AND r.item_kind = 'table_version'
+                                      AND d.ref_id = r.key AND d.ref_version = r.version AND d.ref_hash = r.content_hash));
+  SELECT RAISE(ABORT, '[DB-U-13b] 重算来源须为本档案快照')
+    WHERE NEW.recomputed_from_snapshot_id IS NOT NULL
+      AND (SELECT owner_profile_id FROM calculation_snapshot WHERE snapshot_id = NEW.recomputed_from_snapshot_id) IS NOT NEW.owner_profile_id
+      AND EXISTS (SELECT 1 FROM calculation_snapshot WHERE snapshot_id = NEW.recomputed_from_snapshot_id);
+END;
+
+-- 分支：merged / abandoned 后不得再追加（DB-U-15d）
+CREATE TRIGGER branch_status_history_terminal BEFORE INSERT ON branch_status_history BEGIN
+  SELECT RAISE(ABORT, '[DB-U-15d] 分支已 merged / abandoned，不得再追加状态')
+    WHERE (SELECT new_status FROM branch_status_history WHERE branch_id = NEW.branch_id ORDER BY sequence_no DESC LIMIT 1) IN ('merged','abandoned');
+END;
+
+-- ===================================================================== 删除入口相关触发器（清单 §3.6 第 (6)、(7) 条）
+-- 无主配置回收（第 (6) 条）
+CREATE TRIGGER calculation_config_bd BEFORE DELETE ON calculation_config BEGIN
+  SELECT RAISE(ABORT, '[DB-D-gc][DB-I-calculation_config] 配置回收未经授权')
+    WHERE coalesce(xs_del_gc((SELECT txn_token FROM deletion_txn_marker WHERE id = 1),
+                             (SELECT audit_id  FROM deletion_txn_marker WHERE id = 1),
+                             (SELECT grant_seq FROM deletion_txn_marker WHERE id = 1)), 0) <> 1;
+  SELECT RAISE(ABORT, '[DB-D-gc] 配置仍被档案引用')
+    WHERE EXISTS (SELECT 1 FROM profile_config_ref WHERE config_id = OLD.config_id AND config_version = OLD.config_version);
+  SELECT RAISE(ABORT, '[DB-D-gc] 配置仍被快照引用')
+    WHERE EXISTS (SELECT 1 FROM calculation_snapshot WHERE config_id = OLD.config_id AND config_version = OLD.config_version);
+END;
+CREATE TRIGGER config_param_value_bd BEFORE DELETE ON config_param_value BEGIN
+  SELECT RAISE(ABORT, '[DB-D-gc][DB-I-config_param_value] 配置取值回收未经授权')
+    WHERE coalesce(xs_del_gc((SELECT txn_token FROM deletion_txn_marker WHERE id = 1),
+                             (SELECT audit_id  FROM deletion_txn_marker WHERE id = 1),
+                             (SELECT grant_seq FROM deletion_txn_marker WHERE id = 1)), 0) <> 1;
+  SELECT RAISE(ABORT, '[DB-D-gc] 所属配置仍被引用')
+    WHERE EXISTS (SELECT 1 FROM profile_config_ref WHERE config_id = OLD.config_id AND config_version = OLD.config_version)
+       OR EXISTS (SELECT 1 FROM calculation_snapshot WHERE config_id = OLD.config_id AND config_version = OLD.config_version);
+END;
+
+-- Branch：只许删除入口内置空 base_snapshot_id（第 (6) 条）
+CREATE TRIGGER branch_bu BEFORE UPDATE ON branch BEGIN
+  SELECT RAISE(ABORT, '[DB-D-branch][DB-I-branch] 只许置空 base_snapshot_id，其余列不得改')
+    WHERE NEW.branch_id IS NOT OLD.branch_id OR NEW.branch_name IS NOT OLD.branch_name OR NEW.parent_branch_id IS NOT OLD.parent_branch_id
+       OR NEW.base_data_release IS NOT OLD.base_data_release OR NEW.owner IS NOT OLD.owner OR NEW.branch_note IS NOT OLD.branch_note
+       OR NEW.base_snapshot_id IS NOT NULL OR OLD.base_snapshot_id IS NULL;
+  SELECT RAISE(ABORT, '[DB-D-branch] 置空分支引用未经授权（快照不属被授权档案或不在授权事务内）')
+    WHERE coalesce(xs_del_gate((SELECT owner_profile_id FROM calculation_snapshot WHERE snapshot_id = OLD.base_snapshot_id),
+                               (SELECT txn_token FROM deletion_txn_marker WHERE id = 1),
+                               (SELECT audit_id  FROM deletion_txn_marker WHERE id = 1),
+                               (SELECT grant_seq FROM deletion_txn_marker WHERE id = 1)), 0) <> 1;
+END;
+CREATE TRIGGER branch_bd BEFORE DELETE ON branch BEGIN
+  SELECT RAISE(ABORT, '[DB-I-branch] 分支不得删除（§10.2：只置空引用）');
+END;
+
+-- branch_event：须在授权删除事务内，audit_id 与 U20 一致（第 (6) 条，自查 Z-3）
+CREATE TRIGGER branch_event_bi BEFORE INSERT ON branch_event BEGIN
+  SELECT RAISE(ABORT, '[DB-D-branch-event] branch_event 只能在授权删除事务内插入')
+    WHERE coalesce(xs_del_gc((SELECT txn_token FROM deletion_txn_marker WHERE id = 1),
+                             (SELECT audit_id  FROM deletion_txn_marker WHERE id = 1),
+                             (SELECT grant_seq FROM deletion_txn_marker WHERE id = 1)), 0) <> 1
+       OR NEW.audit_id IS NOT (SELECT audit_id FROM deletion_txn_marker WHERE id = 1);
+END;
+
+-- 删除审计：插入须审计写入授权 W（第 (7) 条）
+CREATE TRIGGER deletion_audit_bi BEFORE INSERT ON deletion_audit BEGIN
+  SELECT RAISE(ABORT, '[DB-D-audit-writer] 删除审计写入未经授权')
+    WHERE coalesce(xs_audit_write((SELECT txn_token FROM deletion_txn_marker WHERE id = 1),
+                                  NEW.audit_id,
+                                  (SELECT grant_seq FROM deletion_txn_marker WHERE id = 1),
+                                  CASE NEW.success WHEN 1 THEN 'success' ELSE 'failure' END), 0) <> 1
+       OR NEW.audit_id IS NOT (SELECT audit_id FROM deletion_txn_marker WHERE id = 1)
+       OR (SELECT kind FROM deletion_txn_marker WHERE id = 1) IS NOT (CASE NEW.success WHEN 1 THEN 'success' ELSE 'failure' END);
+END;
+CREATE TRIGGER deletion_audit_count_bi BEFORE INSERT ON deletion_audit_count BEGIN
+  SELECT RAISE(ABORT, '[DB-D-audit-count] 计数行只属于成功审计')
+    WHERE (SELECT success FROM deletion_audit WHERE audit_id = NEW.audit_id) IS NOT 1;
+  SELECT RAISE(ABORT, '[DB-D-audit-writer] 计数写入未经授权')
+    WHERE coalesce(xs_audit_write((SELECT txn_token FROM deletion_txn_marker WHERE id = 1),
+                                  NEW.audit_id,
+                                  (SELECT grant_seq FROM deletion_txn_marker WHERE id = 1),
+                                  'success'), 0) <> 1
+       OR NEW.audit_id IS NOT (SELECT audit_id FROM deletion_txn_marker WHERE id = 1);
+END;

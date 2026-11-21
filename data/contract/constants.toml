@@ -1,0 +1,136 @@
+# 玄枢契约里的常量与已定结论 —— 只在这里写一次
+#
+# 契约正文引用这里的值，不再在多处重复书写；
+# checks/verify.py 把下面每一条当断言跑，数据一变、结论不成立，CI 就变红。
+
+[time]
+tz_offset_hours = 8
+day_rollover = "00:00:00"
+# 子时窗口：[D-1 日 23:00:00, D 日 01:00:00)，左闭右开【B4-14】
+zi_window_start = "23:00:00"
+zi_window_end_exclusive = "01:00:00"
+# 1972-01-01 前用 UT1，之后用 UTC（闰秒表），表末后不再加闰秒【B4-12】
+utc_from = "1972-01-01"
+# 远期外推标记：该年起的节气结果加“远期外推”标记【B4-5 补定】
+far_future_flag_from_year = 2027
+
+# 叠加用例年份的校验规则（文件头规则 2）【B4-13 / B4-14】
+# 用例本身显式写年份；这里重新筛一遍，结果必须等于 decided_year
+[superposition_selector]
+min_year = 1972
+term_hour = 23                 # 交节落在 D 前一晚 23 点段（晚子时）
+min_margin_minutes = 20        # 离 23:00 与离 00:00 都 > 20 分钟
+pick = "earliest"
+
+[[superposition_case]]
+id = "SHICHEN_ZI_AND_JINGZHE_SUPERPOSITION"
+term = "惊蛰"
+decided_year = 2018
+term_utc8 = "2018-03-05T23:28:11+08:00"
+fixed_utc8_date = "2018-03-06"
+day_candidates = ["丙申", "丁酉"]
+required = true
+decision = "B4-13"
+
+[[superposition_case]]
+id = "SHICHEN_ZI_AND_LICHUN_SUPERPOSITION"
+term = "立春"
+decided_year = 2017
+term_utc8 = "2017-02-03T23:34:03+08:00"
+fixed_utc8_date = "2017-02-04"
+day_candidates = ["辛酉", "壬戌"]
+required = true
+decision = "B4-13"
+
+[[superposition_case]]
+id = "SHICHEN_ZI_AND_LICHUN_EARLY_1976"
+term = "立春"
+decided_year = 1976
+term_utc8 = "1976-02-05T00:39:27+08:00"
+fixed_utc8_date = "1976-02-05"
+day_candidates = ["丙戌", "丁亥"]
+required = false               # 早子时备选，不进必需集，不走规则 2 校验
+decision = "B4-14"
+
+# 年历比对【§13.5 / B4-15】
+[almanac]
+tolerance_seconds = 60
+compare = "instant"            # 比时刻差，不比日期
+# 出版物分钟舍入造成的跨日，以基准表为准
+rounding_cross_midnight = [
+  { year = 1923, term = "雨水", baseline_utc8 = "1923-02-19T23:59:40+08:00" },
+  { year = 1979, term = "大寒", baseline_utc8 = "1979-01-20T23:59:54+08:00" },
+]
+
+# 24 条人工对图清单【B4-17】：22 条与基准表差 1 分钟（秒数在进位边界）+ 2 条舍入跨日
+# 断言：年历与基准表（四舍五入到分）不同的条目，必须恰好是这 24 条，且都已对图
+visual_checked = [
+  "1905 春分", "1909 秋分", "1918 大雪", "1928 立秋", "1928 立冬", "1946 雨水",
+  "1954 大雪", "1962 惊蛰", "1966 谷雨", "1972 立秋", "1975 小寒", "1980 惊蛰",
+  "1989 雨水", "2001 惊蛰", "2010 立冬", "2011 夏至", "2013 寒露", "2014 雨水",
+  "2014 寒露", "2018 小雪", "2022 小雪", "2024 小雪", "1923 雨水", "1979 大寒",
+]
+almanac_years = [1900, 2025]
+
+# 已核定的关键值（金值）
+[[golden_term]]
+year = 2024
+term = "惊蛰"
+utc8 = "2024-03-05T10:22:46+08:00"
+
+[[golden_term]]
+year = 2024
+term = "立春"
+utc8 = "2024-02-04T16:27:08+08:00"
+decision = "B4-16"
+
+[[golden_term]]
+year = 1900
+term = "立春"
+utc8 = "1900-02-04T13:51:30+08:00"
+
+[[golden_term]]
+year = 2000
+term = "立春"
+utc8 = "2000-02-04T20:40:23+08:00"
+
+[[golden_term]]
+year = 2100
+term = "立春"
+utc8 = "2100-02-04T03:02:14+08:00"
+
+[[golden_day]]
+date = "1949-10-01"
+pillar = "甲子"
+note = "锚点 P-D-04"
+
+[[golden_day]]
+date = "2024-03-07"
+pillar = "庚午"
+note = "GOLDEN_PATH_FULL_PILLARS【B4-7】"
+
+[[golden_day]]
+date = "2024-03-10"
+pillar = "癸酉"
+
+[[golden_day]]
+date = "2024-03-11"
+pillar = "甲戌"
+
+# 均时差逐日表【B1-1】——W-05 中可在数据侧检查的部分
+[eot]
+definition = "视太阳时 − 平太阳时（秒）"
+rows = 73415
+first_date = "1900-01-01"
+last_date = "2101-01-01"
+feb_min_minutes = [-15.0, -13.5]      # 每年 1–3 月极小值所在区间
+nov_max_minutes = [16.0, 17.0]        # 每年 9–12 月极大值所在区间
+zero_anchors = ["04-15", "06-13", "09-01", "12-25"]
+zero_tolerance_days = 3
+max_interp_error_seconds = 5.0
+
+# CFG-01（zi_rule）第一版锁定值【用户裁决 N-6】：契约 §13.3、P-8.1“第一版锁定 ye_zi_b”。
+# E2 DDL 生成脚本由此读取，写入用户库 CFG-01 的库层拦截（审核清单 §8.1；E2 实施授权书 Q-8）。
+[cfg01]
+locked_value = "ye_zi_b"
+decision = "N-6"

@@ -1,0 +1,49 @@
+{
+  "note": "E2 端到端用例（审核清单 §7.1、§7.5）与四场景期望。输入为测试构造值，非真实个人信息。",
+  "cases": [
+    {
+      "case_id": "E2E-BZ-1", "domain": "BAZI", "owner_profile_id": "TEST-PROFILE-1", "input_id": "TEST-INPUT-BZ-1",
+      "raw": { "v": 1, "civil_datetime": "1990-06-15T14:30", "time_precision": "MINUTE", "gender": "UNKNOWN", "tz_id": "Asia/Shanghai", "dst_included": true, "longitude": "116.400000", "latitude": "39.900000", "place_name": "北京" },
+      "tz": { "tz_id": "Asia/Shanghai", "utc_offset_seconds": 32400, "dst_flag": true, "tzdata_version": "未记录", "tz_table_version": "未记录", "offset_source": "契约 §11.1 内地夏令时区间（1990-04-15～09-16）" },
+      "normalizer_version": "e2-norm-1",
+      "config": { "config_id": "TEST-CFG-BZ-1", "config_version": 1, "registry_version": "contract-v1.0-P-8", "params": [
+        { "param_id": "CFG-01", "value": "ye_zi_b", "value_source": "version_locked", "apply_mode": "applied" },
+        { "param_id": "CFG-01T", "value": "clock", "value_source": "follows_param", "apply_mode": "applied" },
+        { "param_id": "CFG-02", "value": "false", "value_source": "user_selected", "apply_mode": "applied" },
+        { "param_id": "CFG-03", "value": "lichun", "value_source": "approved_default", "apply_mode": "applied" },
+        { "param_id": "CFG-04", "value": "yh_yuelu", "value_source": "user_selected", "apply_mode": "stored_only" },
+        { "param_id": "CFG-04C", "value": "jieqi_day_1", "value_source": "approved_default", "apply_mode": "stored_only" },
+        { "param_id": "CFG-05", "value": "yuan_hai_static", "value_source": "approved_default", "apply_mode": "applied" },
+        { "param_id": "CFG-05S", "value": "wu", "value_source": "approved_default", "apply_mode": "applied" },
+        { "param_id": "CFG-05W", "value": "none", "value_source": "approved_default", "apply_mode": "applied" },
+        { "param_id": "CFG-14", "value": "iana", "value_source": "approved_default", "apply_mode": "applied" },
+        { "param_id": "CFG-15", "value": "iana", "value_source": "approved_default", "apply_mode": "applied" }
+      ] }
+    },
+    {
+      "case_id": "E2E-LY-1", "domain": "LIUYAO", "owner_profile_id": "TEST-PROFILE-1", "input_id": "TEST-INPUT-LY-1",
+      "raw": { "v": 1, "cast_datetime": "2026-11-21T12:00", "tz_id": "Asia/Shanghai", "method": "coins", "yao": [7, 8, 9, 6, 7, 8] },
+      "tz": { "tz_id": "Asia/Shanghai", "utc_offset_seconds": 28800, "dst_flag": false, "tzdata_version": "未记录", "tz_table_version": "未记录", "offset_source": "契约 §11.1 境内 UTC+8" },
+      "normalizer_version": "e2-norm-1",
+      "config": { "config_id": "TEST-CFG-LY-1", "config_version": 1, "registry_version": "contract-v1.0-P-8", "params": [] }
+    }
+  ],
+  "expect": {
+    "G0": {
+      "E2E-BZ-1": { "status": "BLOCKED", "block_reason_code": "MISSING_APPROVAL" },
+      "E2E-LY-1": { "status": "BLOCKED", "block_reason_code": "MISSING_APPROVAL" }
+    },
+    "G1": {
+      "E2E-BZ-1": { "status": "BLOCKED", "block_reason_code": "BLOCKER_PATH:BLK-6:BZ-05" },
+      "E2E-LY-1": { "status": "BLOCKED", "block_reason_code": "DISPUTE_UNRESOLVED:TEST-DSP-LY-DAYBOUND:LY-06" }
+    },
+    "G1N": {
+      "E2E-BZ-1": { "status": "NON_FORMAL", "reasons": ["PARAM_PROVISIONAL:CFG-05", "PARAM_PROVISIONAL:CFG-05W", "RULE_PROVISIONAL:TEST-RV-PD04"] },
+      "E2E-LY-1": { "status": "NON_FORMAL", "reasons": ["BLOCKER_PATH:BLK-6", "RULE_PROVISIONAL:TEST-RV-PD04"] }
+    },
+    "G2": {
+      "E2E-BZ-1": { "status": "FORMAL", "reasons": [] },
+      "E2E-LY-1": { "status": "FORMAL", "reasons": [] }
+    }
+  }
+}
