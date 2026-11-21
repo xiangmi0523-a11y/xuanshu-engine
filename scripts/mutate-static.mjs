@@ -57,7 +57,10 @@ lines.forEach((line, i) => {
 
 // ---- 计算与输入：预设变异，必须全部测出
 const CODE = [
-  ["P-B-04", "变卦六亲改依变卦宫", "src/zhuanggua.ts", 'hexagram(ly.bian_lines.join(""), st, self, null)', 'hexagram(ly.bian_lines.join(""), st, st.palaceWuxing.get(st.hexagrams.get(ly.bian_lines.join(""))!.palace)!, null)'],
+  ["P-B-04", "变卦六亲改依变卦宫", "src/zhuanggua.ts", 'bianHexagram(ly.bian_lines.join(""), st, self)', 'bianHexagram(ly.bian_lines.join(""), st, st.palaceWuxing.get(st.hexagrams.get(ly.bian_lines.join(""))!.palace)!)'],
+  ["M3-R-2", "变卦恢复输出世应", "src/zhuanggua.ts", "const { hex, lines } = base(bits, st, selfWuxing);\n  return { ...hex, lines };", "const { h, hex, lines } = base(bits, st, selfWuxing);\n  return Object.assign({ ...hex, lines }, { shi: h.shi, ying: h.ying });"],
+  ["M3-R-2", "变卦各爻恢复世应标志", "src/zhuanggua.ts", "const { hex, lines } = base(bits, st, selfWuxing);\n  return { ...hex, lines };", "const { h, hex, lines } = base(bits, st, selfWuxing);\n  return { ...hex, lines: lines.map((l) => Object.assign(l, { shi: h.shi === l.line, ying: h.ying === l.line })) };"],
+  ["M3-R-1", "变卦恢复排六神", "src/zhuanggua.ts", "const { hex, lines } = base(bits, st, selfWuxing);\n  return { ...hex, lines };", "const { hex, lines } = base(bits, st, selfWuxing);\n  return { ...hex, lines: lines.map((l) => Object.assign(l, { liushen: \"青龙\" })) };"],
   ["P-B-02", "纳甲上下卦颠倒", "src/zhuanggua.ts", "i <= 3 ? h.lower : h.upper", "i <= 3 ? h.upper : h.lower"],
   ["P-B-05", "六神按日支起", "src/zhuanggua.ts", "st.liushen.get(dayGanzhi[0]!)!", "(st.liushen.get(STEMS[BRANCHES.indexOf(dayGanzhi[1]!) % 10]!) ?? st.liushen.get(dayGanzhi[0]!))!"],
   ["P-B-08", "动爻标记偏一位", "src/zhuanggua.ts", "ly.moving_lines.includes(l.line)", "ly.moving_lines.includes(l.line - 1)"],

@@ -4,7 +4,7 @@
 // 本文件不重算任何规则，只把引擎输出与基准逐项比对。
 import test from "node:test";
 import assert from "node:assert/strict";
-import { baziDetail, computeZhuanggua, STEMS, BRANCHES, type ZhuangguaHexagram } from "../src/index.js";
+import { baziDetail, computeZhuanggua, STEMS, BRANCHES, type ZhuangguaBianHexagram, type ZhuangguaHexagram } from "../src/index.js";
 import { loadStatic, readRepo, readVectors, sha256Of } from "./helpers/load.js";
 
 interface OHex { lower: string; upper: string; name: string; palace: string; palace_position: string; shi: number; ying: number; najia: string[]; wuxing: string[] }
@@ -49,31 +49,42 @@ test("SC-HEX-O SC-PWX-O SC-NJ-O SC-BWX-O SC-LQ-O SC-LS-O SC-XK-O SC-SS-O SC-CG-O
   assert.equal(cells, 1013, "应逐格核对 1013 格（藏干次序无独立来源，不在内）");
 });
 
-test("X-07 装卦全组合：4096 种爻值 × 60 日辰 = 245,760 种，逐个等于独立基准", () => {
+test("X-07 装卦全组合：4096 种爻值 × 60 日辰 = 245,760 种，逐个等于独立基准（变卦不排六神、不标世应，M3-R 第 1、2 项）", () => {
   const st = loadStatic();
-  const line = (h: ZhuangguaHexagram) => h.lines.map((l) => `${l.line}${+l.yang}${+l.moving}${l.stem_branch}${l.wuxing}${l.liuqin}${l.liushen ?? "-"}${l.shi ? "世" : ""}${l.ying ? "应" : ""}`).join(" ");
-  const eng = (h: ZhuangguaHexagram | null) => h ? `${h.bits}|${h.name}|${h.palace}|${h.palace_position}|${h.palace_wuxing}|${h.shi}|${h.ying}|${line(h)}` : "null";
-  const want = (bits: string | null, me: string, moving: number[], stem: string | null) => {
-    if (!bits) return "null";
+  const engBen = (h: ZhuangguaHexagram) => `${h.bits}|${h.name}|${h.palace}|${h.palace_position}|${h.palace_wuxing}|${h.shi}|${h.ying}|` +
+    h.lines.map((l) => `${l.line}${+l.yang}${+l.moving}${l.stem_branch}${l.wuxing}${l.liuqin}${l.liushen}${l.shi ? "世" : ""}${l.ying ? "应" : ""}`).join(" ");
+  const engBian = (h: ZhuangguaBianHexagram | null) => h ? `${h.bits}|${h.name}|${h.palace}|${h.palace_position}|${h.palace_wuxing}|` +
+    h.lines.map((l) => `${l.line}${+l.yang}${+l.moving}${l.stem_branch}${l.wuxing}${l.liuqin}`).join(" ") : "null";
+  const wantBen = (bits: string, me: string, moving: number[], stem: string) => {
     const h = O.hexagrams[bits]!;
-    const ls = h.najia.map((gz, i) => `${i + 1}${bits[i]}${+moving.includes(i + 1)}${gz}${h.wuxing[i]}${O.liuqin_by_self[me]![bits]![i]}${stem ? O.liushen[stem]![i] : "-"}${h.shi === i + 1 ? "世" : ""}${h.ying === i + 1 ? "应" : ""}`).join(" ");
+    const ls = h.najia.map((gz, i) => `${i + 1}${bits[i]}${+moving.includes(i + 1)}${gz}${h.wuxing[i]}${O.liuqin_by_self[me]![bits]![i]}${O.liushen[stem]![i]}${h.shi === i + 1 ? "世" : ""}${h.ying === i + 1 ? "应" : ""}`).join(" ");
     return `${bits}|${h.name}|${h.palace}|${h.palace_position}|${O.palace_wuxing[h.palace]}|${h.shi}|${h.ying}|${ls}`;
   };
-  let n = 0; const diffs: string[] = [];
+  const wantBian = (bits: string | null, me: string) => {
+    if (!bits) return "null";
+    const h = O.hexagrams[bits]!;
+    return `${bits}|${h.name}|${h.palace}|${h.palace_position}|${O.palace_wuxing[h.palace]}|` +
+      h.najia.map((gz, i) => `${i + 1}${bits[i]}0${gz}${h.wuxing[i]}${O.liuqin_by_self[me]![bits]![i]}`).join(" ");
+  };
+  // 变卦对象及其各爻不得带 shi、ying、liushen 键（M3-R 第 1、2 项）
+  const leaks = (h: ZhuangguaBianHexagram | null) => !!h && ("shi" in h || "ying" in h || h.lines.some((l) => "shi" in l || "ying" in l || "liushen" in l));
+  let n = 0, leaked = 0; const diffs: string[] = [];
   for (const [key, [ben, bian, moving]] of Object.entries(O.yao)) {
     const yao = [...key].map(Number);
     const me = O.palace_wuxing[O.hexagrams[ben]!.palace]!;          // P-B-04：本卦、变卦都以本卦宫五行为我
-    const wBian = want(bian, me, [], null);
+    const wBian = wantBian(bian, me);
     for (const day of JIAZI) {
       const r = computeZhuanggua(yao, day, st);
       n++;
       const [head, v1, v2] = O.xunkong[day]!;
-      const e = `${eng(r.ben)}#${eng(r.bian)}#${r.xunkong.xun_head}${r.xunkong.void.join("")}#${r.liuyao.moving_lines.join("")}`;
-      const w = `${want(ben, me, moving, day[0]!)}#${wBian}#${head}${v1}${v2}#${moving.join("")}`;
+      if (leaks(r.bian)) leaked++;
+      const e = `${engBen(r.ben)}#${engBian(r.bian)}#${r.xunkong.xun_head}${r.xunkong.void.join("")}#${r.liuyao.moving_lines.join("")}`;
+      const w = `${wantBen(ben, me, moving, day[0]!)}#${wBian}#${head}${v1}${v2}#${moving.join("")}`;
       if (e !== w && diffs.length < 5) diffs.push(`${key} ${day}\n 引擎 ${e}\n 基准 ${w}`);
     }
   }
   assert.deepEqual(diffs, []);
+  assert.equal(leaked, 0, "变卦输出带有世应或六神");
   assert.equal(n, 245760);
 });
 

@@ -23,7 +23,10 @@ for (const c of V.cases) {
   test(`[装卦] ${c.id}`, () => {
     const r = computeZhuanggua(c.yao, c.day_ganzhi, loadStatic());
     assert.deepEqual(hexOf(r.ben, true), c.expect.ben, c.basis);
-    assert.deepEqual(r.bian ? hexOf(r.bian, false) : null, c.expect.bian, c.basis);
+    // 变卦不标世应、不排六神（【用户裁决 M3-R】第 1、2 项）：向量中的变卦世应是六十四卦表事实，不再是装卦输出
+    const bianWant = c.expect.bian ? { name: c.expect.bian.name, palace: c.expect.bian.palace, palace_position: c.expect.bian.palace_position, lines: c.expect.bian.lines } : null;
+    assert.deepEqual(r.bian ? { name: r.bian.name, palace: r.bian.palace, palace_position: r.bian.palace_position,
+      lines: r.bian.lines.map((l) => ({ stem_branch: l.stem_branch, wuxing: l.wuxing, liuqin: l.liuqin })) } : null, bianWant, c.basis);
     assert.deepEqual(r.liuyao.moving_lines, c.expect.moving);
     assert.deepEqual(r.ben.lines.filter((l) => l.moving).map((l) => l.line), c.expect.moving);
     assert.deepEqual(r.xunkong, c.expect.xunkong);
@@ -32,7 +35,15 @@ for (const c of V.cases) {
     assert.equal(r.ben.lines.find((l) => l.ying)!.line, c.expect.ben.ying);
     assert.equal(r.layer, ZHUANGGUA_LAYER);
     assert.equal(r.liushen_is_auxiliary_symbol, true);
-    if (r.bian) assert.ok(r.bian.lines.every((l) => l.liushen === undefined), "变卦不排六神");
+    if (r.bian) {
+      assert.ok(!("shi" in r.bian) && !("ying" in r.bian), "变卦不标世应（M3-R 第 2 项）");
+      for (const l of r.bian.lines) {
+        assert.ok(!("liushen" in l), "变卦不排六神（M3-R 第 1 项）");
+        assert.ok(!("shi" in l) && !("ying" in l), "变卦各爻不标世应（M3-R 第 2 项）");
+      }
+    }
+    assert.deepEqual(r.pending, []);
+    assert.equal(r.conventions.length, 2);
   });
 }
 
