@@ -2,7 +2,8 @@
  "note": "独立机读规格（E2-FIX D）。由 scripts/gen-spec.mjs 从审核清单第 4 节逐字摘录（db/spec/checklist_s4.md）与补充出处表（db/spec/sources.json）生成，不读 DDL。required 为清单“必”列；enums 只收多值 CHECK（单值等式另有专门用例），nullable 取自清单强度或补充出处；fks 为清单 FK 标记与补充。DDL 与本规格的双向比对见 test/db/spec.test.ts。",
  "inputs": {
   "checklist_s4_sha256": "c711f5979c82d3a745a35acdb0e73cb1b1d242a91967f111fe2d01dddcbc69af",
-  "sources_sha256": "83795030b577aaf628086fb27f91b58517a8f7de759c6485eec71be4caac246e"
+  "checklist_s5_sha256": "b9b69f481b8a1e9cf841fbbd0dc9c218528d9cfbd33ea96a10d86ec9136785df",
+  "sources_sha256": "e163b451551a3a13e8915c31a828b5fc8bcadceb511467d6419c68e9b8eef9df"
  },
  "tables": {
   "data_release": {
@@ -16,7 +17,25 @@
    "supplement": null,
    "enums": {},
    "fks": [],
-   "src": "清单 F01"
+   "src": "清单 F01",
+   "columns": [
+    "commit_sha",
+    "created_at",
+    "data_release",
+    "release_seq"
+   ],
+   "pk": [
+    "data_release"
+   ],
+   "unique": [
+    {
+     "cols": [
+      "release_seq"
+     ],
+     "src": "清单 F01"
+    }
+   ],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "data_version": {
    "schema": "formal",
@@ -38,7 +57,8 @@
       "day_pillar"
      ],
      "nullable": false,
-     "src": "清单 F02"
+     "src": "清单 F02",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -51,10 +71,32 @@
       "data_release"
      ],
      "deferred": false,
-     "src": "清单 F02；目标：清单 F01：data_release.data_release 为 PK"
+     "src": "清单 F02；目标：清单 F01：data_release.data_release 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F02"
+   "src": "清单 F02",
+   "columns": [
+    "data_release",
+    "kind",
+    "sha256",
+    "version"
+   ],
+   "pk": [
+    "kind",
+    "version"
+   ],
+   "unique": [
+    {
+     "cols": [
+      "kind",
+      "version"
+     ],
+     "src": "清单 F02"
+    }
+   ],
+   "pk_src": "清单 F02 UNIQUE(kind, version) 即自然键，取作主键（工程补充）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "engine_release": {
    "schema": "formal",
@@ -75,10 +117,21 @@
       "data_release"
      ],
      "deferred": false,
-     "src": "清单 F03；目标：清单 F01：data_release.data_release 为 PK"
+     "src": "清单 F03；目标：清单 F01：data_release.data_release 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F03"
+   "src": "清单 F03",
+   "columns": [
+    "data_release",
+    "engine_release_id",
+    "version"
+   ],
+   "pk": [
+    "engine_release_id"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "engine_function": {
    "schema": "formal",
@@ -100,10 +153,23 @@
       "engine_release_id"
      ],
      "deferred": false,
-     "src": "清单 F04；目标：清单 F03：engine_release.engine_release_id 为 PK"
+     "src": "清单 F04；目标：清单 F03：engine_release.engine_release_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F04"
+   "src": "清单 F04",
+   "columns": [
+    "calc_function_id",
+    "engine_release_id",
+    "function_version",
+    "impl_hash"
+   ],
+   "pk": [
+    "engine_release_id",
+    "calc_function_id"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "engine_function_source": {
    "schema": "formal",
@@ -127,10 +193,25 @@
       "calc_function_id"
      ],
      "deferred": false,
-     "src": "清单 F04：impl_hash 由 engine_function_source 计算（§3.8）；工程补充：清单未标 FK"
+     "src": "清单 F04：impl_hash 由 engine_function_source 计算（§3.8）；工程补充：清单未标 FK",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 F04"
+   "src": "清单 F04",
+   "columns": [
+    "calc_function_id",
+    "engine_release_id",
+    "file_sha256",
+    "path"
+   ],
+   "pk": [
+    "engine_release_id",
+    "calc_function_id",
+    "path"
+   ],
+   "unique": [],
+   "pk_src": "清单 F04“PK 三列”：engine_release_id、calc_function_id、path",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "step_code": {
    "schema": "formal",
@@ -152,11 +233,31 @@
       "TEXT"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §6.6 步骤编号表 module；工程补充：清单 F05 未标 CHECK（§1.4“枚举字段一律加 CHECK”）"
+     "src": "工程补充：契约 §6.6 只写“每个模块固定步骤编号”，未列模块值；值取 §5.1 parameter_registry.module 值域（BAZI / LIUYAO / CALENDAR / FENGSHUI / TEXT）。清单 F05 未标 CHECK（§1.4“枚举字段一律加 CHECK”）",
+     "approval": "工程补充：待审查确认"
     }
    },
    "fks": [],
-   "src": "清单 F05"
+   "src": "清单 F05",
+   "columns": [
+    "module",
+    "name",
+    "ordinal",
+    "step_code"
+   ],
+   "pk": [
+    "step_code"
+   ],
+   "unique": [
+    {
+     "cols": [
+      "module",
+      "ordinal"
+     ],
+     "src": "工程补充：契约 §6.6“每个模块固定步骤编号”——同一模块内序号不重复"
+    }
+   ],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "step_dependency": {
    "schema": "formal",
@@ -176,7 +277,8 @@
       "step_code"
      ],
      "deferred": false,
-     "src": "清单 F05；目标：清单 F05：step_dependency(depends_on 必 FK)，指向步骤编号"
+     "src": "清单 F05；目标：清单 F05：step_dependency(depends_on 必 FK)，指向步骤编号",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "step_code",
@@ -187,10 +289,22 @@
       "step_code"
      ],
      "deferred": false,
-     "src": "清单 F05；目标：清单 F05：step_code.step_code 为 PK"
+     "src": "清单 F05；目标：清单 F05：step_code.step_code 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F05"
+   "src": "清单 F05",
+   "columns": [
+    "depends_on",
+    "step_code"
+   ],
+   "pk": [
+    "step_code",
+    "depends_on"
+   ],
+   "unique": [],
+   "pk_src": "连接表以两端外键列组合为主键（同清单 F17 evidence_passage 的 PK 写法）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "canonicalization_version": {
    "schema": "formal",
@@ -203,7 +317,18 @@
    "supplement": null,
    "enums": {},
    "fks": [],
-   "src": "清单 F06"
+   "src": "清单 F06",
+   "columns": [
+    "frozen_at",
+    "golden_vectors_sha256",
+    "spec_ref",
+    "version"
+   ],
+   "pk": [
+    "version"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "blocker_step_map": {
    "schema": "formal",
@@ -224,7 +349,8 @@
       "NON_FORMAL"
      ],
      "nullable": false,
-     "src": "清单 F07"
+     "src": "清单 F07",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -237,7 +363,8 @@
       "block_id"
      ],
      "deferred": false,
-     "src": "清单 F07；目标：清单 F41：blocker.block_id 为 PK"
+     "src": "清单 F07；目标：清单 F41：blocker.block_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "data_release",
@@ -248,7 +375,8 @@
       "data_release"
      ],
      "deferred": false,
-     "src": "清单 F07 data_release 必；工程补充"
+     "src": "清单 F07 data_release 必；工程补充",
+     "approval": "工程补充：待审查确认"
     },
     {
      "table": "step_code",
@@ -259,10 +387,27 @@
       "step_code"
      ],
      "deferred": false,
-     "src": "清单 F07；目标：清单 F05：step_code.step_code 为 PK"
+     "src": "清单 F07；目标：清单 F05：step_code.step_code 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F07"
+   "src": "清单 F07",
+   "columns": [
+    "basis_ref",
+    "block_id",
+    "condition_note",
+    "data_release",
+    "effect",
+    "step_code"
+   ],
+   "pk": [
+    "block_id",
+    "step_code",
+    "data_release"
+   ],
+   "unique": [],
+   "pk_src": "清单 F07：阻断 × 步骤 × 数据版本唯一（工程补充）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "source": {
    "schema": "formal",
@@ -282,7 +427,8 @@
       "已证伪"
      ],
      "nullable": true,
-     "src": "清单 F08；值：契约 v1.0 §2.1：归属主张本身的已证实/推断/未知/已证伪（条件必须）"
+     "src": "清单 F08；值：契约 v1.0 §2.1：归属主张本身的已证实/推断/未知/已证伪（条件必须）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "attribution_status": {
      "constraint": "DB-E-source.attribution_status",
@@ -292,11 +438,31 @@
       "系名"
      ],
      "nullable": false,
-     "src": "清单 F08"
+     "src": "清单 F08",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [],
-   "src": "清单 F08"
+   "src": "清单 F08",
+   "columns": [
+    "attribution_claim_status",
+    "attribution_status",
+    "human_id",
+    "source_id"
+   ],
+   "pk": [
+    "source_id"
+   ],
+   "unique": [
+    {
+     "cols": [
+      "human_id"
+     ],
+     "src": "清单 F08"
+    }
+   ],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "edition": {
    "schema": "formal",
@@ -316,7 +482,8 @@
       "C"
      ],
      "nullable": false,
-     "src": "清单 F09"
+     "src": "清单 F09",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "transcription_status": {
      "constraint": "DB-E-edition.transcription_status",
@@ -326,7 +493,8 @@
       "个人校勘"
      ],
      "nullable": false,
-     "src": "清单 F09；值：契约 v1.0 §2.2 增两值；“原刊本”据清单 §2 第 218 行（契约写出的两值与“原刊本”，后者【待定】，随 Q-3）"
+     "src": "清单 F09；值：契约 v1.0 §2.2 增两值；“原刊本”据清单 §2 第 218 行（契约写出的两值与“原刊本”，后者【待定】，随 Q-3）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -339,7 +507,8 @@
       "edition_id"
      ],
      "deferred": false,
-     "src": "清单 F09；目标：契约 v1.0 §2.2 parent_edition_id 指向底本"
+     "src": "清单 F09；目标：契约 v1.0 §2.2 parent_edition_id 指向底本",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "source",
@@ -350,10 +519,26 @@
       "source_id"
      ],
      "deferred": false,
-     "src": "清单 F09；目标：规则：<表>_id 指向该表"
+     "src": "清单 F09；目标：规则：<表>_id 指向该表",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F09"
+   "src": "清单 F09",
+   "columns": [
+    "base_text",
+    "branch_id",
+    "confidence",
+    "edition_id",
+    "parent_edition_id",
+    "source_id",
+    "transcription_status"
+   ],
+   "pk": [
+    "edition_id"
+   ],
+   "unique": [],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "passage": {
    "schema": "formal",
@@ -375,7 +560,8 @@
       "PARTIAL"
      ],
      "nullable": true,
-     "src": "清单 F10"
+     "src": "清单 F10",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -388,10 +574,30 @@
       "edition_id"
      ],
      "deferred": false,
-     "src": "清单 F10；目标：规则：<表>_id 指向该表"
+     "src": "清单 F10；目标：规则：<表>_id 指向该表",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F10"
+   "src": "清单 F10",
+   "columns": [
+    "against_what",
+    "chapter_label",
+    "edition_id",
+    "image_ref",
+    "paragraph_no",
+    "passage_id",
+    "result",
+    "text",
+    "verified_at",
+    "verified_by",
+    "volume_page"
+   ],
+   "pk": [
+    "passage_id"
+   ],
+   "unique": [],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "variant_type": {
    "schema": "formal",
@@ -403,7 +609,17 @@
    "supplement": null,
    "enums": {},
    "fks": [],
-   "src": "清单 F12"
+   "src": "清单 F12",
+   "columns": [
+    "applies_to_domain",
+    "label",
+    "type_code"
+   ],
+   "pk": [
+    "type_code"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "text_variant": {
    "schema": "formal",
@@ -424,7 +640,8 @@
       "calculation"
      ],
      "nullable": false,
-     "src": "契约 v1.0.6 修订单第一项（§2.3）"
+     "src": "契约 v1.0.6 修订单第一项（§2.3）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     },
     "preferred_reading": {
      "constraint": "DB-E-text_variant.preferred_reading",
@@ -433,7 +650,8 @@
       "b"
      ],
      "nullable": true,
-     "src": "契约 v1.0.6 修订单第一项（§2.3）"
+     "src": "契约 v1.0.6 修订单第一项（§2.3）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    },
    "fks": [
@@ -446,7 +664,8 @@
       "edition_id"
      ],
      "deferred": false,
-     "src": "清单 F13；目标：契约 v1.0 §2.3 各自写明所属 Edition"
+     "src": "清单 F13；目标：契约 v1.0 §2.3 各自写明所属 Edition",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "edition",
@@ -457,7 +676,8 @@
       "edition_id"
      ],
      "deferred": false,
-     "src": "清单 F13；目标：契约 v1.0 §2.3"
+     "src": "清单 F13；目标：契约 v1.0 §2.3",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "passage",
@@ -468,7 +688,8 @@
       "passage_id"
      ],
      "deferred": false,
-     "src": "清单 F13；目标：契约 v1.0 §2.3 passage_a 写明所属段"
+     "src": "清单 F13；目标：契约 v1.0 §2.3 passage_a 写明所属段",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "passage",
@@ -479,7 +700,8 @@
       "passage_id"
      ],
      "deferred": false,
-     "src": "清单 F13；目标：契约 v1.0 §2.3"
+     "src": "清单 F13；目标：契约 v1.0 §2.3",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "variant_type",
@@ -490,10 +712,32 @@
       "type_code"
      ],
      "deferred": false,
-     "src": "清单 F13；目标：清单 F12：variant_type.type_code 为 PK"
+     "src": "清单 F13；目标：清单 F12：variant_type.type_code 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F13；必填：契约 v1.0.6 修订单第一项（§2.3）"
+   "src": "清单 F13；必填：契约 v1.0.6 修订单第一项（§2.3）",
+   "columns": [
+    "edition_a",
+    "edition_b",
+    "impact_level",
+    "impact_note",
+    "passage_a",
+    "passage_b",
+    "preferred_basis",
+    "preferred_reading",
+    "reading_a",
+    "reading_b",
+    "type_code",
+    "variant_id"
+   ],
+   "pk": [
+    "variant_id"
+   ],
+   "unique": [],
+   "columns_src": "契约 v1.0.6 §2.3（text_variant 读法、首选、影响）【待批准】",
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
   },
   "text_variant_component": {
    "schema": "formal",
@@ -513,7 +757,8 @@
       "component_id"
      ],
      "deferred": false,
-     "src": "清单 F14；目标：清单 F21：rule_component.component_id 为 PK"
+     "src": "清单 F14；目标：清单 F21：rule_component.component_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "text_variant",
@@ -524,10 +769,22 @@
       "variant_id"
      ],
      "deferred": false,
-     "src": "清单 F14；目标：清单 F13：text_variant.variant_id"
+     "src": "清单 F14；目标：清单 F13：text_variant.variant_id",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F14"
+   "src": "清单 F14",
+   "columns": [
+    "component_id",
+    "variant_id"
+   ],
+   "pk": [
+    "variant_id",
+    "component_id"
+   ],
+   "unique": [],
+   "pk_src": "连接表以两端外键列组合为主键（同清单 F17 evidence_passage 的 PK 写法）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "annotation": {
    "schema": "formal",
@@ -549,7 +806,8 @@
       "layer_code"
      ],
      "deferred": false,
-     "src": "清单 F15；目标：清单 F15：annotation_layer.layer_code 为 PK"
+     "src": "清单 F15；目标：清单 F15：annotation_layer.layer_code 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "passage",
@@ -560,10 +818,23 @@
       "passage_id"
      ],
      "deferred": false,
-     "src": "清单 F15；目标：规则：<表>_id 指向该表"
+     "src": "清单 F15；目标：规则：<表>_id 指向该表",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F15"
+   "src": "清单 F15",
+   "columns": [
+    "annotation_id",
+    "layer_code",
+    "passage_id",
+    "text"
+   ],
+   "pk": [
+    "annotation_id"
+   ],
+   "unique": [],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "annotation_layer": {
    "schema": "formal",
@@ -573,7 +844,17 @@
    "supplement": null,
    "enums": {},
    "fks": [],
-   "src": "清单 F15"
+   "src": "清单 F15",
+   "columns": [
+    "label",
+    "layer_code"
+   ],
+   "pk": [
+    "layer_code"
+   ],
+   "unique": [],
+   "columns_src": "工程补充：契约 §2.3 层级注册表须有名称；清单 F15 只列 layer_code，名称列可空",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "evidence": {
    "schema": "formal",
@@ -595,7 +876,8 @@
       "C"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §2.4 confidence A/B/C；清单 F16 写“confidence 必”未标 CHECK"
+     "src": "契约 v1.0 §2.4 confidence A/B/C；清单 F16 写“confidence 必”未标 CHECK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "evidence_category": {
      "constraint": "DB-E-evidence.evidence_category",
@@ -609,7 +891,8 @@
       "C-G"
      ],
      "nullable": false,
-     "src": "清单 F16"
+     "src": "清单 F16",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "evidence_tier": {
      "constraint": "DB-E-evidence.evidence_tier",
@@ -621,7 +904,8 @@
       "E5"
      ],
      "nullable": false,
-     "src": "清单 F16"
+     "src": "清单 F16",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "origin": {
      "constraint": "DB-E-evidence.origin",
@@ -630,11 +914,37 @@
       "ai_output"
      ],
      "nullable": false,
-     "src": "清单 F16"
+     "src": "清单 F16",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [],
-   "src": "清单 F16"
+   "src": "清单 F16",
+   "columns": [
+    "branch_id",
+    "confidence",
+    "evidence_category",
+    "evidence_id",
+    "evidence_tier",
+    "human_id",
+    "missing_evidence",
+    "next_source",
+    "origin",
+    "verification_method"
+   ],
+   "pk": [
+    "evidence_id"
+   ],
+   "unique": [
+    {
+     "cols": [
+      "human_id"
+     ],
+     "src": "工程补充：契约 §2.4 human_id 为人读编号，与清单 F08 source.human_id UNIQUE 同理"
+    }
+   ],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "evidence_passage": {
    "schema": "formal",
@@ -654,7 +964,8 @@
       "evidence_id"
      ],
      "deferred": false,
-     "src": "清单 F17；目标：规则：<表>_id 指向该表"
+     "src": "清单 F17；目标：规则：<表>_id 指向该表",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "passage",
@@ -665,10 +976,21 @@
       "passage_id"
      ],
      "deferred": false,
-     "src": "清单 F17；目标：规则：<表>_id 指向该表"
+     "src": "清单 F17；目标：规则：<表>_id 指向该表",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F17"
+   "src": "清单 F17",
+   "columns": [
+    "evidence_id",
+    "passage_id"
+   ],
+   "pk": [
+    "evidence_id",
+    "passage_id"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "manual_check_record": {
    "schema": "formal",
@@ -676,12 +998,26 @@
     "check_id",
     "checked_at",
     "checked_by",
+    "edition_id",
     "evidence_id",
+    "evidence_scope",
     "page_range"
    ],
    "supplement": null,
    "enums": {},
    "fks": [
+    {
+     "table": "edition",
+     "from": [
+      "edition_id"
+     ],
+     "to": [
+      "edition_id"
+     ],
+     "deferred": false,
+     "src": "【用户裁决 G-6】、契约 §2.4 / §13.7；E2-FIX-2 P2-2 要求核验记录关联证据版本与叶号（列为实现方案，待审）",
+     "approval": "用户任务要求（E2-FIX-2 P2-2），实现方案待审"
+    },
     {
      "table": "evidence",
      "from": [
@@ -691,10 +1027,26 @@
       "evidence_id"
      ],
      "deferred": false,
-     "src": "清单 F19；目标：规则：<表>_id 指向该表"
+     "src": "清单 F19；目标：规则：<表>_id 指向该表",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F19"
+   "src": "清单 F19；必填：【用户裁决 G-6】、契约 §2.4 / §13.7；E2-FIX-2 P2-2 要求核验记录关联证据版本与叶号（列为实现方案，待审）",
+   "columns": [
+    "check_id",
+    "checked_at",
+    "checked_by",
+    "edition_id",
+    "evidence_id",
+    "evidence_scope",
+    "page_range"
+   ],
+   "pk": [
+    "check_id"
+   ],
+   "unique": [],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "用户任务要求（E2-FIX-2 P2-2），实现方案待审"
   },
   "rule": {
    "schema": "formal",
@@ -714,7 +1066,8 @@
       "暂缓"
      ],
      "nullable": false,
-     "src": "清单 F20"
+     "src": "清单 F20",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "tier": {
      "constraint": "DB-E-rule.tier",
@@ -724,7 +1077,8 @@
       "T2"
      ],
      "nullable": false,
-     "src": "清单 F20"
+     "src": "清单 F20",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "track": {
      "constraint": "DB-E-rule.track",
@@ -735,7 +1089,8 @@
       "D"
      ],
      "nullable": false,
-     "src": "清单 F20"
+     "src": "清单 F20",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -748,7 +1103,8 @@
       "id"
      ],
      "deferred": false,
-     "src": "清单 F20；目标：清单 F30：system_school(id 必)"
+     "src": "清单 F20；目标：清单 F30：system_school(id 必)",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "system_school",
@@ -759,10 +1115,24 @@
       "id"
      ],
      "deferred": false,
-     "src": "清单 F20；目标：清单 F30：system_school(id 必)"
+     "src": "清单 F20；目标：清单 F30：system_school(id 必)",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F20"
+   "src": "清单 F20",
+   "columns": [
+    "default_scope",
+    "rule_id",
+    "school_id",
+    "system_id",
+    "tier",
+    "track"
+   ],
+   "pk": [
+    "rule_id"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "rule_component": {
    "schema": "formal",
@@ -785,7 +1155,8 @@
       "C-G"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §3.2 / §2.4 evidence_category C-A～C-G；清单 F21 写“evidence_category 必”未标 CHECK"
+     "src": "契约 v1.0 §3.2 / §2.4 evidence_category C-A～C-G；清单 F21 写“evidence_category 必”未标 CHECK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "is_calendar_anchor": {
      "constraint": "DB-E-rule_component.is_calendar_anchor",
@@ -794,7 +1165,8 @@
       1
      ],
      "nullable": true,
-     "src": "契约 v1.0 §3.2 is_calendar_anchor（布尔，条件必须）；清单 F21 条件必须"
+     "src": "契约 v1.0 §3.2 is_calendar_anchor（布尔，条件必须）；清单 F21 条件必须",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -807,10 +1179,24 @@
       "rule_id"
      ],
      "deferred": false,
-     "src": "清单 F21；目标：清单 F20：rule.rule_id 为 PK"
+     "src": "清单 F21；目标：清单 F20：rule.rule_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F21"
+   "src": "清单 F21",
+   "columns": [
+    "applicability_domain",
+    "calc_function_id",
+    "component_id",
+    "evidence_category",
+    "is_calendar_anchor",
+    "rule_id"
+   ],
+   "pk": [
+    "component_id"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "component_blocker": {
    "schema": "formal",
@@ -830,7 +1216,8 @@
       "block_id"
      ],
      "deferred": false,
-     "src": "清单 F22；目标：清单 F41：blocker.block_id 为 PK"
+     "src": "清单 F22；目标：清单 F41：blocker.block_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "rule_component",
@@ -841,10 +1228,22 @@
       "component_id"
      ],
      "deferred": false,
-     "src": "清单 F22；目标：清单 F21：rule_component.component_id 为 PK"
+     "src": "清单 F22；目标：清单 F21：rule_component.component_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F22"
+   "src": "清单 F22",
+   "columns": [
+    "block_id",
+    "component_id"
+   ],
+   "pk": [
+    "component_id",
+    "block_id"
+   ],
+   "unique": [],
+   "pk_src": "连接表以两端外键列组合为主键（同清单 F17 evidence_passage 的 PK 写法）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "component_default": {
    "schema": "formal",
@@ -868,7 +1267,8 @@
       "approval_id"
      ],
      "deferred": false,
-     "src": "清单 F23；目标：清单 F23 / F26：approval_ref 指批准记录（F37 approval_id）"
+     "src": "清单 F23；目标：清单 F23 / F26：approval_ref 指批准记录（F37 approval_id）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "rule_component",
@@ -879,7 +1279,8 @@
       "component_id"
      ],
      "deferred": false,
-     "src": "清单 F23；目标：清单 F21：rule_component.component_id 为 PK"
+     "src": "清单 F23；目标：清单 F21：rule_component.component_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "data_release",
@@ -890,7 +1291,8 @@
       "data_release"
      ],
      "deferred": false,
-     "src": "清单 F23；工程补充"
+     "src": "清单 F23；工程补充",
+     "approval": "工程补充：待审查确认"
     },
     {
      "table": "rule_variant",
@@ -901,10 +1303,37 @@
       "rule_variant_id"
      ],
      "deferred": false,
-     "src": "清单 F23；目标：清单 F24：rule_variant.rule_variant_id 为 PK"
+     "src": "清单 F23；目标：清单 F24：rule_variant.rule_variant_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F23"
+   "src": "清单 F23",
+   "columns": [
+    "applicable_scope",
+    "approval_ref",
+    "component_id",
+    "data_release",
+    "rule_variant_id",
+    "sequence_no"
+   ],
+   "pk": [],
+   "unique": [
+    {
+     "cols": [
+      "component_id",
+      "data_release"
+     ],
+     "src": "清单 F23"
+    },
+    {
+     "cols": [
+      "sequence_no"
+     ],
+     "src": "清单 §3.3：序号全局唯一、递增（DB-Q-03 / DB-Q-04）"
+    }
+   ],
+   "pk_src": "无主键（rowid 表）：清单 F23 以 UNIQUE(component_id, data_release) 为键，sequence_no 排序",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "rule_variant": {
    "schema": "formal",
@@ -927,7 +1356,8 @@
       "C"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §3.3 confidence A/B/C；清单 F24 写“confidence 必”未标 CHECK"
+     "src": "契约 v1.0 §3.3 confidence A/B/C；清单 F24 写“confidence 必”未标 CHECK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "non_formal_reason": {
      "constraint": "DB-E-rule_variant.non_formal_reason",
@@ -940,7 +1370,8 @@
       "其他"
      ],
      "nullable": true,
-     "src": "清单 F24；值：契约 v1.0 §3.3 non_formal_reason（条件必须）"
+     "src": "清单 F24；值：契约 v1.0 §3.3 non_formal_reason（条件必须）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -953,7 +1384,8 @@
       "version"
      ],
      "deferred": false,
-     "src": "清单 F24；目标：清单 F06：canonicalization_version.version 为 PK"
+     "src": "清单 F24；目标：清单 F06：canonicalization_version.version 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "rule_component",
@@ -964,7 +1396,8 @@
       "component_id"
      ],
      "deferred": false,
-     "src": "清单 F24；目标：清单 F21：rule_component.component_id 为 PK"
+     "src": "清单 F24；目标：清单 F21：rule_component.component_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "system_school",
@@ -975,10 +1408,44 @@
       "id"
      ],
      "deferred": false,
-     "src": "清单 F24 school_id 可；工程补充"
+     "src": "清单 F24 school_id 可；工程补充",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 F24"
+   "src": "清单 F24",
+   "columns": [
+    "applicable_from",
+    "applicable_to",
+    "branch_id",
+    "canonicalization_version",
+    "component_id",
+    "confidence",
+    "content_hash",
+    "experiment_hypothesis",
+    "experiment_promotion_path",
+    "experiment_status",
+    "experiment_valid_until",
+    "hash_algorithm",
+    "non_formal_reason",
+    "rule_variant_id",
+    "school_id",
+    "version_no"
+   ],
+   "pk": [
+    "rule_variant_id"
+   ],
+   "unique": [
+    {
+     "cols": [
+      "component_id",
+      "version_no"
+     ],
+     "src": "清单 F24"
+    }
+   ],
+   "columns_drop_src": "清单写法为列组简称，非列名：清单 F24“experiment_* 条”；契约 §3.3 experiment 字段组：假设、状态、晋升路径、有效期",
+   "columns_src": "清单 F24“experiment_* 条”；契约 §3.3 experiment 字段组：假设、状态、晋升路径、有效期",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "rule_variant_edition": {
    "schema": "formal",
@@ -998,7 +1465,8 @@
       "edition_id"
      ],
      "deferred": false,
-     "src": "清单 F25；目标：规则：<表>_id 指向该表"
+     "src": "清单 F25；目标：规则：<表>_id 指向该表",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "rule_variant",
@@ -1009,10 +1477,22 @@
       "rule_variant_id"
      ],
      "deferred": false,
-     "src": "清单 F25；目标：清单 F24：rule_variant.rule_variant_id 为 PK"
+     "src": "清单 F25；目标：清单 F24：rule_variant.rule_variant_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F25"
+   "src": "清单 F25",
+   "columns": [
+    "edition_id",
+    "rule_variant_id"
+   ],
+   "pk": [
+    "rule_variant_id",
+    "edition_id"
+   ],
+   "unique": [],
+   "pk_src": "连接表以两端外键列组合为主键（同清单 F17 evidence_passage 的 PK 写法）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "variant_supersedes": {
    "schema": "formal",
@@ -1035,7 +1515,8 @@
       "approval_id"
      ],
      "deferred": false,
-     "src": "清单 F26；目标：清单 F23 / F26：approval_ref 指批准记录（F37 approval_id）"
+     "src": "清单 F26；目标：清单 F23 / F26：approval_ref 指批准记录（F37 approval_id）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "data_release",
@@ -1046,7 +1527,8 @@
       "data_release"
      ],
      "deferred": false,
-     "src": "清单 F26；工程补充"
+     "src": "清单 F26；工程补充",
+     "approval": "工程补充：待审查确认"
     },
     {
      "table": "rule_variant",
@@ -1057,7 +1539,8 @@
       "rule_variant_id"
      ],
      "deferred": false,
-     "src": "清单 F26；目标：清单 F26；F24 rule_variant_id PK"
+     "src": "清单 F26；目标：清单 F26；F24 rule_variant_id PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "rule_variant",
@@ -1068,10 +1551,31 @@
       "rule_variant_id"
      ],
      "deferred": false,
-     "src": "清单 F26；目标：清单 F26；F24 rule_variant_id PK"
+     "src": "清单 F26；目标：清单 F26；F24 rule_variant_id PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F26"
+   "src": "清单 F26",
+   "columns": [
+    "applicable_scope",
+    "approval_ref",
+    "data_release",
+    "new_variant_id",
+    "old_variant_id",
+    "reason"
+   ],
+   "pk": [],
+   "unique": [
+    {
+     "cols": [
+      "old_variant_id",
+      "new_variant_id"
+     ],
+     "src": "清单 F26"
+    }
+   ],
+   "pk_src": "无主键（rowid 表）：清单 F26 以 UNIQUE(old_variant_id, new_variant_id) 为键",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "param_variant_map": {
    "schema": "formal",
@@ -1095,7 +1599,8 @@
       "data_release"
      ],
      "deferred": false,
-     "src": "清单 F27；工程补充"
+     "src": "清单 F27；工程补充",
+     "approval": "工程补充：待审查确认"
     },
     {
      "table": "parameter_registry",
@@ -1106,7 +1611,8 @@
       "param_id"
      ],
      "deferred": false,
-     "src": "清单 F27；目标：清单 F34：parameter_registry.param_id 为 PK"
+     "src": "清单 F27；目标：清单 F34：parameter_registry.param_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "rule_variant",
@@ -1117,10 +1623,32 @@
       "rule_variant_id"
      ],
      "deferred": false,
-     "src": "清单 F27；目标：清单 F24：rule_variant.rule_variant_id 为 PK"
+     "src": "清单 F27；目标：清单 F24：rule_variant.rule_variant_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F27"
+   "src": "清单 F27",
+   "columns": [
+    "applicable_scope",
+    "data_release",
+    "param_id",
+    "param_value",
+    "rule_variant_id",
+    "selection_rule"
+   ],
+   "pk": [],
+   "unique": [
+    {
+     "cols": [
+      "param_id",
+      "param_value",
+      "data_release"
+     ],
+     "src": "清单 F27"
+    }
+   ],
+   "pk_src": "无主键（rowid 表）：清单 F27 以 UNIQUE(param_id, param_value, data_release) 为键",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "term": {
    "schema": "formal",
@@ -1141,7 +1669,8 @@
       "term_id"
      ],
      "deferred": false,
-     "src": "清单 F28 homonym_of 可（同名异义指向另一术语）；工程补充"
+     "src": "清单 F28 homonym_of 可（同名异义指向另一术语）；工程补充",
+     "approval": "工程补充：待审查确认"
     },
     {
      "table": "system_school",
@@ -1152,10 +1681,23 @@
       "id"
      ],
      "deferred": false,
-     "src": "清单 F28 / F30；工程补充"
+     "src": "清单 F28 / F30；工程补充",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 F28"
+   "src": "清单 F28",
+   "columns": [
+    "homonym_of",
+    "name",
+    "system_id",
+    "term_id"
+   ],
+   "pk": [
+    "term_id"
+   ],
+   "unique": [],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "term_alias": {
    "schema": "formal",
@@ -1175,10 +1717,22 @@
       "term_id"
      ],
      "deferred": false,
-     "src": "清单 F28；工程补充"
+     "src": "清单 F28；工程补充",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 F28"
+   "src": "清单 F28",
+   "columns": [
+    "alias",
+    "term_id"
+   ],
+   "pk": [
+    "term_id",
+    "alias"
+   ],
+   "unique": [],
+   "pk_src": "清单 F28 term_alias(term_id、alias)：同一术语的别名不重复（工程补充）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "dispute": {
    "schema": "formal",
@@ -1196,11 +1750,24 @@
       "已裁决"
      ],
      "nullable": false,
-     "src": "清单 F29"
+     "src": "清单 F29",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [],
-   "src": "清单 F29"
+   "src": "清单 F29",
+   "columns": [
+    "dispute_id",
+    "object_ref",
+    "ruling_ref",
+    "status"
+   ],
+   "pk": [
+    "dispute_id"
+   ],
+   "unique": [],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "dispute_claim": {
    "schema": "formal",
@@ -1221,7 +1788,8 @@
       "dispute_id"
      ],
      "deferred": false,
-     "src": "清单 F29；工程补充"
+     "src": "清单 F29；工程补充",
+     "approval": "工程补充：待审查确认"
     },
     {
      "table": "evidence",
@@ -1232,10 +1800,23 @@
       "evidence_id"
      ],
      "deferred": false,
-     "src": "清单 F29；工程补充"
+     "src": "清单 F29；工程补充",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 F29"
+   "src": "清单 F29",
+   "columns": [
+    "claim",
+    "dispute_id",
+    "evidence_id"
+   ],
+   "pk": [
+    "dispute_id",
+    "claim"
+   ],
+   "unique": [],
+   "pk_src": "清单 F29 dispute_claim：同一争议的主张不重复（工程补充）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "judgment": {
    "schema": "formal",
@@ -1258,10 +1839,24 @@
       "evidence_id"
      ],
      "deferred": false,
-     "src": "清单 F30；工程补充"
+     "src": "清单 F30；工程补充",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 F30"
+   "src": "清单 F30",
+   "columns": [
+    "actor_role",
+    "basis_evidence_id",
+    "conclusion",
+    "decided_at",
+    "judgment_id"
+   ],
+   "pk": [
+    "judgment_id"
+   ],
+   "unique": [],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "system_school": {
    "schema": "formal",
@@ -1281,10 +1876,23 @@
       "id"
      ],
      "deferred": false,
-     "src": "清单 F30 parent_id 可；工程补充"
+     "src": "清单 F30 parent_id 可；工程补充",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 F30"
+   "src": "清单 F30",
+   "columns": [
+    "id",
+    "level_note",
+    "name",
+    "parent_id"
+   ],
+   "pk": [
+    "id"
+   ],
+   "unique": [],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "evidence_status_history": {
    "schema": "formal",
@@ -1305,7 +1913,8 @@
       "claim_status"
      ],
      "nullable": false,
-     "src": "清单 F31"
+     "src": "清单 F31",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "target_type": {
      "constraint": "DB-E-evidence_status_history.target_type",
@@ -1314,7 +1923,8 @@
       "RuleComponent"
      ],
      "nullable": false,
-     "src": "清单 F31"
+     "src": "清单 F31",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -1327,10 +1937,31 @@
       "data_release"
      ],
      "deferred": false,
-     "src": "清单 F31；工程补充"
+     "src": "清单 F31；工程补充",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 F31"
+   "src": "清单 F31",
+   "columns": [
+    "data_release",
+    "field",
+    "new_value",
+    "previous_value",
+    "sequence_no",
+    "target_id",
+    "target_type"
+   ],
+   "pk": [],
+   "unique": [
+    {
+     "cols": [
+      "sequence_no"
+     ],
+     "src": "清单 §3.3：序号全局唯一、递增（DB-Q-03 / DB-Q-04）"
+    }
+   ],
+   "pk_src": "无主键（rowid 表）：只追加历史以 sequence_no 全局唯一排序（清单 §3.3、DB-Q-03）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "admission_record": {
    "schema": "formal",
@@ -1356,7 +1987,8 @@
       "PROHIBITED"
      ],
      "nullable": false,
-     "src": "清单 F32；值：契约 v1.0 §3.2 admission_calc 五档"
+     "src": "清单 F32；值：契约 v1.0 §3.2 admission_calc 五档",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "previous_status": {
      "constraint": "DB-E-admission_record.previous_status",
@@ -1368,7 +2000,8 @@
       "PROHIBITED"
      ],
      "nullable": true,
-     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）"
+     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "purpose": {
      "constraint": "DB-E-admission_record.purpose",
@@ -1378,7 +2011,8 @@
       "qualitative"
      ],
      "nullable": false,
-     "src": "清单 F32"
+     "src": "清单 F32",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -1391,7 +2025,8 @@
       "component_id"
      ],
      "deferred": false,
-     "src": "清单 F32；工程补充"
+     "src": "清单 F32；工程补充",
+     "approval": "工程补充：待审查确认"
     },
     {
      "table": "data_release",
@@ -1402,10 +2037,36 @@
       "data_release"
      ],
      "deferred": false,
-     "src": "清单 F32；工程补充"
+     "src": "清单 F32；工程补充",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 F32"
+   "src": "清单 F32",
+   "columns": [
+    "admission_id",
+    "basis_ref",
+    "component_id",
+    "conditions",
+    "data_release",
+    "decided_by",
+    "new_status",
+    "previous_status",
+    "purpose",
+    "sequence_no"
+   ],
+   "pk": [
+    "admission_id"
+   ],
+   "unique": [
+    {
+     "cols": [
+      "sequence_no"
+     ],
+     "src": "清单 §3.3：序号全局唯一、递增（DB-Q-03 / DB-Q-04）"
+    }
+   ],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "formal_status_history": {
    "schema": "formal",
@@ -1425,7 +2086,8 @@
       "NON_FORMAL"
      ],
      "nullable": false,
-     "src": "清单 F33"
+     "src": "清单 F33",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "previous_value": {
      "constraint": "DB-E-formal_status_history.previous_value",
@@ -1434,7 +2096,8 @@
       "NON_FORMAL"
      ],
      "nullable": true,
-     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）"
+     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "target_type": {
      "constraint": "DB-F-20",
@@ -1445,7 +2108,8 @@
       "RuleVariant"
      ],
      "nullable": false,
-     "src": "清单 F33；值：undefined；约束名：清单 §5 DB-F-20 失败定位"
+     "src": "清单 F33；值：undefined；约束名：清单 §5 DB-F-20 失败定位",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -1458,10 +2122,30 @@
       "data_release"
      ],
      "deferred": false,
-     "src": "清单 F33；工程补充"
+     "src": "清单 F33；工程补充",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 F33"
+   "src": "清单 F33",
+   "columns": [
+    "data_release",
+    "new_value",
+    "previous_value",
+    "sequence_no",
+    "target_id",
+    "target_type"
+   ],
+   "pk": [],
+   "unique": [
+    {
+     "cols": [
+      "sequence_no"
+     ],
+     "src": "清单 §3.3：序号全局唯一、递增（DB-Q-03 / DB-Q-04）"
+    }
+   ],
+   "pk_src": "无主键（rowid 表）：只追加历史以 sequence_no 全局唯一排序（清单 §3.3、DB-Q-03）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "parameter_registry": {
    "schema": "formal",
@@ -1483,7 +2167,8 @@
       1
      ],
      "nullable": false,
-     "src": "清单 F34（bool）"
+     "src": "清单 F34（bool）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "module": {
      "constraint": "DB-E-parameter_registry.module",
@@ -1495,7 +2180,8 @@
       "TEXT"
      ],
      "nullable": false,
-     "src": "清单 F34；值：契约 v1.0 §5.1 module"
+     "src": "清单 F34；值：契约 v1.0 §5.1 module",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "registry_origin": {
      "constraint": "DB-E-parameter_registry.registry_origin",
@@ -1504,7 +2190,8 @@
       "补充来源登记"
      ],
      "nullable": false,
-     "src": "清单 F34；值：契约 v1.0 §5.1 registry_origin"
+     "src": "清单 F34；值：契约 v1.0 §5.1 registry_origin",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "registry_status": {
      "constraint": "DB-E-parameter_registry.registry_status",
@@ -1513,7 +2200,8 @@
       "VERSION_LOCKED"
      ],
      "nullable": false,
-     "src": "清单 F34；值：清单 §10 Q-8（第 2407 行）registry_status ∈ {ACTIVE, VERSION_LOCKED}；实施授权书 Q-8 同意"
+     "src": "清单 F34；值：清单 §10 Q-8（第 2407 行）registry_status ∈ {ACTIVE, VERSION_LOCKED}；实施授权书 Q-8 同意",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "value_kind": {
      "constraint": "DB-E-parameter_registry.value_kind",
@@ -1523,7 +2211,8 @@
       "bool"
      ],
      "nullable": false,
-     "src": "清单 F34"
+     "src": "清单 F34",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -1536,7 +2225,8 @@
       "param_id"
      ],
      "deferred": false,
-     "src": "清单 F34；目标：清单 F34：跟随另一参数"
+     "src": "清单 F34；目标：清单 F34：跟随另一参数",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "parameter_registry",
@@ -1547,10 +2237,30 @@
       "param_id"
      ],
      "deferred": false,
-     "src": "清单 F34；目标：清单 F34"
+     "src": "清单 F34；目标：清单 F34",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F34"
+   "src": "清单 F34",
+   "columns": [
+    "default_value",
+    "first_use_prompt",
+    "follows_param",
+    "has_default",
+    "locked_value",
+    "module",
+    "param_id",
+    "parent_param",
+    "registry_origin",
+    "registry_status",
+    "registry_version",
+    "value_kind"
+   ],
+   "pk": [
+    "param_id"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "param_allowed_value": {
    "schema": "formal",
@@ -1571,7 +2281,8 @@
       "已证伪"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §2.4 claim_status；清单 F35 未标 CHECK"
+     "src": "契约 v1.0 §2.4 claim_status；清单 F35 未标 CHECK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "evidence_status": {
      "constraint": "DB-E-param_allowed_value.evidence_status",
@@ -1584,7 +2295,8 @@
       "REJECTED"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §2.4 evidence_status；清单 F35 未标 CHECK"
+     "src": "契约 v1.0 §2.4 evidence_status；清单 F35 未标 CHECK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -1597,10 +2309,23 @@
       "param_id"
      ],
      "deferred": false,
-     "src": "清单 F35；目标：清单 F34：parameter_registry.param_id 为 PK"
+     "src": "清单 F35；目标：清单 F34：parameter_registry.param_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F35"
+   "src": "清单 F35",
+   "columns": [
+    "claim_status",
+    "evidence_status",
+    "param_id",
+    "value"
+   ],
+   "pk": [
+    "param_id",
+    "value"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "param_dependency": {
    "schema": "formal",
@@ -1620,7 +2345,8 @@
       "param_id"
      ],
      "deferred": false,
-     "src": "清单 F36；目标：清单 F36"
+     "src": "清单 F36；目标：清单 F36",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "parameter_registry",
@@ -1631,10 +2357,22 @@
       "param_id"
      ],
      "deferred": false,
-     "src": "清单 F36；目标：清单 F34：parameter_registry.param_id 为 PK"
+     "src": "清单 F36；目标：清单 F34：parameter_registry.param_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F36"
+   "src": "清单 F36",
+   "columns": [
+    "depends_on",
+    "param_id"
+   ],
+   "pk": [
+    "param_id",
+    "depends_on"
+   ],
+   "unique": [],
+   "pk_src": "连接表以两端外键列组合为主键（同清单 F17 evidence_passage 的 PK 写法）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "approval_record": {
    "schema": "formal",
@@ -1661,7 +2399,8 @@
       "revoke"
      ],
      "nullable": false,
-     "src": "清单 F37；值：契约 v1.0 §8.2 decision"
+     "src": "清单 F37；值：契约 v1.0 §8.2 decision",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -1674,7 +2413,8 @@
       "data_release"
      ],
      "deferred": false,
-     "src": "清单 F37；工程补充"
+     "src": "清单 F37；工程补充",
+     "approval": "工程补充：待审查确认"
     },
     {
      "table": "approval_record",
@@ -1685,7 +2425,8 @@
       "approval_id"
      ],
      "deferred": false,
-     "src": "清单 F37；目标：清单 F37：须指向同一 target 的较早记录"
+     "src": "清单 F37；目标：清单 F37：须指向同一 target 的较早记录",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "rule_variant",
@@ -1696,10 +2437,38 @@
       "rule_variant_id"
      ],
      "deferred": false,
-     "src": "清单 F37；目标：清单 F37：target_type = rule_variant"
+     "src": "清单 F37；目标：清单 F37：target_type = rule_variant",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 F37"
+   "src": "清单 F37",
+   "columns": [
+    "approval_id",
+    "conditions",
+    "data_release",
+    "decided_at",
+    "decided_by",
+    "decision",
+    "scope",
+    "sequence_no",
+    "supersedes_approval_id",
+    "target_content_hash",
+    "target_id",
+    "target_type"
+   ],
+   "pk": [
+    "approval_id"
+   ],
+   "unique": [
+    {
+     "cols": [
+      "sequence_no"
+     ],
+     "src": "清单 F37"
+    }
+   ],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "approval_basis": {
    "schema": "formal",
@@ -1719,10 +2488,22 @@
       "approval_id"
      ],
      "deferred": true,
-     "src": "清单 F38：每条批准至少一行（批准行 BEFORE INSERT 检查子行，子行先写，故延迟）；工程补充：清单未标 FK"
+     "src": "清单 F38：每条批准至少一行（批准行 BEFORE INSERT 检查子行，子行先写，故延迟）；工程补充：清单未标 FK",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 F38"
+   "src": "清单 F38",
+   "columns": [
+    "approval_id",
+    "basis_ref"
+   ],
+   "pk": [
+    "approval_id",
+    "basis_ref"
+   ],
+   "unique": [],
+   "pk_src": "清单 F38 approval_basis(approval_id、basis_ref 均必)：同一批准的依据不重复",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "approval_review": {
    "schema": "formal",
@@ -1745,7 +2526,8 @@
       "approval_id"
      ],
      "deferred": true,
-     "src": "清单 F38（同上）；工程补充"
+     "src": "清单 F38（同上）；工程补充",
+     "approval": "工程补充：待审查确认"
     },
     {
      "table": "review_record",
@@ -1756,10 +2538,22 @@
       "review_id"
      ],
      "deferred": false,
-     "src": "清单 F38 / F40；工程补充"
+     "src": "清单 F38 / F40；工程补充",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 F38"
+   "src": "清单 F38",
+   "columns": [
+    "approval_id",
+    "review_id"
+   ],
+   "pk": [
+    "approval_id",
+    "review_id"
+   ],
+   "unique": [],
+   "pk_src": "连接表以两端外键列组合为主键（同清单 F17 evidence_passage 的 PK 写法）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "approval_revoke_reason": {
    "schema": "formal",
@@ -1782,7 +2576,8 @@
       "approval_id"
      ],
      "deferred": true,
-     "src": "清单 F38：revoke 至少一行（同上）；工程补充"
+     "src": "清单 F38：revoke 至少一行（同上）；工程补充",
+     "approval": "工程补充：待审查确认"
     },
     {
      "table": "revoke_reason_registry",
@@ -1793,10 +2588,22 @@
       "code"
      ],
      "deferred": false,
-     "src": "清单 F38 / F39；工程补充"
+     "src": "清单 F38 / F39；工程补充",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 F38"
+   "src": "清单 F38",
+   "columns": [
+    "approval_id",
+    "reason_code"
+   ],
+   "pk": [
+    "approval_id",
+    "reason_code"
+   ],
+   "unique": [],
+   "pk_src": "连接表以两端外键列组合为主键（同清单 F17 evidence_passage 的 PK 写法）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "revoke_reason_registry": {
    "schema": "formal",
@@ -1807,7 +2614,16 @@
    "supplement": null,
    "enums": {},
    "fks": [],
-   "src": "清单 F39"
+   "src": "清单 F39",
+   "columns": [
+    "code",
+    "label"
+   ],
+   "pk": [
+    "code"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "review_record": {
    "schema": "formal",
@@ -1829,11 +2645,29 @@
       "revocation_trigger"
      ],
      "nullable": false,
-     "src": "清单 F40"
+     "src": "清单 F40",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [],
-   "src": "清单 F40"
+   "src": "清单 F40",
+   "columns": [
+    "body",
+    "created_at",
+    "disposition",
+    "review_id",
+    "role",
+    "source_event",
+    "target_id",
+    "target_type",
+    "trigger_type"
+   ],
+   "pk": [
+    "review_id"
+   ],
+   "unique": [],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "blocker": {
    "schema": "formal",
@@ -1868,11 +2702,34 @@
       "PATH"
      ],
      "nullable": false,
-     "src": "清单 F41"
+     "src": "清单 F41",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [],
-   "src": "清单 F41"
+   "src": "清单 F41",
+   "columns": [
+    "allowed_during_block",
+    "b_mapping",
+    "block_id",
+    "blocked_effect",
+    "blocked_module",
+    "contract_ref",
+    "report_ref",
+    "scope",
+    "scope_path",
+    "source_issue",
+    "state_s1",
+    "state_s2",
+    "state_s3",
+    "trigger",
+    "unblock_condition"
+   ],
+   "pk": [
+    "block_id"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "blocker_change": {
    "schema": "formal",
@@ -1893,7 +2750,8 @@
       "已解除"
      ],
      "nullable": false,
-     "src": "清单 F42"
+     "src": "清单 F42",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "previous_status": {
      "constraint": "DB-E-blocker_change.previous_status",
@@ -1902,7 +2760,8 @@
       "已解除"
      ],
      "nullable": true,
-     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）"
+     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -1915,7 +2774,8 @@
       "block_id"
      ],
      "deferred": false,
-     "src": "清单 F42；目标：清单 F41：blocker.block_id 为 PK"
+     "src": "清单 F42；目标：清单 F41：blocker.block_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "data_release",
@@ -1926,10 +2786,33 @@
       "data_release"
      ],
      "deferred": false,
-     "src": "清单 F42；工程补充"
+     "src": "清单 F42；工程补充",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 F42"
+   "src": "清单 F42",
+   "columns": [
+    "block_id",
+    "change_id",
+    "data_release",
+    "new_status",
+    "previous_status",
+    "sequence_no",
+    "user_ruling_ref"
+   ],
+   "pk": [
+    "change_id"
+   ],
+   "unique": [
+    {
+     "cols": [
+      "sequence_no"
+     ],
+     "src": "清单 §3.3：序号全局唯一、递增（DB-Q-03 / DB-Q-04）"
+    }
+   ],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "profile": {
    "schema": "main",
@@ -1940,7 +2823,16 @@
    "supplement": null,
    "enums": {},
    "fks": [],
-   "src": "清单 U01"
+   "src": "清单 U01",
+   "columns": [
+    "created_at",
+    "owner_profile_id"
+   ],
+   "pk": [
+    "owner_profile_id"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "calculation_input": {
    "schema": "main",
@@ -1964,7 +2856,8 @@
       "CALENDAR"
      ],
      "nullable": false,
-     "src": "清单 U02；值：契约 v1.0 §6.1 domain"
+     "src": "清单 U02；值：契约 v1.0 §6.1 domain",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "gender": {
      "constraint": "DB-E-calculation_input.gender",
@@ -1974,7 +2867,8 @@
       "UNKNOWN"
      ],
      "nullable": true,
-     "src": "清单 U02；值：契约 v1.0 §6.1 raw_payload 性别 gender（MALE / FEMALE / UNKNOWN）；【用户裁决 G-1】"
+     "src": "清单 U02；值：契约 v1.0 §6.1 raw_payload 性别 gender（MALE / FEMALE / UNKNOWN）；【用户裁决 G-1】",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "time_precision": {
      "constraint": "DB-E-calculation_input.time_precision",
@@ -1984,7 +2878,8 @@
       "UNKNOWN"
      ],
      "nullable": true,
-     "src": "契约 v1.0 §6.1 time_precision（MINUTE / SHICHEN / UNKNOWN）；【用户裁决 G-2】；清单 U02 条件必须"
+     "src": "契约 v1.0 §6.1 time_precision（MINUTE / SHICHEN / UNKNOWN）；【用户裁决 G-2】；清单 U02 条件必须",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -1997,10 +2892,32 @@
       "owner_profile_id"
      ],
      "deferred": false,
-     "src": "清单 U02；目标：清单 U01：profile.owner_profile_id 为 PK"
+     "src": "清单 U02；目标：清单 U01：profile.owner_profile_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U02"
+   "src": "清单 U02",
+   "columns": [
+    "domain",
+    "gender",
+    "input_hash",
+    "input_id",
+    "normalized_payload",
+    "normalizer_version",
+    "owner_profile_id",
+    "place_hash",
+    "place_id",
+    "place_release",
+    "raw_payload",
+    "time_precision"
+   ],
+   "pk": [
+    "input_id"
+   ],
+   "unique": [],
+   "columns_drop_src": "清单写法为列组简称，非列名：清单 U02“place 三元组条”；契约 §1.3 跨库引用三元组（ID、数据版本、内容哈希）",
+   "columns_src": "清单 U02“place 三元组条”；契约 §1.3 跨库引用三元组（ID、数据版本、内容哈希）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "input_tz_resolution": {
    "schema": "main",
@@ -2023,7 +2940,8 @@
       1
      ],
      "nullable": false,
-     "src": "清单 U03（bool）"
+     "src": "清单 U03（bool）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -2036,10 +2954,28 @@
       "input_id"
      ],
      "deferred": false,
-     "src": "清单 U03；目标：清单 U02：calculation_input.input_id 为 PK"
+     "src": "清单 U03；目标：清单 U02：calculation_input.input_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U03"
+   "src": "清单 U03",
+   "columns": [
+    "ambiguity_reason",
+    "confirmation_record",
+    "dst_flag",
+    "input_id",
+    "offset_source",
+    "owner_profile_id",
+    "tz_id",
+    "tz_table_version",
+    "tzdata_version",
+    "utc_offset_seconds"
+   ],
+   "pk": [
+    "input_id"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "calculation_config": {
    "schema": "main",
@@ -2063,11 +2999,34 @@
       "CALENDAR"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §5.4 配置所属域，与 §6.1 domain 同值；清单 U04 未标 CHECK"
+     "src": "契约 v1.0 §5.4 配置所属域，与 §6.1 domain 同值；清单 U04 未标 CHECK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [],
-   "src": "清单 U04"
+   "src": "清单 U04",
+   "columns": [
+    "canonicalization_version",
+    "config_hash",
+    "config_id",
+    "config_version",
+    "hash_algorithm",
+    "module",
+    "registry_version"
+   ],
+   "pk": [
+    "config_id",
+    "config_version"
+   ],
+   "unique": [
+    {
+     "cols": [
+      "config_hash"
+     ],
+     "src": "清单 U04"
+    }
+   ],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "config_param_value": {
    "schema": "main",
@@ -2092,7 +3051,8 @@
       "stored_only"
      ],
      "nullable": false,
-     "src": "实施授权书 Q-12 (a)：stored-only / not-applied 标记"
+     "src": "实施授权书 Q-12 (a)：stored-only / not-applied 标记",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "value_source": {
      "constraint": "DB-E-config_param_value.value_source",
@@ -2103,7 +3063,8 @@
       "version_locked"
      ],
      "nullable": false,
-     "src": "清单 U05；值：契约 v1.0 §5.4 param_values.value_source"
+     "src": "清单 U05；值：契约 v1.0 §5.4 param_values.value_source",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -2118,10 +3079,26 @@
       "config_version"
      ],
      "deferred": true,
-     "src": "工程补充：配置行按 config_hash = sha256(jcs-1(params))（清单 §6 (2)）校验，取值行先写，外键延迟；清单 U05 未标 FK"
+     "src": "工程补充：配置行按 config_hash = sha256(jcs-1(params))（清单 §6 (2)）校验，取值行先写，外键延迟；清单 U05 未标 FK",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 U05"
+   "src": "清单 U05",
+   "columns": [
+    "apply_mode",
+    "config_id",
+    "config_version",
+    "param_id",
+    "value",
+    "value_source"
+   ],
+   "pk": [
+    "config_id",
+    "config_version",
+    "param_id"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "profile_config_ref": {
    "schema": "main",
@@ -2144,7 +3121,8 @@
       "config_version"
      ],
      "deferred": false,
-     "src": "清单 U06 PK(三列)；工程补充"
+     "src": "清单 U06 PK(三列)；工程补充",
+     "approval": "工程补充：待审查确认"
     },
     {
      "table": "profile",
@@ -2155,10 +3133,24 @@
       "owner_profile_id"
      ],
      "deferred": false,
-     "src": "清单 U06；目标：清单 U01：profile.owner_profile_id 为 PK"
+     "src": "清单 U06；目标：清单 U01：profile.owner_profile_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U06"
+   "src": "清单 U06",
+   "columns": [
+    "config_id",
+    "config_version",
+    "owner_profile_id"
+   ],
+   "pk": [
+    "owner_profile_id",
+    "config_id",
+    "config_version"
+   ],
+   "unique": [],
+   "pk_src": "清单 U06“PK(三列)”：owner_profile_id、config_id、config_version",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "calculation_snapshot": {
    "schema": "main",
@@ -2197,7 +3189,8 @@
       "CALC_RESEARCH"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §6.3 合法组合只有 CALC_FORMAL / CALC_RESEARCH（BLOCKED 不产生快照）"
+     "src": "契约 v1.0 §6.3 合法组合只有 CALC_FORMAL / CALC_RESEARCH（BLOCKED 不产生快照）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "domain": {
      "constraint": "DB-E-calculation_snapshot.domain",
@@ -2208,7 +3201,8 @@
       "CALENDAR"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §6.1 domain（清单 U07“第 6.1 节全部字段”）"
+     "src": "契约 v1.0 §6.1 domain（清单 U07“第 6.1 节全部字段”）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "formal_status": {
      "constraint": "DB-E-calculation_snapshot.formal_status",
@@ -2217,7 +3211,8 @@
       "NON_FORMAL"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §6.3 formal_status"
+     "src": "契约 v1.0 §6.3 formal_status",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "research_scope": {
      "constraint": "DB-E-calculation_snapshot.research_scope",
@@ -2227,7 +3222,8 @@
       "PERSONAL_RESEARCH"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §7.4 research_scope（【用户裁决 A-2】）"
+     "src": "契约 v1.0 §7.4 research_scope（【用户裁决 A-2】）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "result_completeness": {
      "constraint": "DB-E-calculation_snapshot.result_completeness",
@@ -2236,7 +3232,8 @@
       "OK_WITH_DEGRADATION"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §13.1、【用户裁决 N-1】；清单 §6 第 1851 行"
+     "src": "契约 v1.0 §13.1、【用户裁决 N-1】；清单 §6 第 1851 行",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -2251,7 +3248,8 @@
       "config_version"
      ],
      "deferred": false,
-     "src": "契约 v1.0 §6.2 config_ref"
+     "src": "契约 v1.0 §6.2 config_ref",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "calculation_input",
@@ -2262,7 +3260,8 @@
       "input_id"
      ],
      "deferred": false,
-     "src": "契约 v1.0 §6.2 input_ref"
+     "src": "契约 v1.0 §6.2 input_ref",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "profile",
@@ -2273,7 +3272,8 @@
       "owner_profile_id"
      ],
      "deferred": false,
-     "src": "契约 v1.0 §6.3；清单 U07；工程补充"
+     "src": "契约 v1.0 §6.3；清单 U07；工程补充",
+     "approval": "工程补充：待审查确认"
     },
     {
      "table": "calculation_snapshot",
@@ -2284,10 +3284,41 @@
       "snapshot_id"
      ],
      "deferred": false,
-     "src": "契约 v1.0 §6.3 自引用 snapshot_id【架构验收 二】"
+     "src": "契约 v1.0 §6.3 自引用 snapshot_id【架构验收 二】",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U07"
+   "src": "清单 U07",
+   "columns": [
+    "calc_status",
+    "canonicalization_version",
+    "config_hash",
+    "config_id",
+    "config_version",
+    "created_at",
+    "data_fingerprint",
+    "domain",
+    "engine_release_id",
+    "execution_trace_ref",
+    "formal_status",
+    "hash_algorithm",
+    "input_hash",
+    "input_id",
+    "owner_profile_id",
+    "recomputed_from_snapshot_id",
+    "research_scope",
+    "result_completeness",
+    "result_fingerprint",
+    "result_hash",
+    "result_payload",
+    "snapshot_id"
+   ],
+   "pk": [
+    "snapshot_id"
+   ],
+   "unique": [],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "snapshot_non_formal_reason": {
    "schema": "main",
@@ -2318,7 +3349,8 @@
       "RESEARCH_ONLY"
      ],
      "nullable": false,
-     "src": "清单 U08"
+     "src": "清单 U08",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "ri_segment": {
      "constraint": "DB-E-snapshot_non_formal_reason.ri_segment",
@@ -2333,7 +3365,8 @@
       "R-I-8"
      ],
      "nullable": true,
-     "src": "契约 v1.0 §7.3 R-I-1～R-I-8；清单 U08 ri_segment 条件必须"
+     "src": "契约 v1.0 §7.3 R-I-1～R-I-8；清单 U08 ri_segment 条件必须",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -2346,10 +3379,31 @@
       "snapshot_id"
      ],
      "deferred": true,
-     "src": "清单 U08；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED"
+     "src": "清单 U08；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U08"
+   "src": "清单 U08",
+   "columns": [
+    "note",
+    "ord",
+    "owner_profile_id",
+    "reason_kind",
+    "ri_segment",
+    "snapshot_id",
+    "step_code",
+    "upstream_hash",
+    "upstream_id",
+    "upstream_release"
+   ],
+   "pk": [
+    "snapshot_id",
+    "ord"
+   ],
+   "unique": [],
+   "columns_drop_src": "清单写法为列组简称，非列名：清单 U08“upstream 三元组必”（列见 supplement：upstream_release / upstream_id / upstream_hash）",
+   "pk_src": "快照子表以快照 ID + 表内键为主键（清单 §3.5：一个快照多行、封存后不可追加）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "snapshot_degradation_reason": {
    "schema": "main",
@@ -2367,7 +3421,8 @@
       "HOUR_UNKNOWN"
      ],
      "nullable": false,
-     "src": "清单 U09；值：契约 v1.0 §13.1～§13.3 已列原因码（清单 U09“契约已列者”）"
+     "src": "清单 U09；值：契约 v1.0 §13.1～§13.3 已列原因码（清单 U09“契约已列者”）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -2380,10 +3435,23 @@
       "snapshot_id"
      ],
      "deferred": true,
-     "src": "清单 U09；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED"
+     "src": "清单 U09；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U09"
+   "src": "清单 U09",
+   "columns": [
+    "owner_profile_id",
+    "reason_code",
+    "snapshot_id"
+   ],
+   "pk": [
+    "snapshot_id",
+    "reason_code"
+   ],
+   "unique": [],
+   "pk_src": "快照子表以快照 ID + 表内键为主键（清单 §3.5：一个快照多行、封存后不可追加）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "snapshot_dependency": {
    "schema": "main",
@@ -2415,7 +3483,8 @@
       "cross_domain"
      ],
      "nullable": false,
-     "src": "清单 U10；值：契约 v1.0 §6.4 dep_type 表（8 行，其中 edition / evidence 合为一行，值为 9 个；清单 U10 记“8 类”按行计）"
+     "src": "清单 U10；值：契约 v1.0 §6.4 dep_type 表（8 行，其中 edition / evidence 合为一行，值为 9 个；清单 U10 记“8 类”按行计）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "ref_kind": {
      "constraint": "DB-E-snapshot_dependency.ref_kind",
@@ -2425,7 +3494,8 @@
       "user_snapshot"
      ],
      "nullable": false,
-     "src": "清单 U10 / §6.4 与 §7.4：依赖对象分正式、个人、用户快照（R-I-2）；工程补充：值名为实现命名"
+     "src": "清单 U10 / §6.4 与 §7.4：依赖对象分正式、个人、用户快照（R-I-2）；工程补充：值名为实现命名",
+     "approval": "工程补充：待审查确认"
     }
    },
    "fks": [
@@ -2438,10 +3508,38 @@
       "snapshot_id"
      ],
      "deferred": true,
-     "src": "清单 U10；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED"
+     "src": "清单 U10；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U10"
+   "src": "清单 U10",
+   "columns": [
+    "approval_id",
+    "canonicalization_version",
+    "dep_type",
+    "hash_algorithm",
+    "normalizer_version",
+    "ord",
+    "owner_profile_id",
+    "param_value",
+    "ref_hash",
+    "ref_id",
+    "ref_kind",
+    "ref_release",
+    "ref_version",
+    "registry_version",
+    "snapshot_id",
+    "step_code",
+    "value_source"
+   ],
+   "pk": [
+    "snapshot_id",
+    "ord"
+   ],
+   "unique": [],
+   "columns_src": "契约 §6.4 dep_type 表各类“记录内容”（版本、哈希、批准 ID、参数取值与来源、注册表版本、引擎三项）；step_code：清单 P-42 依赖记到步骤",
+   "pk_src": "快照子表以快照 ID + 表内键为主键（清单 §3.5：一个快照多行、封存后不可追加）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "snapshot_gov_approval": {
    "schema": "main",
@@ -2469,10 +3567,24 @@
       "snapshot_id"
      ],
      "deferred": true,
-     "src": "清单 U11；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id"
+     "src": "清单 U11；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U11"
+   "src": "清单 U11",
+   "columns": [
+    "approval_id",
+    "owner_profile_id",
+    "rule_variant_id",
+    "snapshot_id"
+   ],
+   "pk": [
+    "snapshot_id",
+    "rule_variant_id"
+   ],
+   "unique": [],
+   "pk_src": "快照子表以快照 ID + 表内键为主键（清单 §3.5：一个快照多行、封存后不可追加）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "snapshot_gov_blocker": {
    "schema": "main",
@@ -2494,11 +3606,11 @@
      "constraint": "DB-E-snapshot_gov_blocker.status",
      "values": [
       "现行",
-      "已解除",
-      "无记录"
+      "已解除"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §9.6 status 现行 / 已解除；“无记录”= 计算当时该阻断尚无变更记录（§6.5 记“当时状态”）。工程补充"
+     "src": "契约 v1.0 §9.6 status 现行 / 已解除（只此两值）；无变更记录按 E2-FIX-2 P1-3 用户裁决视为现行（失效关闭），不设“无记录”状态",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -2511,10 +3623,24 @@
       "snapshot_id"
      ],
      "deferred": true,
-     "src": "清单 U11；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id"
+     "src": "清单 U11；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U11"
+   "src": "清单 U11",
+   "columns": [
+    "block_id",
+    "owner_profile_id",
+    "snapshot_id",
+    "status"
+   ],
+   "pk": [
+    "snapshot_id",
+    "block_id"
+   ],
+   "unique": [],
+   "pk_src": "快照子表以快照 ID + 表内键为主键（清单 §3.5：一个快照多行、封存后不可追加）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "snapshot_gov_sequence": {
    "schema": "main",
@@ -2542,7 +3668,8 @@
       "blocker_change"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §6.5 governance_context：证据状态与准入状态序号；清单 §3.3 序号表（evidence_status_history、admission_record、formal_status_history、approval_record、blocker_change）"
+     "src": "契约 v1.0 §6.5 governance_context：证据状态与准入状态序号；清单 §3.3 序号表（evidence_status_history、admission_record、formal_status_history、approval_record、blocker_change）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -2555,10 +3682,24 @@
       "snapshot_id"
      ],
      "deferred": true,
-     "src": "清单 U11；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id"
+     "src": "清单 U11；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U11"
+   "src": "清单 U11",
+   "columns": [
+    "kind",
+    "max_sequence_no",
+    "owner_profile_id",
+    "snapshot_id"
+   ],
+   "pk": [
+    "snapshot_id",
+    "kind"
+   ],
+   "unique": [],
+   "pk_src": "快照子表以快照 ID + 表内键为主键（清单 §3.5：一个快照多行、封存后不可追加）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "snapshot_resolved_context": {
    "schema": "main",
@@ -2578,7 +3719,8 @@
       "table_version"
      ],
      "nullable": false,
-     "src": "清单 U12"
+     "src": "清单 U12",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -2591,10 +3733,28 @@
       "snapshot_id"
      ],
      "deferred": true,
-     "src": "清单 U12；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED"
+     "src": "清单 U12；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U12"
+   "src": "清单 U12",
+   "columns": [
+    "content_hash",
+    "item_kind",
+    "key",
+    "owner_profile_id",
+    "snapshot_id",
+    "value",
+    "version"
+   ],
+   "pk": [
+    "snapshot_id",
+    "item_kind",
+    "key"
+   ],
+   "unique": [],
+   "pk_src": "快照子表以快照 ID + 表内键为主键（清单 §3.5：一个快照多行、封存后不可追加）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "execution_trace_step": {
    "schema": "main",
@@ -2619,7 +3779,8 @@
       "按规则跳过"
      ],
      "nullable": true,
-     "src": "清单 U13"
+     "src": "清单 U13",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "status": {
      "constraint": "DB-E-execution_trace_step.status",
@@ -2628,7 +3789,8 @@
       "未执行"
      ],
      "nullable": false,
-     "src": "清单 U13"
+     "src": "清单 U13",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -2641,10 +3803,32 @@
       "snapshot_id"
      ],
      "deferred": true,
-     "src": "清单 U13；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED"
+     "src": "清单 U13；目标：契约 v1.0 §6.3 CalculationSnapshot.snapshot_id；延迟：清单 §3.5 第 661 行：子表到快照的外键 DEFERRABLE INITIALLY DEFERRED",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U13"
+   "src": "清单 U13",
+   "columns": [
+    "calc_function_id",
+    "exec_order",
+    "function_version",
+    "impl_hash",
+    "input_summary",
+    "output_summary",
+    "owner_profile_id",
+    "reason",
+    "skip_kind",
+    "snapshot_id",
+    "status",
+    "step_code"
+   ],
+   "pk": [
+    "snapshot_id",
+    "step_code"
+   ],
+   "unique": [],
+   "pk_src": "快照子表以快照 ID + 表内键为主键（清单 §3.5：一个快照多行、封存后不可追加）；每步一行（清单 Q-T-01）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "branch": {
    "schema": "main",
@@ -2666,7 +3850,8 @@
       "snapshot_id"
      ],
      "deferred": false,
-     "src": "清单 U14；目标：清单 U14：base_snapshot_id 可 FK（不级联）"
+     "src": "清单 U14；目标：清单 U14：base_snapshot_id 可 FK（不级联）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "branch",
@@ -2677,10 +3862,25 @@
       "branch_id"
      ],
      "deferred": false,
-     "src": "清单 U14；目标：清单 U14"
+     "src": "清单 U14；目标：清单 U14",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U14"
+   "src": "清单 U14",
+   "columns": [
+    "base_data_release",
+    "base_snapshot_id",
+    "branch_id",
+    "branch_name",
+    "branch_note",
+    "owner",
+    "parent_branch_id"
+   ],
+   "pk": [
+    "branch_id"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "branch_status_history": {
    "schema": "main",
@@ -2701,7 +3901,8 @@
       "abandoned"
      ],
      "nullable": false,
-     "src": "清单 U15；值：契约 v1.0 §7.1 status（历史表）"
+     "src": "清单 U15；值：契约 v1.0 §7.1 status（历史表）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "previous_status": {
      "constraint": "DB-E-branch_status_history.previous_status",
@@ -2712,7 +3913,8 @@
       "abandoned"
      ],
      "nullable": true,
-     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）"
+     "src": "清单 §3.3（甲类历史表 previous / new 衔接：previous 取同一值域，首行为空）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -2725,10 +3927,30 @@
       "branch_id"
      ],
      "deferred": false,
-     "src": "清单 U15；目标：清单 U14：branch.branch_id 为 PK"
+     "src": "清单 U15；目标：清单 U14：branch.branch_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U15"
+   "src": "清单 U15",
+   "columns": [
+    "branch_id",
+    "data_release",
+    "new_status",
+    "note",
+    "previous_status",
+    "sequence_no"
+   ],
+   "pk": [],
+   "unique": [
+    {
+     "cols": [
+      "sequence_no"
+     ],
+     "src": "清单 §3.3：序号全局唯一、递增（DB-Q-03 / DB-Q-04）"
+    }
+   ],
+   "pk_src": "无主键（rowid 表）：只追加历史以 sequence_no 全局唯一排序（清单 §3.3、DB-Q-03）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "personal_edition": {
    "schema": "main",
@@ -2758,7 +3980,8 @@
       "C"
      ],
      "nullable": false,
-     "src": "清单 U16：与 edition 同构（清单 F09）"
+     "src": "清单 U16：与 edition 同构（清单 F09）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "transcription_status": {
      "constraint": "DB-E-personal_edition.transcription_status",
@@ -2768,7 +3991,8 @@
       "个人校勘"
      ],
      "nullable": false,
-     "src": "清单 U16：与 edition 同构（清单 F09；值：契约 v1.0 §2.2 增两值；“原刊本”据清单 §2 第 218 行（契约写出的两值与“原刊本”，后者【待定】，随 Q-3））"
+     "src": "清单 U16：与 edition 同构（清单 F09；值：契约 v1.0 §2.2 增两值；“原刊本”据清单 §2 第 218 行（契约写出的两值与“原刊本”，后者【待定】，随 Q-3））",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -2781,10 +4005,30 @@
       "branch_id"
      ],
      "deferred": false,
-     "src": "清单 U16；目标：清单 U14：branch.branch_id 为 PK"
+     "src": "清单 U16；目标：清单 U14：branch.branch_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U16"
+   "src": "清单 U16",
+   "columns": [
+    "base_text",
+    "branch_id",
+    "confidence",
+    "edition_id",
+    "formal_status",
+    "parent_edition_id",
+    "source_hash",
+    "source_id",
+    "source_release",
+    "transcription_status"
+   ],
+   "pk": [
+    "edition_id"
+   ],
+   "unique": [],
+   "columns_src": "清单 U16 与 F09 同构（parent_edition_id、base_text）",
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）；清单 U16 与正式同名表同构",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "personal_evidence": {
    "schema": "main",
@@ -2816,7 +4060,8 @@
       "已证伪"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §2.4"
+     "src": "契约 v1.0 §2.4",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "confidence": {
      "constraint": "DB-E-personal_evidence.confidence",
@@ -2826,7 +4071,8 @@
       "C"
      ],
      "nullable": false,
-     "src": "清单 U16：与 evidence 同构（契约 v1.0 §2.4 confidence A/B/C；清单 F16 写“confidence 必”未标 CHECK）"
+     "src": "清单 U16：与 evidence 同构（契约 v1.0 §2.4 confidence A/B/C；清单 F16 写“confidence 必”未标 CHECK）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "evidence_category": {
      "constraint": "DB-E-personal_evidence.evidence_category",
@@ -2840,7 +4086,8 @@
       "C-G"
      ],
      "nullable": false,
-     "src": "清单 U16：与 evidence 同构（清单 F16）"
+     "src": "清单 U16：与 evidence 同构（清单 F16）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "evidence_status": {
      "constraint": "DB-E-personal_evidence.evidence_status",
@@ -2853,7 +4100,8 @@
       "REJECTED"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §2.4（个人证据直接存状态列）"
+     "src": "契约 v1.0 §2.4（个人证据直接存状态列）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "evidence_tier": {
      "constraint": "DB-E-personal_evidence.evidence_tier",
@@ -2865,7 +4113,8 @@
       "E5"
      ],
      "nullable": false,
-     "src": "清单 U16：与 evidence 同构（清单 F16）"
+     "src": "清单 U16：与 evidence 同构（清单 F16）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "origin": {
      "constraint": "DB-E-personal_evidence.origin",
@@ -2874,7 +4123,8 @@
       "ai_output"
      ],
      "nullable": false,
-     "src": "清单 U16：与 evidence 同构（清单 F16）"
+     "src": "清单 U16：与 evidence 同构（清单 F16）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -2887,10 +4137,30 @@
       "branch_id"
      ],
      "deferred": false,
-     "src": "清单 U16；目标：清单 U14：branch.branch_id 为 PK"
+     "src": "清单 U16；目标：清单 U14：branch.branch_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U16"
+   "src": "清单 U16",
+   "columns": [
+    "branch_id",
+    "claim_status",
+    "confidence",
+    "evidence_category",
+    "evidence_id",
+    "evidence_status",
+    "evidence_tier",
+    "formal_status",
+    "origin",
+    "verification_method"
+   ],
+   "pk": [
+    "evidence_id"
+   ],
+   "unique": [],
+   "columns_src": "清单 U16 与 F16 同构（verification_method）",
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）；清单 U16",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "personal_rule_variant": {
    "schema": "main",
@@ -2924,7 +4194,8 @@
       "C"
      ],
      "nullable": false,
-     "src": "清单 U16：与 rule_variant 同构（契约 v1.0 §3.3 confidence A/B/C；清单 F24 写“confidence 必”未标 CHECK）"
+     "src": "清单 U16：与 rule_variant 同构（契约 v1.0 §3.3 confidence A/B/C；清单 F24 写“confidence 必”未标 CHECK）",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     "non_formal_reason": {
      "constraint": "DB-E-personal_rule_variant.non_formal_reason",
@@ -2937,7 +4208,8 @@
       "其他"
      ],
      "nullable": false,
-     "src": "清单 U16：与 rule_variant 同构（清单 F24；值：契约 v1.0 §3.3 non_formal_reason（条件必须））"
+     "src": "清单 U16：与 rule_variant 同构（清单 F24；值：契约 v1.0 §3.3 non_formal_reason（条件必须））",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [
@@ -2950,10 +4222,36 @@
       "branch_id"
      ],
      "deferred": false,
-     "src": "清单 U16；目标：清单 U14：branch.branch_id 为 PK"
+     "src": "清单 U16；目标：清单 U14：branch.branch_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U16"
+   "src": "清单 U16",
+   "columns": [
+    "branch_id",
+    "canonicalization_version",
+    "component_hash",
+    "component_id",
+    "component_release",
+    "confidence",
+    "content_hash",
+    "experiment_hypothesis",
+    "experiment_promotion_path",
+    "experiment_status",
+    "experiment_valid_until",
+    "formal_status",
+    "hash_algorithm",
+    "non_formal_reason",
+    "rule_variant_id",
+    "version_no"
+   ],
+   "pk": [
+    "rule_variant_id"
+   ],
+   "unique": [],
+   "columns_src": "清单 U16 与 F24 同构；契约 §3.3 experiment 字段组",
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）；清单 U16",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "personal_text_variant": {
    "schema": "main",
@@ -2982,7 +4280,8 @@
       "calculation"
      ],
      "nullable": false,
-     "src": "清单 U16：与 text_variant 同构（契约 v1.0.6 修订单第一项（§2.3））"
+     "src": "清单 U16：与 text_variant 同构（契约 v1.0.6 修订单第一项（§2.3））",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     },
     "preferred_reading": {
      "constraint": "DB-E-personal_text_variant.preferred_reading",
@@ -2991,7 +4290,8 @@
       "b"
      ],
      "nullable": true,
-     "src": "清单 U16：与 text_variant 同构（契约 v1.0.6 修订单第一项（§2.3））"
+     "src": "清单 U16：与 text_variant 同构（契约 v1.0.6 修订单第一项（§2.3））",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    },
    "fks": [
@@ -3004,10 +4304,34 @@
       "branch_id"
      ],
      "deferred": false,
-     "src": "清单 U16；目标：清单 U14：branch.branch_id 为 PK"
+     "src": "清单 U16；目标：清单 U14：branch.branch_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U16"
+   "src": "清单 U16",
+   "columns": [
+    "branch_id",
+    "edition_a_ref",
+    "edition_b_ref",
+    "formal_status",
+    "impact_level",
+    "impact_note",
+    "passage_a_ref",
+    "passage_b_ref",
+    "preferred_basis",
+    "preferred_reading",
+    "reading_a",
+    "reading_b",
+    "type_code",
+    "variant_id"
+   ],
+   "pk": [
+    "variant_id"
+   ],
+   "unique": [],
+   "columns_src": "契约 v1.0.6 §2.3（text_variant 读法、首选、影响）【待批准】；passage_a/b_ref：清单 U16 对正式对象用三元组文本（与 F13 passage_a/b 对应）",
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）；清单 U16",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "blocked_audit_event": {
    "schema": "main",
@@ -3030,11 +4354,26 @@
       "CALENDAR"
      ],
      "nullable": false,
-     "src": "契约 v1.0 §6.3 阻断审计按计算域记录（与 §6.1 domain 同值）；工程补充：清单 U17 未标 CHECK"
+     "src": "契约 v1.0 §6.3 阻断审计按计算域记录（与 §6.1 domain 同值）；工程补充：清单 U17 未标 CHECK",
+     "approval": "工程补充：待审查确认"
     }
    },
    "fks": [],
-   "src": "清单 U17"
+   "src": "清单 U17",
+   "columns": [
+    "app_version",
+    "block_reason_code",
+    "data_release",
+    "event_id",
+    "module",
+    "occurred_at"
+   ],
+   "pk": [
+    "event_id"
+   ],
+   "unique": [],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "deletion_audit": {
    "schema": "main",
@@ -3065,11 +4404,26 @@
       1
      ],
      "nullable": false,
-     "src": "清单 U18 success 均必（布尔）；工程补充：清单未写 bool"
+     "src": "清单 U18 success 均必（布尔）；工程补充：清单未写 bool",
+     "approval": "工程补充：待审查确认"
     }
    },
    "fks": [],
-   "src": "清单 U18"
+   "src": "清单 U18",
+   "columns": [
+    "app_version",
+    "audit_id",
+    "data_release",
+    "deleted_at",
+    "success",
+    "trigger"
+   ],
+   "pk": [
+    "audit_id"
+   ],
+   "unique": [],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "deletion_audit_count": {
    "schema": "main",
@@ -3108,7 +4462,8 @@
       "branch_base_snapshot_cleared"
      ],
      "nullable": false,
-     "src": "清单 U18；值：清单 §3.6 第 815 行“object_type 为 CHECK 枚举”；值 = 清单 §3.6 删除级联所涉用户库表（U01～U13）加 branch 置空事件（§10.2）。工程补充：清单未逐值列出"
+     "src": "清单 U18；值：清单 §3.6 第 815 行“object_type 为 CHECK 枚举”；值 = 清单 §3.6 删除级联所涉用户库表（U01～U13）加 branch 置空事件（§10.2）。工程补充：清单未逐值列出",
+     "approval": "工程补充：待审查确认"
     }
    },
    "fks": [
@@ -3121,10 +4476,23 @@
       "audit_id"
      ],
      "deferred": false,
-     "src": "清单 U18；工程补充"
+     "src": "清单 U18；工程补充",
+     "approval": "工程补充：待审查确认"
     }
    ],
-   "src": "清单 U18"
+   "src": "清单 U18",
+   "columns": [
+    "audit_id",
+    "count",
+    "object_type"
+   ],
+   "pk": [
+    "audit_id",
+    "object_type"
+   ],
+   "unique": [],
+   "pk_src": "清单 U18：每次删除每类对象一行计数",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "branch_event": {
    "schema": "main",
@@ -3147,7 +4515,8 @@
       "audit_id"
      ],
      "deferred": false,
-     "src": "清单 U19；目标：清单 U18：deletion_audit.audit_id"
+     "src": "清单 U19；目标：清单 U18：deletion_audit.audit_id",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "branch",
@@ -3158,10 +4527,24 @@
       "branch_id"
      ],
      "deferred": false,
-     "src": "清单 U19；目标：清单 U14：branch.branch_id 为 PK"
+     "src": "清单 U19；目标：清单 U14：branch.branch_id 为 PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 U19"
+   "src": "清单 U19",
+   "columns": [
+    "audit_id",
+    "branch_id",
+    "event_id",
+    "kind",
+    "occurred_at"
+   ],
+   "pk": [
+    "event_id"
+   ],
+   "unique": [],
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "deletion_txn_marker": {
    "schema": "main",
@@ -3181,11 +4564,24 @@
       "failure"
      ],
      "nullable": false,
-     "src": "清单 U20"
+     "src": "清单 U20",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    },
    "fks": [],
-   "src": "清单 U20"
+   "src": "清单 U20",
+   "columns": [
+    "audit_id",
+    "grant_seq",
+    "id",
+    "kind",
+    "txn_token"
+   ],
+   "pk": [
+    "id"
+   ],
+   "unique": [],
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "step_code_retirement": {
    "schema": "formal",
@@ -3208,7 +4604,8 @@
       "data_release"
      ],
      "deferred": false,
-     "src": "清单 §3.8；目标：清单 F01 data_release PK"
+     "src": "清单 §3.8；目标：清单 F01 data_release PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "step_code",
@@ -3219,10 +4616,21 @@
       "step_code"
      ],
      "deferred": false,
-     "src": "清单 §3.8；目标：清单 F05 step_code PK"
+     "src": "清单 §3.8；目标：清单 F05 step_code PK",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     }
    ],
-   "src": "清单 §3.8：废止的步骤只追加废止标记（不在第 4 节表格中）"
+   "src": "清单 §3.8：废止的步骤只追加废止标记（不在第 4 节表格中）",
+   "columns": [
+    "data_release",
+    "step_code"
+   ],
+   "pk": [
+    "step_code"
+   ],
+   "unique": [],
+   "pk_src": "清单 §3.8：每个步骤编号至多一条废止标记",
+   "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
   },
   "evidence_link": {
    "schema": "formal",
@@ -3240,7 +4648,8 @@
       "indirect"
      ],
      "nullable": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    },
    "fks": [
@@ -3253,7 +4662,8 @@
       "claim_id"
      ],
      "deferred": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     },
     {
      "table": "evidence",
@@ -3264,10 +4674,26 @@
       "evidence_id"
      ],
      "deferred": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    ],
-   "src": "契约 v1.0.6 修订单第二项（§2.5）"
+   "src": "契约 v1.0.6 修订单第二项（§2.5）",
+   "columns": [
+    "branch_id",
+    "claim_id",
+    "directness",
+    "evidence_id",
+    "scope_note"
+   ],
+   "pk": [
+    "evidence_id",
+    "claim_id"
+   ],
+   "unique": [],
+   "columns_src": "契约 v1.0.6 §2.5（scope_note）；branch_id 沿用清单 F18【待批准】",
+   "pk_src": "契约 v1.0.6 §2.5：每个（证据, 主张）一行",
+   "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
   },
   "claim": {
    "schema": "formal",
@@ -3288,10 +4714,25 @@
       "component_id"
      ],
      "deferred": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    ],
-   "src": "契约 v1.0.6 修订单第二项（§2.5）"
+   "src": "契约 v1.0.6 修订单第二项（§2.5）",
+   "columns": [
+    "branch_id",
+    "claim_id",
+    "component_id",
+    "condition",
+    "statement"
+   ],
+   "pk": [
+    "claim_id"
+   ],
+   "unique": [],
+   "columns_src": "契约 v1.0.6 §2.5【待批准】",
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）；契约 v1.0.6",
+   "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
   },
   "evidence_link_role": {
    "schema": "formal",
@@ -3310,7 +4751,8 @@
       "反证"
      ],
      "nullable": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    },
    "fks": [
@@ -3325,10 +4767,25 @@
       "claim_id"
      ],
      "deferred": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    ],
-   "src": "契约 v1.0.6 修订单第二项（§2.5）"
+   "src": "契约 v1.0.6 修订单第二项（§2.5）",
+   "columns": [
+    "claim_id",
+    "evidence_id",
+    "role",
+    "role_note"
+   ],
+   "pk": [
+    "evidence_id",
+    "claim_id",
+    "role"
+   ],
+   "unique": [],
+   "pk_src": "契约 v1.0.6 §2.5：同一链接同一角色一行",
+   "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
   },
   "search_record": {
    "schema": "formal",
@@ -3350,7 +4807,8 @@
       "找到"
      ],
      "nullable": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    },
    "fks": [
@@ -3363,10 +4821,28 @@
       "claim_id"
      ],
      "deferred": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    ],
-   "src": "契约 v1.0.6 修订单第二项（§2.5）"
+   "src": "契约 v1.0.6 修订单第二项（§2.5）",
+   "columns": [
+    "claim_id",
+    "expected_find_premise",
+    "outcome",
+    "outcome_note",
+    "search_id",
+    "search_scope",
+    "search_terms",
+    "searched_at"
+   ],
+   "pk": [
+    "search_id"
+   ],
+   "unique": [],
+   "columns_src": "契约 v1.0.6 §2.5【待批准】",
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）；契约 v1.0.6",
+   "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
   },
   "citation_record": {
    "schema": "formal",
@@ -3386,7 +4862,8 @@
       "未核验"
      ],
      "nullable": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    },
    "fks": [
@@ -3399,7 +4876,8 @@
       "evidence_id"
      ],
      "deferred": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     },
     {
      "table": "passage",
@@ -3410,10 +4888,26 @@
       "passage_id"
      ],
      "deferred": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    ],
-   "src": "契约 v1.0.6 修订单第二项（§2.5）"
+   "src": "契约 v1.0.6 修订单第二项（§2.5）",
+   "columns": [
+    "basis_evidence_id",
+    "citation_id",
+    "cited_ref",
+    "note",
+    "passage_id",
+    "verdict"
+   ],
+   "pk": [
+    "citation_id"
+   ],
+   "unique": [],
+   "columns_src": "契约 v1.0.6 §2.5【待批准】",
+   "pk_src": "稳定 ID 列为主键（契约 §1.3：跨库与库内引用一律用稳定 ID）；契约 v1.0.6",
+   "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
   },
   "text_variant_evidence": {
    "schema": "formal",
@@ -3433,7 +4927,8 @@
       "evidence_id"
      ],
      "deferred": false,
-     "src": "契约 v1.0.6 修订单第一项（§2.3）"
+     "src": "契约 v1.0.6 修订单第一项（§2.3）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     },
     {
      "table": "text_variant",
@@ -3444,10 +4939,22 @@
       "variant_id"
      ],
      "deferred": false,
-     "src": "契约 v1.0.6 修订单第一项（§2.3）"
+     "src": "契约 v1.0.6 修订单第一项（§2.3）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    ],
-   "src": "契约 v1.0.6 修订单第一项（§2.3）"
+   "src": "契约 v1.0.6 修订单第一项（§2.3）",
+   "columns": [
+    "evidence_id",
+    "variant_id"
+   ],
+   "pk": [
+    "variant_id",
+    "evidence_id"
+   ],
+   "unique": [],
+   "pk_src": "连接表以两端外键列组合为主键（同清单 F17 evidence_passage 的 PK 写法）；契约 v1.0.6",
+   "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
   },
   "personal_evidence_link": {
    "schema": "main",
@@ -3468,7 +4975,8 @@
       "indirect"
      ],
      "nullable": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    },
    "fks": [
@@ -3481,7 +4989,8 @@
       "branch_id"
      ],
      "deferred": false,
-     "src": "清单 U16"
+     "src": "清单 U16",
+     "approval": "已批准：审核清单 / 契约 v1.0 / 授权书"
     },
     {
      "table": "personal_evidence",
@@ -3492,10 +5001,28 @@
       "evidence_id"
      ],
      "deferred": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    ],
-   "src": "契约 v1.0.6 修订单第二项（§2.5）（个人链接同构，三元组）"
+   "src": "契约 v1.0.6 修订单第二项（§2.5）（个人链接同构，三元组）",
+   "columns": [
+    "branch_id",
+    "claim_hash",
+    "claim_id",
+    "claim_release",
+    "directness",
+    "evidence_id",
+    "scope_note"
+   ],
+   "pk": [
+    "evidence_id",
+    "claim_id"
+   ],
+   "unique": [],
+   "columns_src": "契约 v1.0.6 §2.5【待批准】",
+   "pk_src": "契约 v1.0.6（个人链接同构）",
+   "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
   },
   "personal_evidence_link_role": {
    "schema": "main",
@@ -3514,7 +5041,8 @@
       "反证"
      ],
      "nullable": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    },
    "fks": [
@@ -3529,10 +5057,174 @@
       "claim_id"
      ],
      "deferred": false,
-     "src": "契约 v1.0.6 修订单第二项（§2.5）"
+     "src": "契约 v1.0.6 修订单第二项（§2.5）",
+     "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
     }
    ],
-   "src": "契约 v1.0.6 修订单第二项（§2.5）"
+   "src": "契约 v1.0.6 修订单第二项（§2.5）",
+   "columns": [
+    "claim_id",
+    "evidence_id",
+    "role",
+    "role_note"
+   ],
+   "pk": [
+    "evidence_id",
+    "claim_id",
+    "role"
+   ],
+   "unique": [],
+   "pk_src": "契约 v1.0.6（个人链接同构）",
+   "approval": "待批准：v1.0.6 修订单（draft，用户未批准）"
+  }
+ },
+ "locators": {
+  "from_checklist_s5": [
+   "DB-C-01",
+   "DB-C-02",
+   "DB-D-audit",
+   "DB-D-audit-count",
+   "DB-D-audit-immutable",
+   "DB-D-audit-writer",
+   "DB-D-branch",
+   "DB-D-branch-event",
+   "DB-D-gate",
+   "DB-D-gc",
+   "DB-F-04",
+   "DB-F-05a",
+   "DB-F-05b",
+   "DB-F-05c",
+   "DB-F-06",
+   "DB-F-07a",
+   "DB-F-07b",
+   "DB-F-07c",
+   "DB-F-08a",
+   "DB-F-08b",
+   "DB-F-09a",
+   "DB-F-09b",
+   "DB-F-09c",
+   "DB-F-10a",
+   "DB-F-10c",
+   "DB-F-11a",
+   "DB-F-11b",
+   "DB-F-12",
+   "DB-F-13",
+   "DB-F-16",
+   "DB-F-20",
+   "DB-F-21",
+   "DB-F-22",
+   "DB-J-01",
+   "DB-J-02",
+   "DB-J-03",
+   "DB-J-04",
+   "DB-J-05",
+   "DB-J-06",
+   "DB-J-07",
+   "DB-J-08",
+   "DB-Q-01",
+   "DB-Q-02",
+   "DB-Q-03",
+   "DB-Q-04",
+   "DB-Q-05",
+   "DB-Q-07",
+   "DB-Q-08",
+   "DB-Q-09",
+   "DB-R-02",
+   "DB-R-04",
+   "DB-S-09",
+   "DB-T-02",
+   "DB-T-03",
+   "DB-T-05",
+   "DB-U-03a",
+   "DB-U-03b",
+   "DB-U-05a",
+   "DB-U-05b",
+   "DB-U-05c",
+   "DB-U-07",
+   "DB-U-08",
+   "DB-U-09a",
+   "DB-U-09b",
+   "DB-U-10",
+   "DB-U-10a",
+   "DB-U-10b",
+   "DB-U-11",
+   "DB-U-11a",
+   "DB-U-11b",
+   "DB-U-12a",
+   "DB-U-12b",
+   "DB-U-13b",
+   "DB-U-14",
+   "DB-U-15c",
+   "DB-U-15d",
+   "DB-X-07"
+  ],
+  "extra": {
+   "DB-F-03-edition": "清单 F09 / F16 / F18 / F24：branch_id 可 CHECK(IS NULL)（正式对象不带分支；R-I-2）【已批准（清单 / 契约）】",
+   "DB-F-03-evidence": "清单 F09 / F16 / F18 / F24：branch_id 可 CHECK(IS NULL)（正式对象不带分支；R-I-2）【已批准（清单 / 契约）】",
+   "DB-F-03-evidence_link": "清单 F09 / F16 / F18 / F24：branch_id 可 CHECK(IS NULL)（正式对象不带分支；R-I-2）【已批准（清单 / 契约）】",
+   "DB-F-03-rule_variant": "清单 F09 / F16 / F18 / F24：branch_id 可 CHECK(IS NULL)（正式对象不带分支；R-I-2）【已批准（清单 / 契约）】",
+   "DB-F-03-claim": "契约 v1.0.6 §2.5：正式主张 branch_id 为空（与清单 F18 同理）【待批准（v1.0.6 修订单 draft）】",
+   "DB-F-09-base_text": "清单 F09：base_text 条（parent_edition_id 非空时必）【已批准（清单 / 契约）】",
+   "DB-F-07-conditions": "清单 F37：conditions 条（approve_conditional 时）【已批准（清单 / 契约）】",
+   "DB-F-07d": "清单 F38：approval_basis 每条批准至少一行（批准行写入时检查）【已批准（清单 / 契约）】",
+   "DB-F-05d": "清单 F34：default_value 条（has_default = 1 时必，或跟随参数）；first_use_prompt 条（has_default = 0 且非锁定时必）——清单 §5 只列 DB-F-05a/b/c，这两项为同一行条件的拆分【工程补充（待审）】",
+   "DB-F-05e": "清单 F34：default_value 条（has_default = 1 时必，或跟随参数）；first_use_prompt 条（has_default = 0 且非锁定时必）——清单 §5 只列 DB-F-05a/b/c，这两项为同一行条件的拆分【工程补充（待审）】",
+   "DB-F-14-ruling": "清单 F29：ruling_ref 条（已裁决时）【已批准（清单 / 契约）】",
+   "DB-U-place": "清单 U02：place 三元组条（有地点时三列同时有或同时无）【已批准（清单 / 契约）】",
+   "ZR-DB-value": "清单 §8 W-03 库层拦截（第 2228–2233 行：CFG-01 锁定值、来源、apply_mode、缺失）【已批准（清单 / 契约）】",
+   "ZR-DB-source": "清单 §8 W-03 库层拦截（第 2228–2233 行：CFG-01 锁定值、来源、apply_mode、缺失）【已批准（清单 / 契约）】",
+   "ZR-DB-apply": "清单 §8 W-03 库层拦截（第 2228–2233 行：CFG-01 锁定值、来源、apply_mode、缺失）【已批准（清单 / 契约）】",
+   "ZR-DB-missing": "清单 §8 W-03 库层拦截（第 2228–2233 行：CFG-01 锁定值、来源、apply_mode、缺失）【已批准（清单 / 契约）】",
+   "DB-S-trace_ref": "契约 §6.3 execution_trace_ref 指向本快照的逐步轨迹；清单 §3.5【已批准（清单 / 契约）】",
+   "DB-S-engine": "清单 §3.5 第 2 条：快照行写入时依赖至少覆盖 engine 一类【已批准（清单 / 契约）】",
+   "DB-U-ri_segment": "清单 U08：ri_segment 条（reason_kind = R-I 时）【已批准（清单 / 契约）】",
+   "DB-U-12c": "清单 U10“按 dep_type 的必需列 CHECK（第 6.4 节）”：rule_variant 须批准 ID、parameter 须取值三项、engine 须版本三项（契约 §6.4 表）【已批准（清单 / 契约）】",
+   "DB-U-12d": "清单 U10“按 dep_type 的必需列 CHECK（第 6.4 节）”：rule_variant 须批准 ID、parameter 须取值三项、engine 须版本三项（契约 §6.4 表）【已批准（清单 / 契约）】",
+   "DB-U-12e": "清单 U10“按 dep_type 的必需列 CHECK（第 6.4 节）”：rule_variant 须批准 ID、parameter 须取值三项、engine 须版本三项（契约 §6.4 表）【已批准（清单 / 契约）】",
+   "DB-U-rc": "清单 U12：version 条、content_hash 条、value 条（按 item_kind 二选一）【已批准（清单 / 契约）】",
+   "DB-U-15-owner": "清单 U14：owner 必 CHECK(= 'OWNER')【已批准（清单 / 契约）】",
+   "DB-U-owner": "清单 U03 / U11：owner_profile_id 与所属输入、快照一致（自查补：封存协议与删除入口都需要）【已批准（清单 / 契约）】",
+   "DB-U-03c": "工程补充：契约 §6.1 gender、time_precision 写在 raw_payload 中，独立列须与之一致（G-1、G-2）【工程补充（待审）】",
+   "DB-D-marker-single": "清单 U20：id 必 PK CHECK(= 1)（至多一行）【已批准（清单 / 契约）】",
+   "DB-F-13b-personal": "契约 v1.0.6 §2.3 / §2.5（个人表同构）【待批准（v1.0.6 修订单 draft）】",
+   "DB-F-13c-personal": "契约 v1.0.6 §2.3 / §2.5（个人表同构）【待批准（v1.0.6 修订单 draft）】",
+   "DB-F-18b-personal": "契约 v1.0.6 §2.3 / §2.5（个人表同构）【待批准（v1.0.6 修订单 draft）】",
+   "DB-G6-replace": "【用户裁决 G-6】、契约 §2.4 / §13.7；E2-FIX-2 P2-2 要求写入门禁（字段与触发器为实现方案）【用户任务要求、实现待审（E2-FIX-2）】",
+   "DB-G6-edition": "【用户裁决 G-6】、契约 §2.4 / §13.7；E2-FIX-2 P2-2 要求写入门禁（字段与触发器为实现方案）【用户任务要求、实现待审（E2-FIX-2）】",
+   "DB-G6-page": "【用户裁决 G-6】、契约 §2.4 / §13.7；E2-FIX-2 P2-2 要求写入门禁（字段与触发器为实现方案）【用户任务要求、实现待审（E2-FIX-2）】",
+   "DB-G6-scope": "【用户裁决 G-6】、契约 §2.4 / §13.7；E2-FIX-2 P2-2 要求写入门禁（字段与触发器为实现方案）【用户任务要求、实现待审（E2-FIX-2）】",
+   "DB-G6-checker": "【用户裁决 G-6】、契约 §2.4 / §13.7；E2-FIX-2 P2-2 要求写入门禁（字段与触发器为实现方案）【用户任务要求、实现待审（E2-FIX-2）】",
+   "DB-G6-PV": "【用户裁决 G-6】、契约 §2.4 / §13.7；E2-FIX-2 P2-2 要求写入门禁（字段与触发器为实现方案）【用户任务要求、实现待审（E2-FIX-2）】",
+   "DB-G6-AI": "【用户裁决 G-6】、契约 §2.4 / §13.7；E2-FIX-2 P2-2 要求写入门禁（字段与触发器为实现方案）【用户任务要求、实现待审（E2-FIX-2）】",
+   "DB-G6-FORMAL": "【用户裁决 G-6】、契约 §2.4 / §13.7；E2-FIX-2 P2-2 要求写入门禁（字段与触发器为实现方案）【用户任务要求、实现待审（E2-FIX-2）】",
+   "DB-F-18b": "契约 v1.0.6 §2.5：每个角色必须附 role_note【待批准（v1.0.6 修订单 draft）】",
+   "DB-F-13b": "契约 v1.0.6 §2.3：两侧读法不得同时为空；首选读法须有依据（清单 DB-F-13 的同表拆分）【待批准（v1.0.6 修订单 draft）】",
+   "DB-F-13c": "契约 v1.0.6 §2.3：两侧读法不得同时为空；首选读法须有依据（清单 DB-F-13 的同表拆分）【待批准（v1.0.6 修订单 draft）】",
+   "DB-F-07a-admission": "清单 F32 admission_record decided_by CHECK(= 'USER')（与 DB-F-07a 同条，用于准入表）【已批准（清单 / 契约）】",
+   "DB-U-14-edition": "清单 U16：formal_status 必 CHECK(= NON_FORMAL)（DB-U-14 按个人表逐表命名）【已批准（清单 / 契约）】",
+   "DB-U-14-evidence": "清单 U16：formal_status 必 CHECK(= NON_FORMAL)（DB-U-14 按个人表逐表命名）【已批准（清单 / 契约）】",
+   "DB-U-14-variant": "清单 U16：formal_status 必 CHECK(= NON_FORMAL)（DB-U-14 按个人表逐表命名）【已批准（清单 / 契约）】",
+   "DB-U-14-text_variant": "清单 U16：formal_status 必 CHECK(= NON_FORMAL)（DB-U-14 按个人表逐表命名）【已批准（清单 / 契约）】",
+   "DB-F-04-personal": "清单 U16：个人表与正式同名表同构（DB-F-04 / DB-F-09c / DB-F-13 的个人表版本）【已批准（清单 / 契约）】",
+   "DB-F-09c-personal": "清单 U16：个人表与正式同名表同构（DB-F-04 / DB-F-09c / DB-F-13 的个人表版本）【已批准（清单 / 契约）】",
+   "DB-F-13-personal": "清单 U16：个人表与正式同名表同构（DB-F-04 / DB-F-09c / DB-F-13 的个人表版本）【已批准（清单 / 契约）】",
+   "DB-D-audit-format-app": "清单 U18：app_version、data_release（GLOB 格式）；count 非负（清单 §3.6 审计格式）【已批准（清单 / 契约）】",
+   "DB-D-audit-format-release": "清单 U18：app_version、data_release（GLOB 格式）；count 非负（清单 §3.6 审计格式）【已批准（清单 / 契约）】",
+   "DB-D-audit-count-range": "清单 U18：app_version、data_release（GLOB 格式）；count 非负（清单 §3.6 审计格式）【已批准（清单 / 契约）】",
+   "DB-F-22b": "清单 F27：UNIQUE(param_id, param_value, data_release)（DB-F-22 的唯一性部分，带定位触发器）【已批准（清单 / 契约）】",
+   "DB-U-07a": "清单 §5 DB-U-07（快照与输入、配置、档案、领域一致）按项拆分为 a～e【已批准（清单 / 契约）】",
+   "DB-U-07b": "清单 §5 DB-U-07（快照与输入、配置、档案、领域一致）按项拆分为 a～e【已批准（清单 / 契约）】",
+   "DB-U-07c": "清单 §5 DB-U-07（快照与输入、配置、档案、领域一致）按项拆分为 a～e【已批准（清单 / 契约）】",
+   "DB-U-07d": "清单 §5 DB-U-07（快照与输入、配置、档案、领域一致）按项拆分为 a～e【已批准（清单 / 契约）】",
+   "DB-U-07e": "清单 §5 DB-U-07（快照与输入、配置、档案、领域一致）按项拆分为 a～e【已批准（清单 / 契约）】"
+  },
+  "mapped": {
+   "DB-C-01": "由查询 Q-C-01 与封存预检报出（清单本条定位写测试编号）",
+   "DB-J-08": "正向用例（同一 old_variant_id 分叉合法，应成功），无报错定位",
+   "DB-R-04": "删除中途失败流程的测试编号（DeletionModule 返回失败并写失败审计），无库层报错标记",
+   "DB-U-03b": "gender 越界值由 DB-E-calculation_input.gender 报出（清单写 DB-U-03b，实现沿用 DB-E 命名；定位名不一致，报告载明）",
+   "DB-U-05a": "(C1, 2) 重插由主键冲突报出（SQLite 主键冲突无约束名；定位名不一致，报告载明）",
+   "DB-X-07": "由查询 Q-X-07 报出"
   }
  }
 }

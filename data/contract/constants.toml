@@ -134,3 +134,9 @@ max_interp_error_seconds = 5.0
 [cfg01]
 locked_value = "ye_zi_b"
 decision = "N-6"
+
+# 必备阻断登记【契约 §9.5 B1–B4 最小阻断集；附录 BLK.1 七项】——E2-FIX-2 P1-3（失效关闭）
+# 计算判定时正式库 blocker 表须含下列全部阻断；缺任何一项按导入遗漏处理（BLOCKED-FORMAL，不生成快照）。
+# verify.py 核对：契约 §9.5 表行与附录 BLK.1 表行恰为这 11 项。
+[blockers]
+required = ["B1", "B2", "B3", "B4", "BLK-1", "BLK-2", "BLK-3", "BLK-4", "BLK-5", "BLK-6", "BLK-7"]

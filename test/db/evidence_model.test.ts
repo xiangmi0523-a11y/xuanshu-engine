@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import type { DatabaseSync } from "node:sqlite";
 import { evidenceChecks, releaseChecks } from "../../db/queries.js";
 import { loadWorld } from "../fixtures/load.js";
-import { ins, rejects, type Row } from "./helpers.js";
+import { ins, rejects, testHumanCheck, type Row } from "./helpers.js";
 
 interface W { db: DatabaseSync; rel: string; seq: { n: number } }
 function world(): W {
@@ -23,8 +23,10 @@ const ev = (w: W, id: string, over: Row = {}) => {
   ins(w.db, "formal", "evidence", { evidence_id: id, human_id: id, evidence_tier: "E1", evidence_category: "C-B", confidence: "A", verification_method: null, missing_evidence: null, next_source: null, origin: "human", branch_id: null, ...over });
   ins(w.db, "formal", "evidence_passage", { evidence_id: id, passage_id: "X-P" });
 };
-const formal = (w: W, t: string, id: string, v: "FORMAL" | "NON_FORMAL") =>
+const formal = (w: W, t: string, id: string, v: "FORMAL" | "NON_FORMAL") => {
+  if (t === "Evidence" && v === "FORMAL") testHumanCheck(w.db, id); // G-6 写入门禁的测试构造（占位核对人）
   ins(w.db, "formal", "formal_status_history", { target_type: t, target_id: id, previous_value: null, new_value: v, data_release: w.rel, sequence_no: w.seq.n++ });
+};
 const claim = (w: W, id: string, component: string, condition: string | null = null) =>
   ins(w.db, "formal", "claim", { claim_id: id, component_id: component, statement: `${id} 命题`, condition, branch_id: null });
 const link = (w: W, e: string, c: string, directness = "direct", scope: string | null = null) =>

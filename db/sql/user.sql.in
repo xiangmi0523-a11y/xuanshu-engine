@@ -175,7 +175,7 @@ CREATE TABLE snapshot_gov_blocker (
   snapshot_id      TEXT NOT NULL REFERENCES calculation_snapshot(snapshot_id) DEFERRABLE INITIALLY DEFERRED,
   owner_profile_id TEXT NOT NULL,
   block_id         TEXT NOT NULL,
-  status           TEXT NOT NULL CONSTRAINT "DB-E-snapshot_gov_blocker.status" CHECK (status IN ('现行','已解除','无记录')),
+  status           TEXT NOT NULL CONSTRAINT "DB-E-snapshot_gov_blocker.status" CHECK (status IN ('现行','已解除')),
   PRIMARY KEY (snapshot_id, block_id)
 ) STRICT;
 CREATE TABLE snapshot_gov_sequence (

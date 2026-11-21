@@ -10,6 +10,7 @@
 //   5 FORMAL
 // BLOCKED 一律不生成快照（Q-6）。
 import type { DatabaseSync } from "node:sqlite";
+import { requiredBlockers } from "./constants.js";
 import { hashOf } from "./canonical.js";
 
 export interface PlannedStep {
@@ -46,6 +47,8 @@ const one = <T>(db: DatabaseSync, sql: string, ...a: (string | number | null)[])
 const all = <T>(db: DatabaseSync, sql: string, ...a: (string | number | null)[]): T[] => db.prepare(sql).all(...a) as T[];
 
 interface MapRow { block_id: string; step_code: string; effect: string; status: string; basis_ref: string }
+/** 失效关闭（P1-3）：只有明确“已解除”才不生效；无记录、未知或异常取值一律按现行处理 */
+const active = (status: string | null | undefined) => status !== "已解除";
 function stepBlockers(db: DatabaseSync, step: string): MapRow[] {
   return all<MapRow>(db, `SELECT m.block_id, m.step_code, m.effect, b.status, m.basis_ref
     FROM formal.blocker_step_map m JOIN formal.v_blocker_current b ON b.block_id = m.block_id
@@ -56,6 +59,11 @@ function disputesFor(db: DatabaseSync, ref: string): DisputeRow[] {
   return all<DisputeRow>(db, "SELECT dispute_id, object_ref, status FROM formal.dispute WHERE object_ref = ? ORDER BY dispute_id", ref);
 }
 interface VariantRow { rule_variant_id: string; component_id: string; version_no: number; content_hash: string }
+
+/** 子项计算准入是否 RESEARCH_ONLY（缺批准的变体只在此路径进入第 4 步，K-2） */
+function adm_research(db: DatabaseSync, component: string): boolean {
+  return one<{ status: string }>(db, "SELECT status FROM formal.v_admission_current WHERE component_id = ? AND purpose = 'calc'", component)?.status === "RESEARCH_ONLY";
+}
 
 /** 正式库当前数据版本（release_seq 最大者）；跨库三元组的“数据版本号”取此值（§1.2） */
 export function currentRelease(db: DatabaseSync): string {
@@ -91,9 +99,12 @@ export function judge(db: DatabaseSync, plan: Plan): Judgment {
   const blocked = (kind: "BLOCKED-HARD" | "BLOCKED-FORMAL", code: string, step_code: string, object_id?: string): Judgment =>
     (object_id === undefined ? { status: "BLOCKED", kind, code, step_code } : { status: "BLOCKED", kind, code, step_code, object_id });
 
+  // 0 必备阻断登记（P1-3 失效关闭）：契约 §9.5 与附录 BLK.1 的 11 项须全部登记；缺任何一项按导入遗漏处理，不生成快照
+  const registered = new Set(all<{ block_id: string }>(db, "SELECT block_id FROM formal.blocker").map((r) => r.block_id));
+  for (const id of requiredBlockers()) if (!registered.has(id)) return blocked("BLOCKED-FORMAL", `BLOCKER_REGISTRY_MISSING:${id}`, executed[0]?.step_code ?? "");
   // 1 BLOCKED-HARD
   for (const s of executed) for (const m of stepBlockers(db, s.step_code)) {
-    if (m.status === "现行" && m.effect === "BLOCKED-HARD") return blocked("BLOCKED-HARD", `BLOCKER_HARD:${m.block_id}:${s.step_code}`, s.step_code);
+    if (active(m.status) && m.effect === "BLOCKED-HARD") return blocked("BLOCKED-HARD", `BLOCKER_HARD:${m.block_id}:${s.step_code}`, s.step_code);
   }
   // 2 争议未裁决且无可选变体；变体缺失或未选；缺必选参数（逐子项检查，任一必需子项不可用即阻断，不以他子项掩盖）
   for (const s of executed) {
@@ -132,10 +143,10 @@ export function judge(db: DatabaseSync, plan: Plan): Judgment {
       if (!selectable(st)) return blocked("BLOCKED-FORMAL", `VARIANT_${st.state === "NONE" ? "MISSING" : "UNSELECTED"}:${cid}:${s.step_code}`, s.step_code, cid);
       const v = st.variant;
       const c = { component_id: cid };
-      const appr = one<{ approval_id: string | null; formal_status: string }>(db,
-        "SELECT current_approval_id AS approval_id, formal_status FROM formal.v_variant_formal WHERE rule_variant_id = ?", v.rule_variant_id);
+      const appr = one<{ approval_id: string | null; approval_status: string }>(db,
+        "SELECT current_approval_id AS approval_id, approval_status FROM formal.v_variant_formal WHERE rule_variant_id = ?", v.rule_variant_id);
       const adm = one<{ status: string; conditions: string | null }>(db, "SELECT status, conditions FROM formal.v_admission_current WHERE component_id = ? AND purpose = 'calc'", c.component_id);
-      const approved = appr?.formal_status === "FORMAL";
+      const approved = appr?.approval_status === "FORMAL"; // K-2 只看批准；R-I-4 与正式状态记录在第 4 步按 v_variant_formal.formal_status 处理
       if (!approved && adm?.status !== "RESEARCH_ONLY") return blocked("BLOCKED-FORMAL", "MISSING_APPROVAL", s.step_code, v.rule_variant_id);
       if (!adm) return blocked("BLOCKED-FORMAL", `ADMISSION_MISSING:${c.component_id}:${s.step_code}`, s.step_code);
       if (adm.status === "DEFERRED" || adm.status === "PROHIBITED") return blocked("BLOCKED-FORMAL", `ADMISSION_${adm.status}:${c.component_id}:${s.step_code}`, s.step_code);
@@ -154,19 +165,31 @@ export function judge(db: DatabaseSync, plan: Plan): Judgment {
   }
   // 3b PATH 阻断：BLOCKED-FORMAL
   for (const s of executed) for (const m of stepBlockers(db, s.step_code)) {
-    if (m.status === "现行" && m.effect === "BLOCKED-FORMAL") return blocked("BLOCKED-FORMAL", `BLOCKER_PATH:${m.block_id}:${s.step_code}`, s.step_code);
+    if (active(m.status) && m.effect === "BLOCKED-FORMAL") return blocked("BLOCKED-FORMAL", `BLOCKER_PATH:${m.block_id}:${s.step_code}`, s.step_code);
   }
   // 4 NON_FORMAL 原因
   for (const s of executed) for (const m of stepBlockers(db, s.step_code)) {
-    if (m.status === "现行" && m.effect === "NON_FORMAL") reasons.push({ reason_kind: "BLOCKER_PATH", step_code: s.step_code, upstream_release: release,
+    if (active(m.status) && m.effect === "NON_FORMAL") reasons.push({ reason_kind: "BLOCKER_PATH", step_code: s.step_code, upstream_release: release,
       upstream_id: m.block_id, upstream_hash: hashOf({ block_id: m.block_id, step_code: s.step_code, effect: m.effect, status: m.status }), note: `${m.block_id} 现行，${s.step_code} 按 BLK.2 第二列为 NON_FORMAL（${m.basis_ref}）` });
   }
   for (const v of variants) {
     for (const d of disputesFor(db, `component:${v.component_id}`)) if (d.status === "未裁决") reasons.push({ reason_kind: "RULE_PROVISIONAL", step_code: v.step_code,
       upstream_release: v.data_release, upstream_id: v.rule_variant_id, upstream_hash: v.content_hash, note: `子项 ${v.component_id} 有未裁决事项 ${d.dispute_id}，所用变体属暂按口径（裁决 4、§5.3）` });
-    const fs = one<{ value: string }>(db, "SELECT value FROM formal.v_formal_status_current WHERE target_type = 'RuleVariant' AND target_id = ?", v.rule_variant_id);
-    if (fs?.value === "NON_FORMAL") reasons.push({ reason_kind: "R-I", ri_segment: "R-I-4", step_code: v.step_code, upstream_release: v.data_release,
+    // P1-2：函数级未裁决争议与子项级同一传播——子项全部可选时不阻断，但所用变体一律属暂按口径 → NON_FORMAL（有默认变体不等于争议已裁决）
+    for (const d of disputesFor(db, `function:${v.calc_function_id}`)) if (d.status === "未裁决") reasons.push({ reason_kind: "RULE_PROVISIONAL", step_code: v.step_code,
+      upstream_release: v.data_release, upstream_id: v.rule_variant_id, upstream_hash: v.content_hash, note: `函数 ${v.calc_function_id} 有未裁决事项 ${d.dispute_id}，所用变体属暂按口径（裁决 4、§5.3）` });
+    // P1-1：变体正式状态以 v_variant_formal.formal_status 为唯一定义；凡不是 FORMAL 都写明原因，不另行推断
+    const vf = one<{ formal_status: string; recorded_status: string | null; ri4_blocked: number }>(db,
+      "SELECT formal_status, recorded_status, ri4_blocked FROM formal.v_variant_formal WHERE rule_variant_id = ?", v.rule_variant_id);
+    if (vf?.recorded_status === "NON_FORMAL") reasons.push({ reason_kind: "R-I", ri_segment: "R-I-4", step_code: v.step_code, upstream_release: v.data_release,
       upstream_id: v.rule_variant_id, upstream_hash: v.content_hash, note: `变体 ${v.rule_variant_id} 的正式状态记录为 NON_FORMAL` });
+    if (vf?.ri4_blocked) {
+      const evs = all<{ evidence_id: string; claim_id: string }>(db, "SELECT evidence_id, claim_id FROM formal.v_ri4_support WHERE component_id = ? ORDER BY evidence_id, claim_id", v.component_id);
+      reasons.push({ reason_kind: "R-I", ri_segment: "R-I-4", step_code: v.step_code, upstream_release: v.data_release, upstream_id: v.rule_variant_id, upstream_hash: v.content_hash,
+        note: `R-I-4：子项 ${v.component_id} 的主张有非正式支持证据（${evs.map((e) => `${e.evidence_id}→${e.claim_id}`).join("、")}），变体不得为 FORMAL` });
+    }
+    if (vf && vf.formal_status !== "FORMAL" && vf.recorded_status !== "NON_FORMAL" && !vf.ri4_blocked && adm_research(db, v.component_id) === false)
+      throw new Error(`[P1-1] 变体 ${v.rule_variant_id} 正式状态为 ${vf.formal_status} 而无可写明的原因（判定与视图定义不一致）`);
   }
   const registryVersion = one<{ v: string }>(db, "SELECT registry_version AS v FROM formal.parameter_registry ORDER BY param_id LIMIT 1")?.v ?? "";
   const seenParam = new Set<string>();
@@ -180,7 +203,9 @@ export function judge(db: DatabaseSync, plan: Plan): Judgment {
   }
   // 去重（同类、同上游只记一次）
   const uniq = new Map<string, Reason>();
-  for (const r of reasons) { const k = `${r.reason_kind}|${r.upstream_id}`; if (!uniq.has(k)) uniq.set(k, r); }
+  // RULE_PROVISIONAL 按（变体, 未裁决事项）去重：同一变体同时受子项级与函数级争议时两条都记（“写明全部原因”，§9.3 第 4 步）
+  const disputeOf = (r: Reason) => (r.reason_kind === "RULE_PROVISIONAL" ? /未裁决事项 (\S+)，/.exec(r.note)?.[1] ?? "" : r.reason_kind === "R-I" ? r.note.slice(0, 5) : "");
+  for (const r of reasons) { const k = `${r.reason_kind}|${r.upstream_id}|${disputeOf(r)}`; if (!uniq.has(k)) uniq.set(k, r); }
   const blockers = all<{ block_id: string; status: string }>(db, "SELECT block_id, status FROM formal.v_blocker_current ORDER BY block_id");
   const rs = [...uniq.values()];
   return { status: rs.length ? "NON_FORMAL" : "FORMAL", reasons: rs, variants, blockers };

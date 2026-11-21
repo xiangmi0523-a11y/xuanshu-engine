@@ -9,12 +9,16 @@ import { readRepo } from "../helpers/load.js";
 export type Val = string | number | null;
 export type Row = Record<string, Val>;
 export interface Spec {
+  locators?: SpecLocators;
   tables: Record<string, {
     schema: "formal" | "main"; required: string[]; supplement: { columns: string[]; source: string } | null;
-    enums: Record<string, { constraint: string; values: (string | number)[]; nullable: boolean; src: string }>;
-    fks: { table: string; from: string[]; to: string[]; deferred: boolean; src: string }[];
+    enums: Record<string, { constraint: string; values: (string | number)[]; nullable: boolean; src: string; approval?: string }>;
+    approval?: string; src?: string;
+    fks: { table: string; from: string[]; to: string[]; deferred: boolean; src: string; approval?: string }[];
+    columns: string[]; pk: string[]; unique: { cols: string[]; src: string }[];
   }>;
 }
+export interface SpecLocators { from_checklist_s5: string[]; extra: Record<string, string>; mapped?: Record<string, string> }
 export const spec = (): Spec => JSON.parse(readRepo("db/spec.json")) as Spec;
 export const baseRows = (): [("formal" | "main"), string, Row][] =>
   (JSON.parse(readRepo("test/fixtures/base_rows.json")) as { rows: [("formal" | "main"), string, Row][] }).rows;
@@ -66,3 +70,17 @@ export function runCase(scenario: string, caseId: string, opts: { w?: LoadedWorl
   return { w, c, out, inp, cfg };
 }
 export const count = (db: DatabaseSync, t: string) => (db.prepare(`SELECT count(*) AS n FROM ${t}`).get() as { n: number }).n;
+
+/**
+ * 隔离库内为某证据补“相符的人工核验记录”（每个所引版本一条）。只供测试构造 G-6 门禁的正向对照；
+ * 核对人为测试占位名，不代表任何真实核验，不得用于真实证据（E2-FIX-2 P2-2：不得伪造人工核验记录）。
+ */
+export function testHumanCheck(db: DatabaseSync, evidenceId: string, checker = "X-测试核对员"): void {
+  const eds = db.prepare(`SELECT DISTINCT p.edition_id FROM formal.evidence_passage ep JOIN formal.passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = ? ORDER BY p.edition_id`).all(evidenceId) as { edition_id: string }[];
+  const scope = (db.prepare(`SELECT group_concat(p.passage_id || '|' || p.edition_id || '|' || p.volume_page, ';' ORDER BY p.passage_id) AS s FROM formal.evidence_passage ep JOIN formal.passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = ?`).get(evidenceId) as { s: string }).s;
+  for (const { edition_id } of eds) {
+    const pages = (db.prepare(`SELECT group_concat(p.volume_page, ',' ORDER BY p.volume_page) AS s FROM formal.evidence_passage ep JOIN formal.passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = ? AND p.edition_id = ?`).get(evidenceId, edition_id) as { s: string }).s;
+    const n = (db.prepare("SELECT count(*) AS n FROM formal.manual_check_record").get() as { n: number }).n;
+    ins(db, "formal", "manual_check_record", { check_id: `X-MC-${evidenceId}-${n + 1}`, evidence_id: evidenceId, edition_id, checked_by: checker, checked_at: "2026-11-21", page_range: pages, evidence_scope: scope });
+  }
+}

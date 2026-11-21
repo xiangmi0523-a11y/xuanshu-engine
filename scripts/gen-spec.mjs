@@ -68,7 +68,10 @@ for (const line of checklistText.split("\n")) {
   const unbound = names.filter((n) => !bodies.has(n));
   for (const n of unbound) bodies.set(n, unbound.length === 1 ? rest : fields);
   for (const [n, body] of bodies) {
-    const t = tables.get(n) ?? { schema, row: rid, required: new Set(), enums: [], fkCols: [] };
+    const t = tables.get(n) ?? { schema, row: rid, required: new Set(), enums: [], fkCols: [], cols: new Set(), pk: null, unique: [] };
+    // 表级 PK(…) / UNIQUE(…)（P2-3）：“PK 三列”“PK(三列)”由 sources 补列名
+    for (const m of body.matchAll(/(?:^|[；、\s(])PK\(([a-z_][\w, ]*)\)/g)) t.pk = m[1].split(",").map((x) => x.trim());
+    for (const m of body.matchAll(/UNIQUE\(([a-z_][\w, ]*)\)/g)) t.unique.push(m[1].split(",").map((x) => x.trim()));
     tables.set(n, t);
     for (const seg of splitTop(body, "；")) {
       const allReq = /均必\)?\s*$/.test(seg) || /均必/.test(seg);
@@ -86,6 +89,9 @@ for (const line of checklistText.split("\n")) {
         const tailFull = item.slice(item.indexOf(im[1]) + im[1].length); // 含括号注释：延迟、可空枚举由此判定
         const strength = /^(必|可|条)/.exec(tail)?.[1] ?? (allReq ? "必" : undefined);
         for (const c of cols) {
+          t.cols.add(c);
+          if (/(^|\s)PK(\s|$)/.test(tail) && cols.length === 1) t.pk = [c];
+          if (/(^|\s)UNIQUE(\s|$)/.test(tail) && cols.length === 1) t.unique.push([c]);
           if (strength === "必") t.required.add(c);
           if (/(^|\s)PK(\s|$)/.test(tail) && !/FK/.test(tail) && cols.length === 1 && !pkMap.has(c)) pkMap.set(c, { table: n, src: `清单 ${rid}：${n}.${c} 为 PK` });
           if (/(^|\s)FK(\s|（|$)/.test(tail) || /\bFK\b/.test(tail)) t.fkCols.push({ col: c, deferred: /FK（延迟）/.test(tailFull), src: `清单 ${rid}` });
@@ -146,12 +152,13 @@ for (const [name, t] of tables) {
     if (!tg) { problems.push(`${name}.${f.col}：清单写 FK 而未写目标，sources 未补`); continue; }
     fks.push({ table: tg.table, from: [f.col], to: tg.to, deferred: f.deferred || (sources.deferred[`${name}.${f.col}`] !== undefined), src: `${f.src}；目标：${tg.src}${sources.deferred[`${name}.${f.col}`] ? `；延迟：${sources.deferred[`${name}.${f.col}`]}` : ""}` });
   }
-  out[name] = { schema: t.schema, required: [...t.required].sort(), supplement: s.supplement ?? null, enums, fks, src: `清单 ${t.row}` };
+  out[name] = { schema: t.schema, required: [...t.required].sort(), supplement: s.supplement ?? null, enums, fks, src: `清单 ${t.row}`,
+    columns: [...t.cols], pk: t.pk, unique: t.unique.map((u) => ({ cols: u, src: `清单 ${t.row}` })) };
 }
 // 补充：清单未写的枚举、外键与新增表（逐条注明出处）
 for (const [name, s] of Object.entries(sources.tables)) {
   if (s.drop) { delete out[name]; continue; }
-  if (s.replace || s.add_table) out[name] = { schema: s.schema, required: [...s.required].sort(), supplement: s.supplement ?? null, enums: {}, fks: [], src: s.src };
+  if (s.replace || s.add_table) out[name] = { schema: s.schema, required: [...s.required].sort(), supplement: s.supplement ?? null, enums: {}, fks: [], src: s.src, columns: [...s.required], pk: null, unique: [] };
   const o = out[name];
   if (!o) { problems.push(`sources 指向清单中没有的表 ${name}，且未标 add_table`); continue; }
   if (s.required_override) o.required = [...s.required_override.cols].sort(), o.src += `；必填：${s.required_override.src}`;
@@ -161,6 +168,11 @@ for (const [name, s] of Object.entries(sources.tables)) {
     o.enums[c] = { constraint: e.constraint ?? `DB-E-${name}.${c}`, values: e.values, nullable: !!e.nullable, src: e.src };
   }
   for (const [c, e] of Object.entries(s.enums ?? {})) if (e.constraint && o.enums[c]) o.enums[c].constraint = e.constraint, o.enums[c].src += `；约束名：${e.constraint_src}`;
+  if (s.columns_drop) o.columns = o.columns.filter((c) => !s.columns_drop.cols.includes(c)), o.columns_drop_src = s.columns_drop.src;
+  if (s.columns_add) for (const c of s.columns_add.cols) if (!o.columns.includes(c)) o.columns.push(c);
+  if (s.columns_add) o.columns_src = s.columns_add.src;
+  if (s.pk) { if (o.pk && o.pk.join() !== s.pk.cols.join()) problems.push(`${name}：sources PK 与清单不同`); o.pk = s.pk.cols; o.pk_src = s.pk.src; }
+  for (const u of s.unique_add ?? []) o.unique.push({ cols: u.cols, src: u.src });
   for (const f of s.fks ?? []) {
     if (o.fks.some((x) => x.from.join() === f.from.join())) { problems.push(`${name}(${f.from})：sources 外键与清单重复，应改用 fk_targets`); continue; }
     o.fks.push({ table: f.table, from: f.from, to: f.to, deferred: !!f.deferred, src: f.src });
@@ -175,13 +187,40 @@ for (const [name, s] of Object.entries(sources.tables)) {
     o.enums[c] = { constraint: `DB-E-${name}.${c}`, values: e.values, nullable: s.enum_not_null?.includes(c) ? false : e.nullable, src: `清单 U16：与 ${s.isomorphic_of} 同构（${e.src}）` };
   }
 }
+for (const [name, o] of Object.entries(out)) {
+  for (const c of [...o.required, ...(o.supplement?.columns ?? []), ...Object.keys(o.enums), ...o.fks.flatMap((f) => f.from)]) if (!o.columns.includes(c)) o.columns.push(c);
+  o.columns.sort();
+  if (!o.pk) problems.push(`${name}：清单未写主键，sources 未补`);
+}
+// 约束定位（P2-3）：清单第 5 节“失败定位”所列 DB-* 编号（“DB-F-05a / b / c”展开），去掉通用族（DB-N、DB-N2、DB-E、DB-K、DB-I）
+const s5 = read("db/spec/checklist_s5.md");
+const locators = new Set();
+for (const m of s5.matchAll(/失败定位[：|]([^\n]*)|\| (DB-[A-Z]-\d+[a-z]?) \|[^\n]*\|([^|\n]*)\|\s*$/gm)) {
+  const text = m[1] ?? m[3] ?? "";
+  for (const g of text.matchAll(/(DB-[A-Z]-\d+)([a-z])?((?:\s*\/\s*[a-z](?![\w-]))*)|(DB-[A-Z]-[a-z][\w-]*)/g)) {
+    if (g[4]) { locators.add(g[4]); continue; } // 词形编号：DB-D-gate、DB-D-audit 等
+    locators.add(g[1] + (g[2] ?? ""));
+    for (const x of (g[3] ?? "").matchAll(/[a-z]/g)) locators.add(g[1] + x[0]);
+  }
+}
+for (const x of ["DB-N", "DB-N2", "DB-E", "DB-K", "DB-I"]) locators.delete(x);
+const locatorsExtra = sources.locators_extra ?? {};
 if (problems.length) { console.error(problems.join("\n")); process.exit(1); }
 
+// 批准状态（E2-FIX-2 P2-4）：按出处分四类。v1.0.6 修订单为 draft，用户未批准；“工程补充”待审查确认；E2-FIX-2 为用户任务要求、具体字段与触发器为实现方案
+const approvalOf = (src) => /v1\.0\.6/.test(src) ? "待批准：v1.0.6 修订单（draft，用户未批准）" : /E2-FIX-2 P2-2/.test(src) ? "用户任务要求（E2-FIX-2 P2-2），实现方案待审"
+  : /工程补充/.test(src) ? "工程补充：待审查确认" : "已批准：审核清单 / 契约 v1.0 / 授权书";
+for (const o of Object.values(out)) {
+  o.approval = approvalOf(o.src);
+  for (const e of Object.values(o.enums)) e.approval = approvalOf(e.src);
+  for (const f of o.fks) f.approval = approvalOf(f.src);
+}
 const sortObj = (o) => Object.fromEntries(Object.keys(o).sort().map((k) => [k, o[k]]));
 const spec = {
   note: "独立机读规格（E2-FIX D）。由 scripts/gen-spec.mjs 从审核清单第 4 节逐字摘录（db/spec/checklist_s4.md）与补充出处表（db/spec/sources.json）生成，不读 DDL。required 为清单“必”列；enums 只收多值 CHECK（单值等式另有专门用例），nullable 取自清单强度或补充出处；fks 为清单 FK 标记与补充。DDL 与本规格的双向比对见 test/db/spec.test.ts。",
-  inputs: { checklist_s4_sha256: sha(checklistText), sources_sha256: sha(read("db/spec/sources.json")) },
-  tables: Object.fromEntries(Object.entries(out).map(([k, v]) => [k, { ...v, enums: sortObj(v.enums), fks: v.fks.sort((a, b) => a.from.join().localeCompare(b.from.join())) }])),
+  inputs: { checklist_s4_sha256: sha(checklistText), checklist_s5_sha256: sha(read("db/spec/checklist_s5.md")), sources_sha256: sha(read("db/spec/sources.json")) },
+  tables: Object.fromEntries(Object.entries(out).map(([k, v]) => [k, { ...v, enums: sortObj(v.enums), fks: v.fks.sort((a, b) => a.from.join().localeCompare(b.from.join())), unique: v.unique.sort((a, b) => a.cols.join().localeCompare(b.cols.join())) }])),
+  locators: { from_checklist_s5: [...locators].sort(), extra: Object.fromEntries(Object.entries(locatorsExtra).map(([k, v]) => [k, `${v.src}【${v.approval}】`])), mapped: sources.locators_mapped ?? {} },
 };
 const text = JSON.stringify(spec, null, 1) + "\n";
 if (process.argv.includes("--check")) {

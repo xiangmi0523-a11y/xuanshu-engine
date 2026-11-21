@@ -310,7 +310,7 @@ test("DB-C-06 / DB-C-10：子时适用域判断所读变体（八字 14:30）与
 });
 
 test("DB-C-07 / DB-C-08 / DB-C-09：R-I-1、R-I-3、R-I-4 发布校验查询", async () => {
-  const { ins } = await import("./helpers.js");
+  const { ins, testHumanCheck } = await import("./helpers.js");
   const w = loadWorld("G2"); const db = w.db; const rel = w.releases.at(-1)!;
   let seq = 100;
   const fs = (t: string, id: string, prev: string | null, next: string) => ins(db, "formal", "formal_status_history", { target_type: t, target_id: id, previous_value: prev, new_value: next, data_release: rel, sequence_no: seq++ });
@@ -323,7 +323,7 @@ test("DB-C-07 / DB-C-08 / DB-C-09：R-I-1、R-I-3、R-I-4 发布校验查询", a
   assert.deepEqual(releaseChecks["Q-C-07"](db), [], "正向：Source、Edition 皆 NON_FORMAL");
   fs("Edition", "X-E", "NON_FORMAL", "FORMAL");
   assert.equal(releaseChecks["Q-C-07"](db).length, 1, "R-I-1");
-  fs("Edition", "X-E", "FORMAL", "NON_FORMAL"); fs("Evidence", "X-EV", null, "FORMAL");
+  fs("Edition", "X-E", "FORMAL", "NON_FORMAL"); testHumanCheck(db, "X-EV"); fs("Evidence", "X-EV", null, "FORMAL");
   assert.equal(releaseChecks["Q-C-08"](db).length, 1, "R-I-3");
   fs("Evidence", "X-EV", "FORMAL", "NON_FORMAL");
   ins(db, "formal", "claim", { claim_id: "X-CL", component_id: "P-B-02", statement: "s", condition: null, branch_id: null });
@@ -416,7 +416,7 @@ test("DB-X-02：正式库无行引用用户库对象", () => {
   assert.deepEqual(snapshotChecks["Q-X-02"]!(r.w.db), []);
 });
 
-test("DB-X-05：§12.2 证据一致性查询（v1.0.6 九条）——各造一条违例恰查出 1 行，清除后 0 行", async () => {
+test("DB-X-05：§12.2 证据一致性查询（v1.0.6 九条）——各造一条违例恰查出 1 行或被写入门禁先行拦截，清除后 0 行", async () => {
   const { ins } = await import("./helpers.js");
   const { openMemoryDb } = await import("../../db/connect.js");
   const keys = Object.keys(evidenceChecks) as (keyof typeof evidenceChecks)[];
@@ -432,10 +432,11 @@ test("DB-X-05：§12.2 证据一致性查询（v1.0.6 九条）——各造一�
       ins(db, "formal", "evidence_passage", { evidence_id: "X-EV", passage_id: "X-P" });
     };
     switch (k) {
-      case "Q-X-05-1": ev({ confidence: "B" }); st("PRIMARY_VERIFIED"); break;
-      case "Q-X-05-2": ev({ verification_method: "网络检索" }); st("PRIMARY_VERIFIED"); break;
-      case "Q-X-05-3": ev({}); st("PRIMARY_VERIFIED"); ed("原刊本"); break;
-      case "Q-X-05-4": ev({ origin: "ai_output" }); st("CROSS_CHECKED"); break;
+      // Q-X-05-1～4：E2-FIX-2 P2-2 起写入路径已由 G-6 触发器先行拦截（查询保留作发布前复核）
+      case "Q-X-05-1": ev({ confidence: "B" }); assert.throws(() => st("PRIMARY_VERIFIED"), /DB-G6-PV/); continue;
+      case "Q-X-05-2": ev({ verification_method: "网络检索" }); assert.throws(() => st("PRIMARY_VERIFIED"), /DB-G6-PV/); continue;
+      case "Q-X-05-3": ev({}); ed("原刊本"); assert.throws(() => st("PRIMARY_VERIFIED"), /DB-G6-PV/); continue;
+      case "Q-X-05-4": ev({ origin: "ai_output" }); ed("原刊本"); assert.throws(() => st("CROSS_CHECKED"), /DB-G6-AI/); continue;
       case "Q-X-05-5": ev({}); ed("转录本（未与影印本对校）"); break;
       case "Q-X-05-6": db.exec("SELECT 1"); assert.throws(() => ev({ branch_id: "X-BR" })); continue; // 库层 CHECK 已先行拦截（DB-F-03）
       case "Q-X-05-7": continue; // 个人对象 branch_id 为 NOT NULL，库层先拦截（DB-N）

@@ -175,13 +175,18 @@ CREATE TABLE formal.evidence_passage (
   PRIMARY KEY (evidence_id, passage_id)
 ) STRICT;
 
--- F19 manual_check_record（§12.2 第 4 条；Q-7）
+-- F19 manual_check_record（§12.2 第 4 条；Q-7；E2-FIX-2 P2-2：绑定证据版本与叶号）
+--   edition_id：所核对的版本（须是该证据所引段落之一的版本）；
+--   page_range：该版本内所核对的叶号，须等于证据在该版本所引段落的 volume_page（按字典序、以“,”连接）；
+--   evidence_scope：核对时证据的引文范围指纹（段落|版本|叶号，按 passage_id 排序），证据范围其后有变即视为过期。
 CREATE TABLE formal.manual_check_record (
-  check_id    TEXT NOT NULL PRIMARY KEY,
-  evidence_id TEXT NOT NULL REFERENCES evidence(evidence_id),
-  checked_by  TEXT NOT NULL,
-  checked_at  TEXT NOT NULL,
-  page_range  TEXT NOT NULL
+  check_id       TEXT NOT NULL PRIMARY KEY,
+  evidence_id    TEXT NOT NULL REFERENCES evidence(evidence_id),
+  edition_id     TEXT NOT NULL REFERENCES edition(edition_id),
+  checked_by     TEXT NOT NULL,
+  checked_at     TEXT NOT NULL,
+  page_range     TEXT NOT NULL,
+  evidence_scope TEXT NOT NULL
 ) STRICT;
 
 -- ===================================================================== 规则层
@@ -632,6 +637,55 @@ CREATE TRIGGER formal.component_default_bi BEFORE INSERT ON component_default BE
           (SELECT max(d.release_seq) FROM component_default c JOIN data_release d ON d.data_release = c.data_release WHERE c.component_id = NEW.component_id);
 END;
 
+-- G-6 人工核验门禁（【用户裁决 G-6】、§2.4、§13.7；E2-FIX-2 P2-2）：写入路径上拦截，不只靠发布前查询。
+-- 核验记录本身：版本须为证据所引版本；叶号须与证据所引叶号一致；范围指纹须为当前范围；核对人不得是 AI 代理名。
+-- 库层无法证明“核对人确为自然人”；此处只拒绝明显的 AI 署名，真实性由发布流程中的用户确认承担（报告载明）。
+CREATE TRIGGER formal.manual_check_record_bi BEFORE INSERT ON manual_check_record BEGIN
+  SELECT RAISE(ABORT, '[DB-G6-edition] 核验版本不是该证据所引段落的版本')
+    WHERE NOT EXISTS (SELECT 1 FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.evidence_id AND p.edition_id = NEW.edition_id);
+  SELECT RAISE(ABORT, '[DB-G6-page] 核验叶号与证据所引叶号不一致')
+    WHERE NEW.page_range IS NOT (SELECT group_concat(p.volume_page, ',' ORDER BY p.volume_page) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.evidence_id AND p.edition_id = NEW.edition_id);
+  SELECT RAISE(ABORT, '[DB-G6-scope] 核验范围指纹不是证据当前的引文范围')
+    WHERE NEW.evidence_scope IS NOT (SELECT group_concat(p.passage_id || '|' || p.edition_id || '|' || p.volume_page, ';' ORDER BY p.passage_id) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.evidence_id);
+  SELECT RAISE(ABORT, '[DB-G6-checker] 核对人不得为 AI 代理（G-6 要求逐页人工核对）')
+    WHERE lower(NEW.checked_by) IN ('ai','assistant','claude','muse','chatgpt','gpt','gpt-4','gpt-5')
+       OR instr(lower(NEW.checked_by), 'claude') > 0 OR instr(lower(NEW.checked_by), 'gpt') > 0 OR instr(lower(NEW.checked_by), 'muse') > 0;
+END;
+-- 证据一经 PRIMARY_VERIFIED 或 FORMAL，不得再追加引文段（替换证据须新建证据行；防止核验后被替换范围）
+CREATE TRIGGER formal.evidence_passage_g6_bi BEFORE INSERT ON evidence_passage BEGIN
+  SELECT RAISE(ABORT, '[DB-G6-replace] 已核验或已正式的证据不得追加引文段，须另建证据')
+    WHERE (SELECT h.new_value FROM evidence_status_history h WHERE h.target_type = 'Evidence' AND h.target_id = NEW.evidence_id AND h.field = 'evidence_status' ORDER BY h.sequence_no DESC LIMIT 1) = 'PRIMARY_VERIFIED'
+       OR (SELECT h.new_value FROM formal_status_history h WHERE h.target_type = 'Evidence' AND h.target_id = NEW.evidence_id ORDER BY h.sequence_no DESC LIMIT 1) = 'FORMAL';
+END;
+-- 证据核验状态：PRIMARY_VERIFIED 须 confidence = A、核对方式含“影印本对校 / 馆藏版本核对”、所引段落具备 §13.7 七项、且每个所引版本都有匹配的人工核验记录；
+-- 来源为 AI 输出的证据高于 UNVERIFIED 同样须有匹配记录（不依赖 origin 自报：PRIMARY_VERIFIED 一律要求）
+CREATE TRIGGER formal.evidence_status_g6_bi BEFORE INSERT ON evidence_status_history WHEN NEW.target_type = 'Evidence' AND NEW.field = 'evidence_status' BEGIN
+  SELECT RAISE(ABORT, '[DB-G6-PV] PRIMARY_VERIFIED 须 confidence = A 且核对方式含影印本对校或馆藏版本核对')
+    WHERE NEW.new_value = 'PRIMARY_VERIFIED' AND NOT EXISTS (SELECT 1 FROM evidence e WHERE e.evidence_id = NEW.target_id AND e.confidence = 'A'
+      AND (instr(coalesce(e.verification_method, ''), '影印本对校') > 0 OR instr(coalesce(e.verification_method, ''), '馆藏版本核对') > 0));
+  SELECT RAISE(ABORT, '[DB-G6-PV] PRIMARY_VERIFIED 的所引段落缺 §13.7 七项之一')
+    WHERE NEW.new_value = 'PRIMARY_VERIFIED' AND EXISTS (SELECT 1 FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id
+      AND (p.image_ref IS NULL OR p.verified_by IS NULL OR p.verified_at IS NULL OR p.against_what IS NULL OR p.result IS NULL));
+  SELECT RAISE(ABORT, '[DB-G6-PV] PRIMARY_VERIFIED 缺与证据版本、叶号、当前范围相符的人工核验记录')
+    WHERE NEW.new_value = 'PRIMARY_VERIFIED' AND (EXISTS (SELECT 1 FROM evidence_passage ep0 JOIN passage p0 ON p0.passage_id = ep0.passage_id WHERE ep0.evidence_id = NEW.target_id
+      AND NOT EXISTS (SELECT 1 FROM manual_check_record m WHERE m.evidence_id = NEW.target_id AND m.edition_id = p0.edition_id
+        AND m.page_range = (SELECT group_concat(p.volume_page, ',' ORDER BY p.volume_page) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id AND p.edition_id = p0.edition_id) AND m.evidence_scope = (SELECT group_concat(p.passage_id || '|' || p.edition_id || '|' || p.volume_page, ';' ORDER BY p.passage_id) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id)))
+      OR NOT EXISTS (SELECT 1 FROM evidence_passage ep1 WHERE ep1.evidence_id = NEW.target_id));
+  SELECT RAISE(ABORT, '[DB-G6-AI] 来源为 AI 输出的证据高于 UNVERIFIED 须有相符的人工核验记录')
+    WHERE NEW.new_value <> 'UNVERIFIED' AND (SELECT origin FROM evidence WHERE evidence_id = NEW.target_id) = 'ai_output' AND (EXISTS (SELECT 1 FROM evidence_passage ep0 JOIN passage p0 ON p0.passage_id = ep0.passage_id WHERE ep0.evidence_id = NEW.target_id
+      AND NOT EXISTS (SELECT 1 FROM manual_check_record m WHERE m.evidence_id = NEW.target_id AND m.edition_id = p0.edition_id
+        AND m.page_range = (SELECT group_concat(p.volume_page, ',' ORDER BY p.volume_page) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id AND p.edition_id = p0.edition_id) AND m.evidence_scope = (SELECT group_concat(p.passage_id || '|' || p.edition_id || '|' || p.volume_page, ';' ORDER BY p.passage_id) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id)))
+      OR NOT EXISTS (SELECT 1 FROM evidence_passage ep1 WHERE ep1.evidence_id = NEW.target_id));
+END;
+-- 证据正式状态：FORMAL 须每个所引版本都有相符的人工核验记录（E2-FIX-2 P2-2 第 4 项）
+CREATE TRIGGER formal.formal_status_g6_bi BEFORE INSERT ON formal_status_history WHEN NEW.target_type = 'Evidence' AND NEW.new_value = 'FORMAL' BEGIN
+  SELECT RAISE(ABORT, '[DB-G6-FORMAL] 证据 FORMAL 缺与证据版本、叶号、当前范围相符的人工核验记录')
+    WHERE EXISTS (SELECT 1 FROM evidence_passage ep0 JOIN passage p0 ON p0.passage_id = ep0.passage_id WHERE ep0.evidence_id = NEW.target_id
+      AND NOT EXISTS (SELECT 1 FROM manual_check_record m WHERE m.evidence_id = NEW.target_id AND m.edition_id = p0.edition_id
+        AND m.page_range = (SELECT group_concat(p.volume_page, ',' ORDER BY p.volume_page) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id AND p.edition_id = p0.edition_id) AND m.evidence_scope = (SELECT group_concat(p.passage_id || '|' || p.edition_id || '|' || p.volume_page, ';' ORDER BY p.passage_id) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id)))
+      OR NOT EXISTS (SELECT 1 FROM evidence_passage ep1 WHERE ep1.evidence_id = NEW.target_id);
+END;
+
 -- 变体类型、撤销原因注册表：类型码不删不改义（只读触发器由 gen.ts 统一生成）
 
 -- ===================================================================== 视图（同库）
@@ -672,17 +726,39 @@ CREATE VIEW formal.v_rule_aggregate AS
 CREATE VIEW formal.v_current_approval AS
   SELECT a.* FROM approval_record a
   WHERE a.sequence_no = (SELECT max(sequence_no) FROM approval_record x WHERE x.target_id = a.target_id);
+-- R-I-4 支持关系（契约 v1.0.6 R-I-4；E2-FIX-2 P1-1）：子项下任一主张有“支持”角色、且该证据当前不是 FORMAL 的证据。
+-- 证据没有任何正式状态记录时按非正式处理（失效关闭，契约 §2.4 formal_status 必须）。只读角色表：异文、检索、引用、可信度、反证都不在此。
+-- 粒度说明：主张挂在子项上，故一条非正式支持证据影响该子项的全部变体（含竞争变体）——保守阻断，边界见定点修订报告二。
+CREATE VIEW formal.v_ri4_support AS
+  SELECT DISTINCT c.component_id, lr.evidence_id, lr.claim_id
+  FROM claim c
+  JOIN evidence_link l ON l.claim_id = c.claim_id AND l.branch_id IS NULL
+  JOIN evidence_link_role lr ON lr.evidence_id = l.evidence_id AND lr.claim_id = l.claim_id AND lr.role = '支持'
+  WHERE coalesce((SELECT f.value FROM v_formal_status_current f WHERE f.target_type = 'Evidence' AND f.target_id = lr.evidence_id), 'NON_FORMAL') <> 'FORMAL';
+-- 变体正式状态的唯一定义（P1-1 第 4 项：v_variant_formal、v_formal_status_current 与 judge() 统一）：
+--   approval_status：按 §8.2 由批准推出（现行 approve 且内容哈希一致）——judge 据此区分“缺现行批准”（K-2）；
+--   recorded_status：formal_status_history 中该变体的最新记录（可空）；
+--   ri4_blocked：存在 R-I-4 非正式支持证据；
+--   formal_status：三者合取——已批准、记录不为 NON_FORMAL、且无 R-I-4 违例，才为 FORMAL。
 CREATE VIEW formal.v_variant_formal AS
   SELECT v.rule_variant_id, v.component_id,
-    CASE WHEN a.decision = 'approve' AND a.target_content_hash = v.content_hash THEN 'FORMAL' ELSE 'NON_FORMAL' END AS formal_status,
-    a.approval_id AS current_approval_id
+    CASE WHEN a.decision = 'approve' AND a.target_content_hash = v.content_hash THEN 'FORMAL' ELSE 'NON_FORMAL' END AS approval_status,
+    a.approval_id AS current_approval_id,
+    (SELECT f.value FROM v_formal_status_current f WHERE f.target_type = 'RuleVariant' AND f.target_id = v.rule_variant_id) AS recorded_status,
+    EXISTS (SELECT 1 FROM v_ri4_support s WHERE s.component_id = v.component_id) AS ri4_blocked,
+    CASE WHEN a.decision = 'approve' AND a.target_content_hash = v.content_hash
+              AND (SELECT f.value FROM v_formal_status_current f WHERE f.target_type = 'RuleVariant' AND f.target_id = v.rule_variant_id) IS NOT 'NON_FORMAL'
+              AND NOT EXISTS (SELECT 1 FROM v_ri4_support s WHERE s.component_id = v.component_id)
+         THEN 'FORMAL' ELSE 'NON_FORMAL' END AS formal_status
   FROM rule_variant v LEFT JOIN v_current_approval a ON a.target_id = v.rule_variant_id;
 CREATE VIEW formal.v_current_default AS
   SELECT d.* FROM component_default d
   WHERE d.sequence_no = (SELECT max(sequence_no) FROM component_default x WHERE x.component_id = d.component_id);
+-- 阻断现行状态（E2-FIX-2 P1-3 用户裁决：失效关闭）：阻断已登记而没有任何 blocker_change 记录时视为“现行”；
+-- 只有最新一条变更为“已解除”才算解除。不设“无记录”状态。
 CREATE VIEW formal.v_blocker_current AS
   SELECT b.block_id, b.scope,
-    coalesce((SELECT c.new_status FROM blocker_change c WHERE c.block_id = b.block_id ORDER BY c.sequence_no DESC LIMIT 1), '无记录') AS status
+    coalesce((SELECT c.new_status FROM blocker_change c WHERE c.block_id = b.block_id ORDER BY c.sequence_no DESC LIMIT 1), '现行') AS status
   FROM blocker b;
 -- 治理索引（§8.5）：由权威记录生成，不设可写表
 CREATE VIEW formal.v_governance_record AS

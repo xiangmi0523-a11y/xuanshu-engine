@@ -20,7 +20,7 @@
     ["formal", "annotation", {"annotation_id": "TEST-AN-1", "passage_id": "TEST-PSG-1", "layer_code": "TEST-AL-1", "text": "注"}],
     ["formal", "evidence", {"evidence_id": "TEST-EV-1", "human_id": "TEST-EV-1", "evidence_tier": "E3", "evidence_category": "C-B", "confidence": "B", "verification_method": null, "missing_evidence": null, "next_source": null, "origin": "human", "branch_id": null}],
     ["formal", "evidence_passage", {"evidence_id": "TEST-EV-1", "passage_id": "TEST-PSG-1"}],
-    ["formal", "manual_check_record", {"check_id": "TEST-MC-1", "evidence_id": "TEST-EV-1", "checked_by": "USER", "checked_at": "2026-11-21", "page_range": "1a-1b"}],
+    ["formal", "manual_check_record", {"check_id": "TEST-MC-1", "evidence_id": "TEST-EV-1", "edition_id": "TEST-ED-1", "checked_by": "USER", "checked_at": "2026-11-21", "page_range": "1a", "evidence_scope": "TEST-PSG-1|TEST-ED-1|1a"}],
     ["formal", "system_school", {"id": "TEST-SYS-1", "name": "子平", "parent_id": null, "level_note": null}],
     ["formal", "rule", {"rule_id": "TEST-RULE-1", "track": "A", "tier": "T0", "default_scope": "进默认", "system_id": "TEST-SYS-1", "school_id": null}],
     ["formal", "rule_component", {"component_id": "TEST-RC-1", "rule_id": "TEST-RULE-1", "evidence_category": "C-B", "is_calendar_anchor": null, "calc_function_id": "liuyao.cast", "applicability_domain": "LIUYAO"}],

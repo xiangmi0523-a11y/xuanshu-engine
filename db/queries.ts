@@ -42,15 +42,21 @@ export const releaseChecks = {
       SELECT h.new_value FROM formal.formal_status_history h JOIN formal.data_release hr ON hr.data_release = h.data_release
       WHERE h.target_type = 'RuleVariant' AND h.target_id = a.target_id AND hr.release_seq <= r.release_seq ORDER BY h.sequence_no DESC LIMIT 1) = 'FORMAL'`),
   "Q-F-24d": (db: DatabaseSync) => q(db, `
-    SELECT v.rule_variant_id, eh.data_release, eh.target_id AS evidence_id
-    FROM formal.formal_status_history eh JOIN formal.data_release er ON er.data_release = eh.data_release
-    JOIN formal.evidence_link_role lr ON lr.evidence_id = eh.target_id AND lr.role = '支持'
-    JOIN formal.evidence_link l ON l.evidence_id = lr.evidence_id AND l.claim_id = lr.claim_id AND l.branch_id IS NULL
-    JOIN formal.claim c ON c.claim_id = l.claim_id
-    JOIN formal.rule_variant v ON v.component_id = c.component_id
-    WHERE eh.target_type = 'Evidence' AND eh.new_value = 'NON_FORMAL' AND (
-      SELECT h.new_value FROM formal.formal_status_history h JOIN formal.data_release hr ON hr.data_release = h.data_release
-      WHERE h.target_type = 'RuleVariant' AND h.target_id = v.rule_variant_id AND hr.release_seq <= er.release_seq ORDER BY h.sequence_no DESC LIMIT 1) = 'FORMAL'`),
+    WITH asof AS (
+      SELECT r.data_release, r.release_seq, v.rule_variant_id, s.evidence_id,
+        (SELECT h.new_value FROM formal.formal_status_history h JOIN formal.data_release hr ON hr.data_release = h.data_release
+          WHERE h.target_type = 'RuleVariant' AND h.target_id = v.rule_variant_id AND hr.release_seq <= r.release_seq ORDER BY h.sequence_no DESC LIMIT 1) AS variant_status,
+        (SELECT h.new_value FROM formal.formal_status_history h JOIN formal.data_release hr ON hr.data_release = h.data_release
+          WHERE h.target_type = 'Evidence' AND h.target_id = s.evidence_id AND hr.release_seq <= r.release_seq ORDER BY h.sequence_no DESC LIMIT 1) AS evidence_status
+      FROM formal.data_release r
+      CROSS JOIN (SELECT DISTINCT c.component_id, lr.evidence_id FROM formal.claim c
+                  JOIN formal.evidence_link l ON l.claim_id = c.claim_id AND l.branch_id IS NULL
+                  JOIN formal.evidence_link_role lr ON lr.evidence_id = l.evidence_id AND lr.claim_id = l.claim_id AND lr.role = '支持') s
+      JOIN formal.rule_variant v ON v.component_id = s.component_id)
+    -- 逐个数据版本按“截至该版本”的状态比对（P2-1 时序）：证据先失效、变体后转 FORMAL，或证据从未有正式状态记录，都查得出
+    SELECT rule_variant_id, data_release, evidence_id FROM asof
+    WHERE variant_status = 'FORMAL' AND coalesce(evidence_status, 'NON_FORMAL') <> 'FORMAL'
+    ORDER BY release_seq, rule_variant_id, evidence_id`),
   /** Q-F-25 成对阻断同步解除（B4 与 BLK-6、B1 与 BLK-7；§9.5、BLK.4） */
   "Q-F-25": (db: DatabaseSync) => q(db, `
     WITH pairs(a, b) AS (VALUES ('B4','BLK-6'), ('BLK-6','B4'), ('B1','BLK-7'), ('BLK-7','B1'))
@@ -67,16 +73,13 @@ export const releaseChecks = {
     JOIN formal.v_formal_status_current fe ON fe.target_type = 'Edition' AND fe.target_id = p.edition_id AND fe.value = 'NON_FORMAL'
     JOIN formal.v_formal_status_current fv ON fv.target_type = 'Evidence' AND fv.target_id = ep.evidence_id AND fv.value = 'FORMAL'`),
   /**
-   * Q-C-09 R-I-4（v1.0.6）：证据对变体所属子项下任一主张具有“支持”角色且为 NON_FORMAL，而变体（按 §8.2 推出）为 FORMAL。
-   * 只要有一个支持角色即触发（兼有反证也触发）；只有反证不触发；异文、检索记录、引用记录、可信度不在角色表内，结构上不能充当支持。
+   * Q-C-09 R-I-4（v1.0.6；E2-FIX-2 P1-1）：已按批准为 FORMAL 的变体，其子项主张有非正式支持证据（含证据无正式状态记录）。
+   * 与 judge() 共用 formal.v_ri4_support 一个定义；只有反证、异文、检索、引用、可信度不在其中。
    */
   "Q-C-09": (db: DatabaseSync) => q(db, `
-    SELECT DISTINCT vf.rule_variant_id, lr.evidence_id, lr.claim_id FROM formal.v_variant_formal vf
-    JOIN formal.claim c ON c.component_id = vf.component_id
-    JOIN formal.evidence_link l ON l.claim_id = c.claim_id AND l.branch_id IS NULL
-    JOIN formal.evidence_link_role lr ON lr.evidence_id = l.evidence_id AND lr.claim_id = l.claim_id AND lr.role = '支持'
-    JOIN formal.v_formal_status_current fe ON fe.target_type = 'Evidence' AND fe.target_id = lr.evidence_id AND fe.value = 'NON_FORMAL'
-    WHERE vf.formal_status = 'FORMAL'`),
+    SELECT DISTINCT vf.rule_variant_id, s.evidence_id, s.claim_id FROM formal.v_variant_formal vf
+    JOIN formal.v_ri4_support s ON s.component_id = vf.component_id
+    WHERE vf.approval_status = 'FORMAL'`),
 };
 
 // ---------------------------------------------------------------- §12.2 证据一致性查询（W-02，DB-X-05）
@@ -188,7 +191,7 @@ export const snapshotChecks: Record<string, (db: DatabaseSync, sid?: string) => 
   /** Q-B-01 所经步骤映射到现行阻断的 BLOCKED-FORMAL / BLOCKED-HARD 却已封存（不得记为 NON_FORMAL，Q-6） */
   "Q-B-01": (db: DatabaseSync, sid?: string) => q(db, `SELECT t.snapshot_id, t.step_code, m.block_id FROM main.execution_trace_step t
     JOIN formal.blocker_step_map m ON m.step_code = t.step_code JOIN formal.v_blocker_current b ON b.block_id = m.block_id
-    WHERE t.status = '完成' AND b.status = '现行' AND m.effect IN ('BLOCKED-FORMAL','BLOCKED-HARD')${snapFilter("t.snapshot_id", sid)}`),
+    WHERE t.status = '完成' AND b.status <> '已解除' AND m.effect IN ('BLOCKED-FORMAL','BLOCKED-HARD')${snapFilter("t.snapshot_id", sid)}`),
   /** Q-B-02 BLOCKER_PATH 原因只能引用效果为 NON_FORMAL 的映射 */
   "Q-B-02": (db: DatabaseSync, sid?: string) => q(db, `SELECT r.snapshot_id, r.upstream_id, r.step_code FROM main.snapshot_non_formal_reason r
     WHERE r.reason_kind = 'BLOCKER_PATH' AND NOT EXISTS (SELECT 1 FROM formal.blocker_step_map m
