@@ -129,7 +129,10 @@ export function buildPlan(db: DatabaseSync, inp: PreparedInput, cfg: PreparedCon
   const skip = (d: StepDef, kind: "范围外" | "输入缺失" | "按规则跳过", reason: string): PlannedStep =>
     ({ step_code: d.step, status: "未执行", skip_kind: kind, reason, rule_functions: [], params: d.params, trace_function: d.trace });
   if (inp.domain === "BAZI") {
-    return { module: "BAZI", config: cfg.params, steps: BAZI_STEPS.map((d) => {
+    // 输入路径（契约 §11.1 输入路径表）：出生地纬度为负即南半球出生
+    const lat = Number(inp.raw["latitude"]);
+    const input_paths = Number.isFinite(lat) && lat < 0 ? ["南半球"] : [];
+    return { module: "BAZI", config: cfg.params, input_paths, steps: BAZI_STEPS.map((d) => {
       if (d.step === "BZ-02" || d.step === "BZ-03") {
         if (val("CFG-02") === "false") return skip(d, "按规则跳过", "CFG-02 = false：钟表时间，不做经度换算与均时差（§9.4）");
         throw new CanonicalError("DB-T-07", "CFG-02 = true 的路径经过均时差（B1 / BLK-7），不在 E2 端到端范围");

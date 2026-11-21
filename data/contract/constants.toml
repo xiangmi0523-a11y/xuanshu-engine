@@ -140,3 +140,24 @@ decision = "N-6"
 # verify.py 核对：契约 §9.5 表行与附录 BLK.1 表行恰为这 11 项。
 [blockers]
 required = ["B1", "B2", "B3", "B4", "BLK-1", "BLK-2", "BLK-3", "BLK-4", "BLK-5", "BLK-6", "BLK-7"]
+
+# 阻断覆盖方式【契约 §9.4、§9.5、附录 BLK.2～BLK.4、§11.1 输入路径表】——E2-FIX-2 答复第 4 条（映射完整性，失效关闭）
+# 每项现行阻断须有一种可检验的覆盖方式；覆盖缺失（如步骤映射漏导）时计算判定一律 BLOCKED-FORMAL。
+#   step_map        ：须在 blocker_step_map 中至少登记一行（PATH 级，BLK.2 有可执行路径）
+#   pair:<编号>      ：与另一阻断为同一事项（BLK.4：B1 ↔ BLK-7、B4 ↔ BLK-6），现行时按对方的步骤映射生效
+#   input_path:<路径>：输入路径级（§11.1 表：南半球出生 → 输入路径 BLOCKED-HARD）
+#   global:ZR-DB     ：B2 由库层 ZR-DB-* 约束与 CFG-01 锁定值承担（§9.4 GLOBAL：挡无 zi_rule 命盘持久化）
+#   global:isolation ：B3 由“只用内存临时库”承担（§9.7、B3-1；check:isolation）
+#   no_entry        ：当前引擎无该模块 / 子路径入口（BLK.3 八字排盘、六爻装卦两栏为“不锁”的 MODULE 级阻断）
+[blocker_coverage]
+B1 = "pair:BLK-7"
+B2 = "global:ZR-DB"
+B3 = "global:isolation"
+B4 = "pair:BLK-6"
+BLK-1 = "no_entry"
+BLK-2 = "no_entry"
+BLK-3 = "no_entry"
+BLK-4 = "no_entry"
+BLK-5 = "input_path:南半球"
+BLK-6 = "step_map"
+BLK-7 = "step_map"

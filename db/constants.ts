@@ -13,3 +13,15 @@ export function requiredBlockers(): string[] {
   if (ids.length === 0) throw new Error("[blockers] required 为空");
   return ids;
 }
+
+/** [blocker_coverage]：每项必备阻断的覆盖方式（契约 §9.5、BLK.3、BLK.4、§11.1；verify.py 逐项核对契约） */
+export function blockerCoverage(): Map<string, string> {
+  const m = /^\[blocker_coverage\]\n((?:[^[\n][^\n]*\n?)*)/m.exec(toml());
+  if (!m) throw new Error("data/contract/constants.toml 缺 [blocker_coverage]");
+  const out = new Map<string, string>();
+  for (const line of m[1]!.split("\n")) {
+    const kv = /^([A-Za-z0-9_-]+)\s*=\s*"([^"]+)"/.exec(line.trim());
+    if (kv) out.set(kv[1]!, kv[2]!);
+  }
+  return out;
+}

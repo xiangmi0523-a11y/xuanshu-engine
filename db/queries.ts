@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import type { DatabaseSync } from "node:sqlite";
+import { blockerCoverage } from "./constants.js";
 import { hashOf } from "./canonical.js";
 
 type Row = Record<string, unknown>;
@@ -193,9 +194,15 @@ export const snapshotChecks: Record<string, (db: DatabaseSync, sid?: string) => 
     JOIN formal.blocker_step_map m ON m.step_code = t.step_code JOIN formal.v_blocker_current b ON b.block_id = m.block_id
     WHERE t.status = '完成' AND b.status <> '已解除' AND m.effect IN ('BLOCKED-FORMAL','BLOCKED-HARD')${snapFilter("t.snapshot_id", sid)}`),
   /** Q-B-02 BLOCKER_PATH 原因只能引用效果为 NON_FORMAL 的映射 */
-  "Q-B-02": (db: DatabaseSync, sid?: string) => q(db, `SELECT r.snapshot_id, r.upstream_id, r.step_code FROM main.snapshot_non_formal_reason r
+  // pair 类阻断（BLK.4：B1 ↔ BLK-7、B4 ↔ BLK-6）按对方的映射核对（E2-FIX-3）
+  "Q-B-02": (db: DatabaseSync, sid?: string) => {
+    const pairs = [...blockerCoverage()].flatMap(([b, k]) => (k.startsWith("pair:") ? [`('${b.replace(/'/g, "''")}','${k.slice(5).replace(/'/g, "''")}')`] : []));
+    const pairCte = pairs.length ? `WITH pair(block_id, via) AS (VALUES ${pairs.join(",")})` : "WITH pair(block_id, via) AS (SELECT NULL, NULL WHERE 0)";
+    return q(db, `${pairCte} SELECT r.snapshot_id, r.upstream_id, r.step_code FROM main.snapshot_non_formal_reason r
     WHERE r.reason_kind = 'BLOCKER_PATH' AND NOT EXISTS (SELECT 1 FROM formal.blocker_step_map m
-      WHERE m.block_id = r.upstream_id AND m.step_code = r.step_code AND m.effect = 'NON_FORMAL')${snapFilter("r.snapshot_id", sid)}`),
+      WHERE m.step_code = r.step_code AND m.effect = 'NON_FORMAL'
+        AND (m.block_id = r.upstream_id OR m.block_id IN (SELECT via FROM pair WHERE pair.block_id = r.upstream_id)))${snapFilter("r.snapshot_id", sid)}`);
+  },
   /** Q-X-01 / Q-X-03 用户库三元组在正式库存在且哈希一致 */
   "Q-X-01": (db: DatabaseSync, sid?: string) => q(db, `
     SELECT d.snapshot_id, d.dep_type, d.ref_id FROM main.snapshot_dependency d

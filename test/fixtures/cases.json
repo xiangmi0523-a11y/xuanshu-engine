@@ -39,7 +39,7 @@
     },
     "G1N": {
       "E2E-BZ-1": { "status": "NON_FORMAL", "reasons": ["PARAM_PROVISIONAL:CFG-05", "PARAM_PROVISIONAL:CFG-05W", "RULE_PROVISIONAL:TEST-RV-PD04"] },
-      "E2E-LY-1": { "status": "NON_FORMAL", "reasons": ["BLOCKER_PATH:BLK-6", "RULE_PROVISIONAL:TEST-RV-PD04"] }
+      "E2E-LY-1": { "status": "NON_FORMAL", "reasons": ["BLOCKER_PATH:B4", "BLOCKER_PATH:BLK-6", "RULE_PROVISIONAL:TEST-RV-PD04"], "note_e2fix3": "B4 与 BLK-6 为同一事项（BLK.4），B4 现行时按 BLK-6 的映射生效（E2-FIX-3）" }
     },
     "G2": {
       "E2E-BZ-1": { "status": "FORMAL", "reasons": [] },

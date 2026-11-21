@@ -103,3 +103,29 @@ test("G6-7 对照：版本、叶号、范围都相符且核对人非 AI 时，PR
   testHumanCheck(w2.db, "X-EV7");
   rejects(() => status(w2, "X-EV7", "PRIMARY_VERIFIED"), "DB-G6-PV"); // 段落缺 §13.7 七项
 });
+
+test("G6-8（用户 2026-11-21 裁决）：证据 FORMAL 须有相符的人工核验记录，但 FORMAL 不等于 PRIMARY_VERIFIED——B 级、E3、SINGLE_SOURCE 的证据有记录即可 FORMAL；无记录仍拒", () => {
+  const w = world();
+  ins(w.db, "formal", "evidence", { evidence_id: "X-EVB", human_id: "X-EVB", evidence_tier: "E3", evidence_category: "C-B", confidence: "C", verification_method: "现代排印本比读",
+    missing_evidence: null, next_source: null, origin: "human", branch_id: null });
+  ins(w.db, "formal", "evidence_passage", { evidence_id: "X-EVB", passage_id: "X-PM" });
+  status(w, "X-EVB", "SINGLE_SOURCE");
+  rejects(() => formal(w, "X-EVB", "FORMAL"), "DB-G6-FORMAL");
+  testHumanCheck(w.db, "X-EVB");
+  formal(w, "X-EVB", "FORMAL");
+  rejects(() => status(w, "X-EVB", "PRIMARY_VERIFIED", "SINGLE_SOURCE"), "DB-G6-PV"); // FORMAL 并不使其成为 PRIMARY_VERIFIED（confidence C、无影印本对校）
+  const st = w.db.prepare("SELECT new_value FROM formal.evidence_status_history WHERE target_id = 'X-EVB' ORDER BY sequence_no DESC LIMIT 1").get() as { new_value: string };
+  assert.equal(st.new_value, "SINGLE_SOURCE");
+});
+
+test("G6-9（§13.7、【用户裁决 N-4】）：所引段落核对结果为 MISMATCH / PARTIAL 时不得 PRIMARY_VERIFIED", () => {
+  for (const r of ["MISMATCH", "PARTIAL"]) {
+    const w = world();
+    w.db.prepare("INSERT INTO formal.passage (passage_id, edition_id, chapter_label, paragraph_no, text, volume_page, image_ref, verified_by, verified_at, against_what, result) VALUES ('X-P33','X-E1787','卷一',4,'t','n33','img','X-影像记录','2026-05-07',?,?)")
+      .run(JSON.stringify({ v: 1, edition: "X-E1787", image: "n33" }), r);
+    ins(w.db, "formal", "evidence", { evidence_id: "X-EVM", human_id: "X-EVM", evidence_tier: "E1", evidence_category: "C-B", confidence: "A", verification_method: "影印本对校", missing_evidence: null, next_source: null, origin: "human", branch_id: null });
+    ins(w.db, "formal", "evidence_passage", { evidence_id: "X-EVM", passage_id: "X-P33" });
+    testHumanCheck(w.db, "X-EVM");
+    rejects(() => status(w, "X-EVM", "PRIMARY_VERIFIED"), "DB-G6-PV");
+  }
+});

@@ -127,10 +127,11 @@ test("DB-S-05：结果中时间只到分钟，无秒级字段", () => {
 
 test("DB-S-07 反向：G1N 删去六爻 BLOCKER_PATH:BLK-6 原因行——库层只保证至少一条，测试比对期望集合查出差集", () => {
   const p = prepared("G1N", "E2E-LY-1");
-  const bad = clone(p.rows); bad.reasons = bad.reasons.filter((r) => r["reason_kind"] !== "BLOCKER_PATH");
+  const bad = clone(p.rows); bad.reasons = bad.reasons.filter((r) => !(r["reason_kind"] === "BLOCKER_PATH" && String(r["upstream_id"]).startsWith("BLK-")));
   sealSnapshot(p.w.db, bad, { skipPrecheck: true });
   const missing = exp("G1N", "E2E-LY-1").reasons!.filter((k) => !reasonKeys(bad).includes(k));
-  assert.deepEqual(missing.map((k) => k.split(":")[0]), ["BLOCKER_PATH"], "差集为 BLOCKER_PATH");
+  assert.equal(missing.length, 1, "差集恰一条");
+  assert.match(missing[0]!, /^BLOCKER_PATH:BLK-/, "差集为 BLOCKER_PATH（BLK 一条；B4 经 BLK.4 另记一条，保留）");
 });
 
 test("DB-S-08 / DB-C-01：G2 把一个依赖改回 NON_FORMAL（撤销批准）后仍封存 FORMAL——预检拒；绕过预检 Q-C-01 查出", async () => {

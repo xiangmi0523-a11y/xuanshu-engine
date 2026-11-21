@@ -10,7 +10,8 @@
 //   5 FORMAL
 // BLOCKED 一律不生成快照（Q-6）。
 import type { DatabaseSync } from "node:sqlite";
-import { requiredBlockers } from "./constants.js";
+import { blockerCoverage, requiredBlockers } from "./constants.js";
+import { isMemoryDb } from "./connect.js";
 import { hashOf } from "./canonical.js";
 
 export interface PlannedStep {
@@ -28,7 +29,8 @@ export interface PlannedStep {
   output_summary?: string;
 }
 export interface ConfigParam { param_id: string; value: string; value_source: string; apply_mode: "applied" | "stored_only" }
-export interface Plan { module: "BAZI" | "LIUYAO"; steps: PlannedStep[]; config: ConfigParam[] }
+/** input_paths：输入决定的路径标记（如“南半球”，契约 §11.1 输入路径表），供 input_path 类阻断判定 */
+export interface Plan { module: "BAZI" | "LIUYAO"; steps: PlannedStep[]; config: ConfigParam[]; input_paths?: string[] }
 
 export interface UsedVariant {
   step_code: string; calc_function_id: string; component_id: string; rule_variant_id: string; version_no: number;
@@ -49,10 +51,60 @@ const all = <T>(db: DatabaseSync, sql: string, ...a: (string | number | null)[])
 interface MapRow { block_id: string; step_code: string; effect: string; status: string; basis_ref: string }
 /** 失效关闭（P1-3）：只有明确“已解除”才不生效；无记录、未知或异常取值一律按现行处理 */
 const active = (status: string | null | undefined) => status !== "已解除";
+/**
+ * 某步骤上的阻断映射：本身登记的映射在前；其后为 pair 类阻断（BLK.4 同一事项：B1 ↔ BLK-7、B4 ↔ BLK-6）
+ * 按对方映射生效，状态取自身（E2-FIX-3：B1、B4 自身无映射时不再失效开放）。
+ */
 function stepBlockers(db: DatabaseSync, step: string): MapRow[] {
-  return all<MapRow>(db, `SELECT m.block_id, m.step_code, m.effect, b.status, m.basis_ref
+  const own = all<MapRow>(db, `SELECT m.block_id, m.step_code, m.effect, b.status, m.basis_ref
     FROM formal.blocker_step_map m JOIN formal.v_blocker_current b ON b.block_id = m.block_id
     WHERE m.step_code = ? ORDER BY m.block_id`, step);
+  const paired: MapRow[] = [];
+  for (const [b, kind] of blockerCoverage()) {
+    const pair = /^pair:(.+)$/.exec(kind)?.[1];
+    if (!pair) continue;
+    const st = one<{ status: string }>(db, "SELECT status FROM formal.v_blocker_current WHERE block_id = ?", b);
+    for (const m of own.filter((x) => x.block_id === pair)) paired.push({ ...m, block_id: b, status: st?.status ?? "现行", basis_ref: `${m.basis_ref}（经 ${b} ↔ ${pair}，BLK.4）` });
+  }
+  return [...own, ...paired];
+}
+
+/**
+ * 映射完整性（E2-FIX-3，失效关闭）：每项未解除的必备阻断须有可检验的覆盖；覆盖缺失即 BLOCKED-FORMAL。
+ * 另核对 component_blocker：本次所用子项挂了某现行阻断，而该阻断在该步骤（含 pair 映射）没有映射 → 映射漏导。
+ */
+const blocked = (kind: "BLOCKED-HARD" | "BLOCKED-FORMAL", code: string, step_code: string, object_id?: string): Judgment =>
+  (object_id === undefined ? { status: "BLOCKED", kind, code, step_code } : { status: "BLOCKED", kind, code, step_code, object_id });
+function coverageGap(db: DatabaseSync, plan: Plan, executed: PlannedStep[]): Judgment | undefined {
+  const step0 = executed[0]?.step_code ?? "";
+  const cov = blockerCoverage();
+  const mapCount = (b: string) => (one<{ n: number }>(db, "SELECT count(*) AS n FROM formal.blocker_step_map WHERE block_id = ?", b)?.n ?? 0);
+  for (const id of requiredBlockers()) {
+    const st = one<{ status: string }>(db, "SELECT status FROM formal.v_blocker_current WHERE block_id = ?", id)?.status;
+    if (!active(st)) continue;
+    const kind = cov.get(id);
+    if (!kind) return blocked("BLOCKED-FORMAL", `BLOCKER_COVERAGE_UNDEFINED:${id}`, step0);
+    if (kind === "step_map") { if (mapCount(id) === 0) return blocked("BLOCKED-FORMAL", `BLOCKER_MAP_MISSING:${id}`, step0); }
+    else if (kind.startsWith("pair:")) { if (mapCount(kind.slice(5)) === 0) return blocked("BLOCKED-FORMAL", `BLOCKER_MAP_MISSING:${id}:${kind.slice(5)}`, step0); }
+    else if (kind.startsWith("input_path:")) {
+      if ((plan.input_paths ?? []).includes(kind.slice(11))) return blocked("BLOCKED-HARD", `BLOCKER_INPUT_PATH:${id}:${step0}`, step0);
+    } else if (kind === "global:ZR-DB") {
+      if (!one(db, "SELECT 1 FROM main.sqlite_master WHERE sql LIKE '%ZR-DB-missing%'")) return blocked("BLOCKED-FORMAL", `BLOCKER_COVERAGE_MISSING:${id}`, step0);
+    } else if (kind === "global:isolation") {
+      if (!isMemoryDb(db)) return blocked("BLOCKED-HARD", `BLOCKER_COVERAGE_MISSING:${id}`, step0);
+    } else if (kind !== "no_entry") return blocked("BLOCKED-FORMAL", `BLOCKER_COVERAGE_UNDEFINED:${id}`, step0);
+  }
+  for (const s of executed) for (const fn of s.rule_functions) {
+    const links = all<{ component_id: string; block_id: string }>(db, `SELECT cb.component_id, cb.block_id FROM formal.component_blocker cb
+      JOIN formal.rule_component c ON c.component_id = cb.component_id WHERE c.calc_function_id = ? ORDER BY cb.block_id`, fn);
+    for (const l of links) {
+      const st = one<{ status: string }>(db, "SELECT status FROM formal.v_blocker_current WHERE block_id = ?", l.block_id)?.status;
+      if (!active(st)) continue;
+      if (!stepBlockers(db, s.step_code).some((m) => m.block_id === l.block_id))
+        return blocked("BLOCKED-FORMAL", `BLOCKER_MAP_MISSING:${l.block_id}:${s.step_code}`, s.step_code, l.component_id);
+    }
+  }
+  return undefined;
 }
 interface DisputeRow { dispute_id: string; object_ref: string; status: string }
 function disputesFor(db: DatabaseSync, ref: string): DisputeRow[] {
@@ -96,12 +148,12 @@ const componentsOf = (db: DatabaseSync, fn: string) =>
 export function judge(db: DatabaseSync, plan: Plan): Judgment {
   const executed = plan.steps.filter((s) => s.status === "完成");
   const release = currentRelease(db);
-  const blocked = (kind: "BLOCKED-HARD" | "BLOCKED-FORMAL", code: string, step_code: string, object_id?: string): Judgment =>
-    (object_id === undefined ? { status: "BLOCKED", kind, code, step_code } : { status: "BLOCKED", kind, code, step_code, object_id });
 
   // 0 必备阻断登记（P1-3 失效关闭）：契约 §9.5 与附录 BLK.1 的 11 项须全部登记；缺任何一项按导入遗漏处理，不生成快照
   const registered = new Set(all<{ block_id: string }>(db, "SELECT block_id FROM formal.blocker").map((r) => r.block_id));
   for (const id of requiredBlockers()) if (!registered.has(id)) return blocked("BLOCKED-FORMAL", `BLOCKER_REGISTRY_MISSING:${id}`, executed[0]?.step_code ?? "");
+  const gap = coverageGap(db, plan, executed);
+  if (gap) return gap;
   // 1 BLOCKED-HARD
   for (const s of executed) for (const m of stepBlockers(db, s.step_code)) {
     if (active(m.status) && m.effect === "BLOCKED-HARD") return blocked("BLOCKED-HARD", `BLOCKER_HARD:${m.block_id}:${s.step_code}`, s.step_code);

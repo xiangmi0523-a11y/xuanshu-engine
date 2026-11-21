@@ -208,7 +208,7 @@ const locatorsExtra = sources.locators_extra ?? {};
 if (problems.length) { console.error(problems.join("\n")); process.exit(1); }
 
 // 批准状态（E2-FIX-2 P2-4）：按出处分四类。v1.0.6 修订单为 draft，用户未批准；“工程补充”待审查确认；E2-FIX-2 为用户任务要求、具体字段与触发器为实现方案
-const approvalOf = (src) => /v1\.0\.6/.test(src) ? "待批准：v1.0.6 修订单（draft，用户未批准）" : /E2-FIX-2 P2-2/.test(src) ? "用户任务要求（E2-FIX-2 P2-2），实现方案待审"
+const approvalOf = (src) => /用户裁决 E2-FIX-2-R/.test(src) ? "已批准：用户裁决（契约 v1.0.7）" : /v1\.0\.6/.test(src) ? "待批准：v1.0.6 修订单（draft，用户未批准）" : /E2-FIX-2 P2-2/.test(src) ? "用户任务要求（E2-FIX-2 P2-2），实现方案待审"
   : /工程补充/.test(src) ? "工程补充：待审查确认" : "已批准：审核清单 / 契约 v1.0 / 授权书";
 for (const o of Object.values(out)) {
   o.approval = approvalOf(o.src);
