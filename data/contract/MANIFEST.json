@@ -2,9 +2,9 @@
   "note": "契约常量副本（只读）：来自 xuanshu-data constants.toml，供 DDL 生成脚本读取 [cfg01] locked_value、计算判定读取 [blockers] required（审核清单 §8.1；E2 实施授权书 Q-8）。数据仓库 verify.py 核对该值与契约 §13.3、P-8.1 一致。",
   "files": {
     "constants.toml": {
-      "sha256": "8b3f996537506d6d583bd4197f679be0e733c8bbbd0b2ceb8641f9685514ea1a",
-      "decision": "N-6（[cfg01]）；E2-FIX-2 P1-3（[blockers]）；E2-FIX-2 答复第 4 条（[blocker_coverage]）",
-      "source": "xuanshu-data 分支 e2-impl-data 提交 4f3d4ee"
+      "sha256": "9a3927f59877b2f4ec6399ad3ca973f9031aca0e7c44227d8ba688e29cee697f",
+      "decision": "N-6（[cfg01]）；E2-FIX-2 P1-3（[blockers]）；E2-FIX-2 答复第 4 条（[blocker_coverage]）；E2-FIX-4 F3-2（[blocker_step_maps]、[blocker_component_links]）",
+      "source": "xuanshu-data 分支 e2-impl-data 提交 7271c19"
     }
   },
   "golden": {

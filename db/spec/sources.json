@@ -2595,6 +2595,18 @@
   "DB-U-07e": {
    "src": "清单 §5 DB-U-07（快照与输入、配置、档案、领域一致）按项拆分为 a～e",
    "approval": "已批准（清单 / 契约）"
+  },
+  "DB-G6-PV-check": {
+   "src": "E2-FIX-2 P2-2 任务要求“PRIMARY_VERIFIED 写入路径检查相符人工核验记录”；未作为正式契约规则批准（E2-FIX-4 明确），待用户裁决",
+   "approval": "待批准（PRIMARY_VERIFIED 一律须人工核验记录，未获批准）"
+  },
+  "DB-G6-checker-empty": {
+   "src": "E2-FIX-4 F3-5 用户任务要求：拒绝空字符串与纯空白核对人",
+   "approval": "用户任务要求（E2-FIX-4），实现待审"
+  },
+  "DB-G6-date": {
+   "src": "E2-FIX-4 F3-5 用户任务要求：核验日期须为 YYYY-MM-DD 有效日期；不晚于对应数据版本日期（在 G-6 触发器与 v_manual_check_valid 使用处判定）",
+   "approval": "用户任务要求（E2-FIX-4），实现待审"
   }
  },
  "locators_mapped": {

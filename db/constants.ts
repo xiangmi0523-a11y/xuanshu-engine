@@ -25,3 +25,21 @@ export function blockerCoverage(): Map<string, string> {
   }
   return out;
 }
+
+/** 读一个“键 = [字符串, …]”节 */
+function listSection(name: string): Map<string, string[]> {
+  const m = new RegExp(`^\\[${name}\\]\\n((?:[^[\\n][^\\n]*\\n?)*)`, "m").exec(toml());
+  if (!m) throw new Error(`data/contract/constants.toml 缺 [${name}]`);
+  const out = new Map<string, string[]>();
+  for (const line of m[1]!.split("\n")) {
+    const kv = /^([A-Za-z0-9_-]+)\s*=\s*\[([^\]]*)\]/.exec(line.trim());
+    if (kv) out.set(kv[1]!, [...kv[2]!.matchAll(/"([^"]+)"/g)].map((x) => x[1]!));
+  }
+  return out;
+}
+/** [blocker_step_maps]：必备“步骤:效果”（审核清单 §7.2；E2-FIX-4 F3-2） */
+export function requiredBlockerMaps(): Map<string, { step: string; effect: string }[]> {
+  return new Map([...listSection("blocker_step_maps")].map(([b, xs]) => [b, xs.map((x) => { const [step, effect] = x.split(":"); return { step: step!, effect: effect! }; })]));
+}
+/** [blocker_component_links]：必备子项—阻断关联（审核清单 §3.8 × §7.2；E2-FIX-4 F3-2） */
+export function requiredBlockerLinks(): Map<string, string[]> { return listSection("blocker_component_links"); }

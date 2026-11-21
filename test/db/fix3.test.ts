@@ -25,7 +25,7 @@ test("4a-1 反例：BLK-6 现行而全部步骤映射漏导——修复前八字
   assert.equal(count(w.db, "formal.blocker_step_map WHERE block_id = 'BLK-6'"), 0);
   const j = judgeCase(w, "E2E-BZ-1");
   assert.equal(j.status, "BLOCKED", `判定：${JSON.stringify(j).slice(0, 200)}`);
-  if (j.status === "BLOCKED") { assert.equal(j.kind, "BLOCKED-FORMAL"); assert.match(j.code, /BLK-6/); }
+  if (j.status === "BLOCKED") { assert.equal(j.kind, "BLOCKED-FORMAL"); assert.match(j.code, /BLK-6|B4/); }
   const before = count(w.db, "calculation_snapshot");
   runCase("G2", "E2E-BZ-1", { w });
   assert.equal(count(w.db, "calculation_snapshot"), before);
@@ -36,7 +36,7 @@ test("4a-2 反例：只漏导 BLK-6 → BZ-05 一条映射（其余映射仍在�
   assert.ok(count(w.db, "formal.blocker_step_map WHERE block_id = 'BLK-6'") > 0);
   const j = judgeCase(w, "E2E-BZ-1");
   assert.equal(j.status, "BLOCKED");
-  if (j.status === "BLOCKED") assert.match(j.code, /BLK-6:BZ-05/);
+  if (j.status === "BLOCKED") assert.match(j.code, /BLK-6:BZ-05|BLOCKER_MAP_MISSING:(B4|BLK-6)/);
 });
 
 test("4a-3 反例：B4 现行而 BLK-6 已解除（导入不一致）——B4 自身无映射，修复前放行；修复后按 BLK.4 同一事项沿用 BLK-6 映射而阻断", () => {
@@ -46,9 +46,9 @@ test("4a-3 反例：B4 现行而 BLK-6 已解除（导入不一致）——B4 �
   const j = judgeCase(w, "E2E-BZ-1");
   assert.equal(j.status, "BLOCKED");
   if (j.status === "BLOCKED") assert.match(j.code, /B4/);
+  // E2-FIX-4：pair 双方状态不一致本身即数据不一致，六爻也失效关闭（不再只靠沿用映射）
   const ly = judgeCase(w, "E2E-LY-1");
-  assert.equal(ly.status, "NON_FORMAL");
-  if (ly.status === "NON_FORMAL") assert.ok(ly.reasons.some((r) => r.reason_kind === "BLOCKER_PATH" && r.upstream_id === "B4"));
+  assert.ok(ly.status === "BLOCKED" && /BLOCKER_PAIR_STATE/.test(ly.code), JSON.stringify(ly).slice(0, 160));
 });
 
 test("4a-4 反例：BLK-5 现行而南半球出生（纬度为负）——修复前 FORMAL（无映射即放行）；修复后输入路径 BLOCKED-HARD；北半球不受影响", () => {

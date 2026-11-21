@@ -1,0 +1,108 @@
+{
+ "note": "阻断覆盖复核清单（E2-FIX-4 F3-3）。新增或改动计算模块、步骤、步骤所读计算函数，或改动 constants.toml [blocker_coverage] 时，必须重新复核每项 no_entry / input_path 阻断是否因此有了入口，并更新本文件；否则测试失败，判定对清单外入口一律 BLOCKED-FORMAL。复核结论只表明“当前入口不触及该阻断”，不解除任何阻断。 skippable 为各模块允许“未执行”的步骤（复核过：BZ-02/03 仅 CFG-02 = false；BZ-12 大运、BZ-13 人元司令为范围外或准入跳过；LY-09 月建不在 E2-A 范围）；清单外步骤若未执行即失效关闭，防止以跳过步骤绕开其上的阻断映射。",
+ "reviewed_coverage": {
+  "B1": "pair:BLK-7",
+  "B2": "global:ZR-DB",
+  "B3": "global:isolation",
+  "B4": "pair:BLK-6",
+  "BLK-1": "no_entry",
+  "BLK-2": "no_entry",
+  "BLK-3": "no_entry",
+  "BLK-4": "no_entry",
+  "BLK-5": "input_path:南半球",
+  "BLK-6": "step_map",
+  "BLK-7": "step_map"
+ },
+ "modules": {
+  "BAZI": {
+   "BZ-01": [],
+   "BZ-02": [
+    "bazi.longitude_correction"
+   ],
+   "BZ-03": [
+    "bazi.eot"
+   ],
+   "BZ-04": [
+    "bazi.zi_attribution"
+   ],
+   "BZ-05": [
+    "bazi.year_pillar"
+   ],
+   "BZ-06": [
+    "bazi.month_pillar",
+    "calendar.jieqi_lookup"
+   ],
+   "BZ-07": [
+    "calendar.day_pillar"
+   ],
+   "BZ-08": [
+    "bazi.hour_pillar"
+   ],
+   "BZ-09": [
+    "bazi.shishen"
+   ],
+   "BZ-10": [
+    "bazi.canggan"
+   ],
+   "BZ-11": [
+    "bazi.changsheng"
+   ],
+   "BZ-12": [
+    "bazi.luck_cycle"
+   ],
+   "BZ-13": [
+    "bazi.siling"
+   ]
+  },
+  "LIUYAO": {
+   "LY-01": [
+    "liuyao.cast"
+   ],
+   "LY-02": [
+    "liuyao.palace"
+   ],
+   "LY-03": [
+    "liuyao.najia"
+   ],
+   "LY-04": [
+    "liuyao.shiying"
+   ],
+   "LY-05": [
+    "liuyao.liuqin"
+   ],
+   "LY-06": [
+    "calendar.day_pillar",
+    "liuyao.day_boundary"
+   ],
+   "LY-07": [
+    "liuyao.liushen"
+   ],
+   "LY-08": [
+    "liuyao.xunkong"
+   ],
+   "LY-09": [
+    "liuyao.month_build"
+   ],
+   "LY-10": [
+    "liuyao.bian"
+   ]
+  }
+ },
+ "no_entry": {
+  "BLK-1": "小运：八字步骤表 BZ-01～BZ-13 无小运步骤；BZ-12 大运为“范围外”跳过，不读小运规则",
+  "BLK-2": "盲派 / 新派：无任何步骤读取盲派 / 新派变体；所用变体均来自既有子项",
+  "BLK-3": "玄空飞星：引擎无 FENGSHUI 模块入口（modules 只有 BAZI、LIUYAO）",
+  "BLK-4": "玄空立向：同上，无 FENGSHUI 模块入口"
+ },
+ "skippable": {
+  "BAZI": [
+   "BZ-02",
+   "BZ-03",
+   "BZ-12",
+   "BZ-13"
+  ],
+  "LIUYAO": [
+   "LY-09"
+  ]
+ }
+}

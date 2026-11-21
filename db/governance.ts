@@ -11,7 +11,8 @@
 // BLOCKED 一律不生成快照（Q-6）。
 import type { DatabaseSync } from "node:sqlite";
 import { blockerCoverage, requiredBlockers } from "./constants.js";
-import { isMemoryDb } from "./connect.js";
+import { blockerIntegrity, isActive, statusOf } from "./blockers.js";
+import { coverageReview } from "./coverage_review.js";
 import { hashOf } from "./canonical.js";
 
 export interface PlannedStep {
@@ -77,29 +78,32 @@ const blocked = (kind: "BLOCKED-HARD" | "BLOCKED-FORMAL", code: string, step_cod
   (object_id === undefined ? { status: "BLOCKED", kind, code, step_code } : { status: "BLOCKED", kind, code, step_code, object_id });
 function coverageGap(db: DatabaseSync, plan: Plan, executed: PlannedStep[]): Judgment | undefined {
   const step0 = executed[0]?.step_code ?? "";
-  const cov = blockerCoverage();
-  const mapCount = (b: string) => (one<{ n: number }>(db, "SELECT count(*) AS n FROM formal.blocker_step_map WHERE block_id = ?", b)?.n ?? 0);
-  for (const id of requiredBlockers()) {
-    const st = one<{ status: string }>(db, "SELECT status FROM formal.v_blocker_current WHERE block_id = ?", id)?.status;
-    if (!active(st)) continue;
-    const kind = cov.get(id);
-    if (!kind) return blocked("BLOCKED-FORMAL", `BLOCKER_COVERAGE_UNDEFINED:${id}`, step0);
-    if (kind === "step_map") { if (mapCount(id) === 0) return blocked("BLOCKED-FORMAL", `BLOCKER_MAP_MISSING:${id}`, step0); }
-    else if (kind.startsWith("pair:")) { if (mapCount(kind.slice(5)) === 0) return blocked("BLOCKED-FORMAL", `BLOCKER_MAP_MISSING:${id}:${kind.slice(5)}`, step0); }
-    else if (kind.startsWith("input_path:")) {
-      if ((plan.input_paths ?? []).includes(kind.slice(11))) return blocked("BLOCKED-HARD", `BLOCKER_INPUT_PATH:${id}:${step0}`, step0);
-    } else if (kind === "global:ZR-DB") {
-      if (!one(db, "SELECT 1 FROM main.sqlite_master WHERE sql LIKE '%ZR-DB-missing%'")) return blocked("BLOCKED-FORMAL", `BLOCKER_COVERAGE_MISSING:${id}`, step0);
-    } else if (kind === "global:isolation") {
-      if (!isMemoryDb(db)) return blocked("BLOCKED-HARD", `BLOCKER_COVERAGE_MISSING:${id}`, step0);
-    } else if (kind !== "no_entry") return blocked("BLOCKED-FORMAL", `BLOCKER_COVERAGE_UNDEFINED:${id}`, step0);
+  // F3-3：计算入口须在覆盖复核清单内（新增模块、步骤或计算函数未经复核即失效关闭）
+  const rev = coverageReview();
+  const revSteps = rev.modules[plan.module];
+  if (!revSteps) return blocked("BLOCKED-FORMAL", `COVERAGE_REVIEW_MISSING:${plan.module}:${step0}`, step0);
+  for (const s of plan.steps) {
+    const r = revSteps[s.step_code];
+    if (!r) return blocked("BLOCKED-FORMAL", `COVERAGE_REVIEW_MISSING:${s.step_code}`, s.step_code);
+    // 跳过步骤也须经复核：清单外的步骤若“未执行”，其上的阻断映射会被绕开，故失效关闭
+    if (s.status !== "完成" && !(rev.skippable[plan.module] ?? []).includes(s.step_code)) return blocked("BLOCKED-FORMAL", `COVERAGE_REVIEW_SKIP:${s.step_code}`, s.step_code);
+    for (const fn of s.rule_functions) if (!r.includes(fn)) return blocked("BLOCKED-FORMAL", `COVERAGE_REVIEW_MISSING:${fn}:${s.step_code}`, s.step_code);
   }
+  // F3-2：静态完整性（覆盖方式、必备映射与效果、必备子项关联、pair 状态、global 机制），只核验未解除者
+  const p = blockerIntegrity(db, true)[0];
+  if (p) return blocked("BLOCKED-FORMAL", `${p.code}:${p.block_id}`, step0);
+  // 输入路径类（BLK-5）：南半球 → BLOCKED-HARD；半球未知 → 暂按 BLOCKED-FORMAL（F3-1 临时安全措施，产品口径待用户裁决）
+  for (const [id, kind] of blockerCoverage()) {
+    if (!kind.startsWith("input_path:") || !isActive(statusOf(db, id))) continue;
+    if ((plan.input_paths ?? []).includes(kind.slice(11))) return blocked("BLOCKED-HARD", `BLOCKER_INPUT_PATH:${id}:${step0}`, step0);
+    if ((plan.input_paths ?? []).includes(`${kind.slice(11)}未知`)) return blocked("BLOCKED-FORMAL", `BLOCKER_INPUT_UNKNOWN:${id}:${step0}`, step0);
+  }
+  // 子项交叉核对（通用）：所用子项挂了某现行阻断，而该步骤（含 pair 映射）没有映射 → 映射漏导
   for (const s of executed) for (const fn of s.rule_functions) {
     const links = all<{ component_id: string; block_id: string }>(db, `SELECT cb.component_id, cb.block_id FROM formal.component_blocker cb
       JOIN formal.rule_component c ON c.component_id = cb.component_id WHERE c.calc_function_id = ? ORDER BY cb.block_id`, fn);
     for (const l of links) {
-      const st = one<{ status: string }>(db, "SELECT status FROM formal.v_blocker_current WHERE block_id = ?", l.block_id)?.status;
-      if (!active(st)) continue;
+      if (!isActive(statusOf(db, l.block_id))) continue;
       if (!stepBlockers(db, s.step_code).some((m) => m.block_id === l.block_id))
         return blocked("BLOCKED-FORMAL", `BLOCKER_MAP_MISSING:${l.block_id}:${s.step_code}`, s.step_code, l.component_id);
     }

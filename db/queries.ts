@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import type { DatabaseSync } from "node:sqlite";
 import { blockerCoverage } from "./constants.js";
+import { blockerIntegrity } from "./blockers.js";
 import { hashOf } from "./canonical.js";
 
 type Row = Record<string, unknown>;
@@ -62,7 +63,13 @@ export const releaseChecks = {
   "Q-F-25": (db: DatabaseSync) => q(db, `
     WITH pairs(a, b) AS (VALUES ('B4','BLK-6'), ('BLK-6','B4'), ('B1','BLK-7'), ('BLK-7','B1'))
     SELECT p.a AS block_id, c.data_release FROM pairs p JOIN formal.blocker_change c ON c.block_id = p.a AND c.new_status = '已解除'
-    WHERE NOT EXISTS (SELECT 1 FROM formal.blocker_change d WHERE d.block_id = p.b AND d.new_status = '已解除' AND d.data_release = c.data_release)`),
+    WHERE NOT EXISTS (SELECT 1 FROM formal.blocker_change d WHERE d.block_id = p.b AND d.new_status = '已解除' AND d.data_release = c.data_release)
+    -- E2-FIX-4 F3-6：再核当前状态——成对阻断当前状态必须一致（重新阻断、单边回退等历史配对查不出的情形）
+    UNION ALL SELECT p.a, 'CURRENT:' || coalesce(sa.status, '?') || '/' || coalesce(sb.status, '?') FROM pairs p
+      LEFT JOIN formal.v_blocker_current sa ON sa.block_id = p.a LEFT JOIN formal.v_blocker_current sb ON sb.block_id = p.b
+      WHERE sa.status IS NOT sb.status`),
+  /** Q-F-26（E2-FIX-4 F3-7）：阻断静态完整性——覆盖方式、必备映射与效果、必备子项关联、pair 状态、global 机制（全部阻断，不论是否现行；与判定共用 blockerIntegrity） */
+  "Q-F-26": (db: DatabaseSync) => blockerIntegrity(db, false).map((p) => ({ block_id: p.block_id, code: p.code, detail: p.detail }) as Row),
   /** Q-C-07 R-I-1：Source NON_FORMAL 而其 Edition 为 FORMAL */
   "Q-C-07": (db: DatabaseSync) => q(db, `
     SELECT e.edition_id FROM formal.edition e
@@ -83,6 +90,11 @@ export const releaseChecks = {
     WHERE vf.approval_status = 'FORMAL'`),
 };
 
+/** 证据在某日期前未被相符人工核验记录覆盖：无所引段落，或某个所引版本没有 checked_at <= 日期 的相符记录（与 G-6 触发器同一口径） */
+const uncovered = (e: string, date: string) => `(NOT EXISTS (SELECT 1 FROM formal.evidence_passage ep1 WHERE ep1.evidence_id = ${e})
+  OR EXISTS (SELECT 1 FROM formal.evidence_passage ep0 JOIN formal.passage p0 ON p0.passage_id = ep0.passage_id WHERE ep0.evidence_id = ${e}
+    AND NOT EXISTS (SELECT 1 FROM formal.v_manual_check_valid v WHERE v.evidence_id = ${e} AND v.edition_id = p0.edition_id AND v.checked_at <= ${date})))`;
+
 // ---------------------------------------------------------------- §12.2 证据一致性查询（W-02，DB-X-05）
 export const evidenceChecks = {
   "Q-X-05-1": (db: DatabaseSync) => q(db, `SELECT e.evidence_id FROM formal.evidence e JOIN formal.v_evidence_current c ON c.evidence_id = e.evidence_id
@@ -93,10 +105,22 @@ export const evidenceChecks = {
   "Q-X-05-3": (db: DatabaseSync) => q(db, `SELECT DISTINCT e.evidence_id FROM formal.evidence e JOIN formal.v_evidence_current c ON c.evidence_id = e.evidence_id
                                            JOIN formal.evidence_passage ep ON ep.evidence_id = e.evidence_id JOIN formal.passage p ON p.passage_id = ep.passage_id
                                            WHERE c.evidence_status = 'PRIMARY_VERIFIED' AND (p.image_ref IS NULL OR p.verified_by IS NULL OR p.verified_at IS NULL
-                                             OR p.against_what IS NULL OR p.result IS NULL)`),
+                                             OR p.against_what IS NULL OR p.result IS NOT 'MATCH')`),
   "Q-X-05-4": (db: DatabaseSync) => q(db, `SELECT e.evidence_id FROM formal.evidence e JOIN formal.v_evidence_current c ON c.evidence_id = e.evidence_id
-                                           WHERE e.origin = 'ai_output' AND c.evidence_status <> 'UNVERIFIED'
-                                             AND NOT EXISTS (SELECT 1 FROM formal.manual_check_record m WHERE m.evidence_id = e.evidence_id)`),
+                                           WHERE e.origin = 'ai_output' AND c.evidence_status <> 'UNVERIFIED' AND ${uncovered("e.evidence_id", "'9999-12-31'")}`),
+  /**
+   * Q-X-05-10（E2-FIX-4 F3-4；【用户裁决 E2-FIX-2-R1】）：当前为 FORMAL 的证据，没有在其 FORMAL 记录所属数据版本日期之前、
+   * 与版本 / 叶号 / 当前范围相符的人工核验记录（与写入触发器共用 v_manual_check_valid；触发器缺失或被绕过时兜底）
+   */
+  "Q-X-05-10": (db: DatabaseSync) => q(db, `SELECT f.target_id AS evidence_id, f.data_release FROM formal.formal_status_history f
+                                           WHERE f.target_type = 'Evidence' AND f.new_value = 'FORMAL'
+                                             AND f.sequence_no = (SELECT max(g.sequence_no) FROM formal.formal_status_history g WHERE g.target_type = 'Evidence' AND g.target_id = f.target_id)
+                                             AND ${uncovered("f.target_id", "(SELECT substr(r.created_at, 1, 10) FROM formal.data_release r WHERE r.data_release = f.data_release)")}`),
+  /** Q-X-05-11（E2-FIX-4 F3-4；§13.7、【用户裁决 N-4】）：当前 PRIMARY_VERIFIED 而所引段落核对结果不是 MATCH，或没有任何所引段落 */
+  "Q-X-05-11": (db: DatabaseSync) => q(db, `SELECT e.evidence_id FROM formal.evidence e JOIN formal.v_evidence_current c ON c.evidence_id = e.evidence_id
+                                           WHERE c.evidence_status = 'PRIMARY_VERIFIED' AND (NOT EXISTS (SELECT 1 FROM formal.evidence_passage ep WHERE ep.evidence_id = e.evidence_id)
+                                             OR EXISTS (SELECT 1 FROM formal.evidence_passage ep JOIN formal.passage p ON p.passage_id = ep.passage_id
+                                               WHERE ep.evidence_id = e.evidence_id AND p.result IS NOT 'MATCH'))`),
   "Q-X-05-5": (db: DatabaseSync) => q(db, `SELECT DISTINCT e.evidence_id FROM formal.evidence e JOIN formal.evidence_passage ep ON ep.evidence_id = e.evidence_id
                                            JOIN formal.passage p ON p.passage_id = ep.passage_id JOIN formal.edition ed ON ed.edition_id = p.edition_id
                                            WHERE ed.transcription_status = '转录本（未与影印本对校）' AND e.confidence = 'A'`),

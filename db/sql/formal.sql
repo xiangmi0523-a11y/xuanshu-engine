@@ -183,8 +183,8 @@ CREATE TABLE formal.manual_check_record (
   check_id       TEXT NOT NULL PRIMARY KEY,
   evidence_id    TEXT NOT NULL REFERENCES evidence(evidence_id),
   edition_id     TEXT NOT NULL REFERENCES edition(edition_id),
-  checked_by     TEXT NOT NULL,
-  checked_at     TEXT NOT NULL,
+  checked_by     TEXT NOT NULL CONSTRAINT "DB-G6-checker-empty" CHECK (length(trim(checked_by, ' 　' || char(9, 10, 13))) > 0),
+  checked_at     TEXT NOT NULL CONSTRAINT "DB-G6-date" CHECK (checked_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]' AND date(checked_at) IS checked_at),
   page_range     TEXT NOT NULL,
   evidence_scope TEXT NOT NULL
 ) STRICT;
@@ -657,35 +657,38 @@ CREATE TRIGGER formal.evidence_passage_g6_bi BEFORE INSERT ON evidence_passage B
     WHERE (SELECT h.new_value FROM evidence_status_history h WHERE h.target_type = 'Evidence' AND h.target_id = NEW.evidence_id AND h.field = 'evidence_status' ORDER BY h.sequence_no DESC LIMIT 1) = 'PRIMARY_VERIFIED'
        OR (SELECT h.new_value FROM formal_status_history h WHERE h.target_type = 'Evidence' AND h.target_id = NEW.evidence_id ORDER BY h.sequence_no DESC LIMIT 1) = 'FORMAL';
 END;
--- 证据核验状态：PRIMARY_VERIFIED 须 confidence = A、核对方式含“影印本对校 / 馆藏版本核对”、所引段落具备 §13.7 七项、且每个所引版本都有匹配的人工核验记录；
--- 来源为 AI 输出的证据高于 UNVERIFIED 同样须有匹配记录（不依赖 origin 自报：PRIMARY_VERIFIED 一律要求）
+-- 相符的人工核验记录（唯一定义，触发器与发布前查询共用；E2-FIX-4 F3-4）：版本为证据所引版本、叶号与证据在该版本所引叶号一致、
+-- 范围指纹等于证据当前引文范围。是否“在某数据版本日期之前”由使用方按 checked_at <= 版本日期 判定（F3-5）。
+CREATE VIEW formal.v_manual_check_valid AS
+  SELECT m.check_id, m.evidence_id, m.edition_id, m.checked_at FROM manual_check_record m
+  WHERE m.page_range = (SELECT group_concat(p.volume_page, ',' ORDER BY p.volume_page) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = m.evidence_id AND p.edition_id = m.edition_id) AND m.evidence_scope = (SELECT group_concat(p.passage_id || '|' || p.edition_id || '|' || p.volume_page, ';' ORDER BY p.passage_id) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = m.evidence_id);
+-- 证据核验状态（【用户裁决 G-6】、§13.7、【用户裁决 N-4】）：PRIMARY_VERIFIED 须 confidence = A、核对方式含影印本对校 / 馆藏版本核对、
+-- 所引段落七项齐备且核对结果为 MATCH（DB-G6-PV，已批准）；来源为 AI 输出的证据高于 UNVERIFIED 须有相符记录（DB-G6-AI，已批准）。
+-- PRIMARY_VERIFIED 一律另须相符记录（DB-G6-PV-check）：E2-FIX-2 任务要求实现，**未作为正式契约规则批准**，待用户裁决。
 CREATE TRIGGER formal.evidence_status_g6_bi BEFORE INSERT ON evidence_status_history WHEN NEW.target_type = 'Evidence' AND NEW.field = 'evidence_status' BEGIN
   SELECT RAISE(ABORT, '[DB-G6-PV] PRIMARY_VERIFIED 须 confidence = A 且核对方式含影印本对校或馆藏版本核对')
     WHERE NEW.new_value = 'PRIMARY_VERIFIED' AND NOT EXISTS (SELECT 1 FROM evidence e WHERE e.evidence_id = NEW.target_id AND e.confidence = 'A'
       AND (instr(coalesce(e.verification_method, ''), '影印本对校') > 0 OR instr(coalesce(e.verification_method, ''), '馆藏版本核对') > 0));
   SELECT RAISE(ABORT, '[DB-G6-PV] PRIMARY_VERIFIED 的所引段落缺 §13.7 七项之一或核对结果不是 MATCH（N-4）')
-    WHERE NEW.new_value = 'PRIMARY_VERIFIED' AND EXISTS (SELECT 1 FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id
-      AND (p.image_ref IS NULL OR p.verified_by IS NULL OR p.verified_at IS NULL OR p.against_what IS NULL OR p.result IS NOT 'MATCH'));
-  SELECT RAISE(ABORT, '[DB-G6-PV] PRIMARY_VERIFIED 缺与证据版本、叶号、当前范围相符的人工核验记录')
-    WHERE NEW.new_value = 'PRIMARY_VERIFIED' AND (EXISTS (SELECT 1 FROM evidence_passage ep0 JOIN passage p0 ON p0.passage_id = ep0.passage_id WHERE ep0.evidence_id = NEW.target_id
-      AND NOT EXISTS (SELECT 1 FROM manual_check_record m WHERE m.evidence_id = NEW.target_id AND m.edition_id = p0.edition_id
-        AND m.page_range = (SELECT group_concat(p.volume_page, ',' ORDER BY p.volume_page) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id AND p.edition_id = p0.edition_id) AND m.evidence_scope = (SELECT group_concat(p.passage_id || '|' || p.edition_id || '|' || p.volume_page, ';' ORDER BY p.passage_id) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id)))
-      OR NOT EXISTS (SELECT 1 FROM evidence_passage ep1 WHERE ep1.evidence_id = NEW.target_id));
-  SELECT RAISE(ABORT, '[DB-G6-AI] 来源为 AI 输出的证据高于 UNVERIFIED 须有相符的人工核验记录')
-    WHERE NEW.new_value <> 'UNVERIFIED' AND (SELECT origin FROM evidence WHERE evidence_id = NEW.target_id) = 'ai_output' AND (EXISTS (SELECT 1 FROM evidence_passage ep0 JOIN passage p0 ON p0.passage_id = ep0.passage_id WHERE ep0.evidence_id = NEW.target_id
-      AND NOT EXISTS (SELECT 1 FROM manual_check_record m WHERE m.evidence_id = NEW.target_id AND m.edition_id = p0.edition_id
-        AND m.page_range = (SELECT group_concat(p.volume_page, ',' ORDER BY p.volume_page) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id AND p.edition_id = p0.edition_id) AND m.evidence_scope = (SELECT group_concat(p.passage_id || '|' || p.edition_id || '|' || p.volume_page, ';' ORDER BY p.passage_id) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id)))
-      OR NOT EXISTS (SELECT 1 FROM evidence_passage ep1 WHERE ep1.evidence_id = NEW.target_id));
+    WHERE NEW.new_value = 'PRIMARY_VERIFIED' AND (NOT EXISTS (SELECT 1 FROM evidence_passage ep WHERE ep.evidence_id = NEW.target_id)
+      OR EXISTS (SELECT 1 FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id
+      AND (p.image_ref IS NULL OR p.verified_by IS NULL OR p.verified_at IS NULL OR p.against_what IS NULL OR p.result IS NOT 'MATCH')));
+  SELECT RAISE(ABORT, '[DB-G6-PV-check] PRIMARY_VERIFIED 缺与证据版本、叶号、当前范围相符且不晚于该数据版本日期的人工核验记录')
+    WHERE NEW.new_value = 'PRIMARY_VERIFIED' AND (NOT EXISTS (SELECT 1 FROM evidence_passage ep1 WHERE ep1.evidence_id = NEW.target_id)
+      OR EXISTS (SELECT 1 FROM evidence_passage ep0 JOIN passage p0 ON p0.passage_id = ep0.passage_id WHERE ep0.evidence_id = NEW.target_id
+        AND NOT EXISTS (SELECT 1 FROM v_manual_check_valid v WHERE v.evidence_id = NEW.target_id AND v.edition_id = p0.edition_id AND v.checked_at <= (SELECT substr(r.created_at, 1, 10) FROM data_release r WHERE r.data_release = NEW.data_release))));
+  SELECT RAISE(ABORT, '[DB-G6-AI] 来源为 AI 输出的证据高于 UNVERIFIED 须有相符且不晚于该数据版本日期的人工核验记录')
+    WHERE NEW.new_value <> 'UNVERIFIED' AND (SELECT origin FROM evidence WHERE evidence_id = NEW.target_id) = 'ai_output' AND (NOT EXISTS (SELECT 1 FROM evidence_passage ep1 WHERE ep1.evidence_id = NEW.target_id)
+      OR EXISTS (SELECT 1 FROM evidence_passage ep0 JOIN passage p0 ON p0.passage_id = ep0.passage_id WHERE ep0.evidence_id = NEW.target_id
+        AND NOT EXISTS (SELECT 1 FROM v_manual_check_valid v WHERE v.evidence_id = NEW.target_id AND v.edition_id = p0.edition_id AND v.checked_at <= (SELECT substr(r.created_at, 1, 10) FROM data_release r WHERE r.data_release = NEW.data_release))));
 END;
--- 证据正式状态：FORMAL 须每个所引版本都有相符的人工核验记录（E2-FIX-2 P2-2 第 4 项）
+-- 证据正式状态（【用户裁决 E2-FIX-2-R1】）：FORMAL 须每个所引版本都有相符、且核验日期不晚于该数据版本日期的人工核验记录
 CREATE TRIGGER formal.formal_status_g6_bi BEFORE INSERT ON formal_status_history WHEN NEW.target_type = 'Evidence' AND NEW.new_value = 'FORMAL' BEGIN
-  SELECT RAISE(ABORT, '[DB-G6-FORMAL] 证据 FORMAL 缺与证据版本、叶号、当前范围相符的人工核验记录')
-    WHERE EXISTS (SELECT 1 FROM evidence_passage ep0 JOIN passage p0 ON p0.passage_id = ep0.passage_id WHERE ep0.evidence_id = NEW.target_id
-      AND NOT EXISTS (SELECT 1 FROM manual_check_record m WHERE m.evidence_id = NEW.target_id AND m.edition_id = p0.edition_id
-        AND m.page_range = (SELECT group_concat(p.volume_page, ',' ORDER BY p.volume_page) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id AND p.edition_id = p0.edition_id) AND m.evidence_scope = (SELECT group_concat(p.passage_id || '|' || p.edition_id || '|' || p.volume_page, ';' ORDER BY p.passage_id) FROM evidence_passage ep JOIN passage p ON p.passage_id = ep.passage_id WHERE ep.evidence_id = NEW.target_id)))
-      OR NOT EXISTS (SELECT 1 FROM evidence_passage ep1 WHERE ep1.evidence_id = NEW.target_id);
+  SELECT RAISE(ABORT, '[DB-G6-FORMAL] 证据 FORMAL 缺与证据版本、叶号、当前范围相符且不晚于该数据版本日期的人工核验记录')
+    WHERE (NOT EXISTS (SELECT 1 FROM evidence_passage ep1 WHERE ep1.evidence_id = NEW.target_id)
+      OR EXISTS (SELECT 1 FROM evidence_passage ep0 JOIN passage p0 ON p0.passage_id = ep0.passage_id WHERE ep0.evidence_id = NEW.target_id
+        AND NOT EXISTS (SELECT 1 FROM v_manual_check_valid v WHERE v.evidence_id = NEW.target_id AND v.edition_id = p0.edition_id AND v.checked_at <= (SELECT substr(r.created_at, 1, 10) FROM data_release r WHERE r.data_release = NEW.data_release))));
 END;
-
 -- 变体类型、撤销原因注册表：类型码不删不改义（只读触发器由 gen.ts 统一生成）
 
 -- ===================================================================== 视图（同库）

@@ -188,7 +188,8 @@ test("P1-2：函数级争议 + 子项缺变体 → BLOCKED-FORMAL；函数无子
 });
 
 // ---------------------------------------------------------------- P1-3：阻断失效关闭
-const dropChanges = (block: string): WorldEdit => ({ exclude: (rec) => rec.t === "blocker_change" && rec.r["block_id"] === block });
+// BLK-6 与 B4 为 pair（BLK.4、B4-25 同步）：两者一起去掉，避免 E2-FIX-4 的 pair 状态检查先行拦截
+const dropChanges = (block: string): WorldEdit => ({ exclude: (rec) => rec.t === "blocker_change" && (rec.r["block_id"] === block || (block === "BLK-6" && rec.r["block_id"] === "B4")) });
 
 test("P1-3 反例：删除 BLK-6 的全部 blocker_change 记录后，BLK-6 仍按现行生效（G2：八字 BZ-05 BLOCKED，六爻 LY-06 NON_FORMAL）", () => {
   const w = loadWorld("G2", openMemoryDb(), dropChanges("BLK-6"));
@@ -202,9 +203,13 @@ test("P1-3 反例：删除 BLK-6 的全部 blocker_change 记录后，BLK-6 仍�
 });
 
 test("P1-3：历史变更缺失（只丢最新一条“已解除”）→ 回到现行；导入遗漏（整条阻断未登记）→ BLOCKED-FORMAL，不生成快照", () => {
-  const w = loadWorld("G2", openMemoryDb(), { exclude: (rec) => rec.t === "blocker_change" && rec.r["block_id"] === "BLK-6" && rec.r["new_status"] === "已解除" });
+  const w = loadWorld("G2", openMemoryDb(), { exclude: (rec) => rec.t === "blocker_change" && ["BLK-6", "B4"].includes(String(rec.r["block_id"])) && rec.r["new_status"] === "已解除" });
   assert.equal((w.db.prepare("SELECT status FROM formal.v_blocker_current WHERE block_id = 'BLK-6'").get() as { status: string }).status, "现行");
   assert.equal(judgeCase(w, "E2E-LY-1").status, "NON_FORMAL");
+  // 只丢 BLK-6 一侧的“已解除”：pair 状态不一致 → 整次 BLOCKED-FORMAL（E2-FIX-4 F3-2 / F3-6）
+  const w1 = loadWorld("G2", openMemoryDb(), { exclude: (rec) => rec.t === "blocker_change" && rec.r["block_id"] === "BLK-6" && rec.r["new_status"] === "已解除" });
+  const j1 = judgeCase(w1, "E2E-LY-1");
+  assert.ok(j1.status === "BLOCKED" && /BLOCKER_PAIR_STATE/.test(j1.code), JSON.stringify(j1).slice(0, 160));
   const omit: WorldEdit = { exclude: (rec) => ["blocker", "blocker_change", "blocker_step_map", "component_blocker"].includes(rec.t) && rec.r["block_id"] === "BLK-6" };
   const w2 = loadWorld("G2", openMemoryDb(), omit);
   assert.equal(count(w2.db, "formal.blocker WHERE block_id = 'BLK-6'"), 0);

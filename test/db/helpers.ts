@@ -59,10 +59,10 @@ export function inSavepoint<T>(db: DatabaseSync, fn: () => T): T {
 // ---------------------------------------------------------------- 端到端
 export interface E2ERun { w: LoadedWorld; c: CaseSpec; out: CalcOutcome; inp: ReturnType<typeof prepareInput>; cfg: ReturnType<typeof prepareConfig> }
 export function scenarioName(sc: string, domain: string): string { return sc === "G1N" ? `G1N:${domain}` : sc; }
-export function runCase(scenario: string, caseId: string, opts: { w?: LoadedWorld; hooks?: SealHooks; profileId?: string; inputId?: string } = {}): E2ERun {
+export function runCase(scenario: string, caseId: string, opts: { w?: LoadedWorld; hooks?: SealHooks; profileId?: string; inputId?: string; raw?: Record<string, unknown> } = {}): E2ERun {
   const c = cases().cases.find((x) => x.case_id === caseId)!;
   const w = opts.w ?? loadWorld(scenarioName(scenario, c.domain));
-  const inp = prepareInput({ domain: c.domain, raw: c.raw, tz: c.tz, normalizer_version: c.normalizer_version });
+  const inp = prepareInput({ domain: c.domain, raw: (opts.raw ?? c.raw) as typeof c.raw, tz: c.tz, normalizer_version: c.normalizer_version });
   const cfg = prepareConfig({ ...c.config, module: c.domain });
   const profileId = opts.profileId ?? c.owner_profile_id, inputId = opts.inputId ?? c.input_id;
   saveProfileInputConfig(w.db, profileId, inp, inputId, cfg);

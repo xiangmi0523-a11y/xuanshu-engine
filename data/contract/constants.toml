@@ -161,3 +161,16 @@ BLK-4 = "no_entry"
 BLK-5 = "input_path:南半球"
 BLK-6 = "step_map"
 BLK-7 = "step_map"
+
+# 必备阻断—步骤映射与效果【审核清单 §7.2（授权书 Q-16 批准建立 blocker_step_map）】——E2-FIX-4 F3-2
+# 每项 step_map / pair 覆盖的阻断，其有效映射（自身 ∪ pair 对方）须逐条含下列“步骤:效果”，效果须完全一致；不得另有未列步骤。
+# verify.py 核对清单 §7.2 表行。
+[blocker_step_maps]
+BLK-7 = ["BZ-03:BLOCKED-FORMAL"]
+BLK-6 = ["BZ-05:BLOCKED-FORMAL", "BZ-07:NON_FORMAL", "LY-06:NON_FORMAL"]
+
+# 必备子项—阻断关联【审核清单 §3.8 步骤—子项表（授权书 Q-10 批准）× 上表映射步骤】——E2-FIX-4 F3-2
+# 映射步骤所对应的子项须在 component_blocker 中挂上该阻断（pair 阻断挂自身或对方均可）。verify.py 核对 §3.8 表行。
+[blocker_component_links]
+BLK-7 = ["P-D-08-b"]
+BLK-6 = ["P-D-02", "P-D-04"]

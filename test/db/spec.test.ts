@@ -105,6 +105,11 @@ const mutations: { name: string; file: keyof Sql; from: string; to: string; expe
     expect: (d) => d.missing.some((x) => x.startsWith("定位 DB-F-20")), matrix: "diff" },
   { name: "删除 G-6 写入门禁触发器（evidence_status_g6_bi 整条）", file: "formal", from: /CREATE TRIGGER formal\.evidence_status_g6_bi[\s\S]*?\nEND;\n/.exec(ddlText().formal)?.[0] ?? "<未找到触发器>", to: "",
     expect: (d) => d.missing.some((x) => x.startsWith("定位 DB-G6-PV")) && d.missing.some((x) => x.startsWith("定位 DB-G6-AI")), matrix: "diff" },
+  // E2-FIX-4 追加：核对人非空、核验日期格式、PRIMARY_VERIFIED 核验记录（待批准部分）各自删除即被查出
+  { name: "删除核对人非空约束（DB-G6-checker-empty）", file: "formal", from: ` CONSTRAINT "DB-G6-checker-empty" CHECK (length(trim(checked_by, ' 　' || char(9, 10, 13))) > 0)`, to: "",
+    expect: (d) => d.missing.some((x) => x.startsWith("定位 DB-G6-checker-empty")), matrix: "diff" },
+  { name: "删除核验日期约束（DB-G6-date）", file: "formal", from: ` CONSTRAINT "DB-G6-date" CHECK (checked_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]' AND date(checked_at) IS checked_at)`, to: "",
+    expect: (d) => d.missing.some((x) => x.startsWith("定位 DB-G6-date")), matrix: "diff" },
   { name: "删除只追加触发器（claim_no_update）", file: "formal", from: "CREATE TRIGGER formal.claim_no_update BEFORE UPDATE ON claim BEGIN SELECT RAISE(ABORT, '[DB-I-claim] 正式库只读、只追加，拒绝 UPDATE'); END;\n", to: "",
     expect: (d) => d.missing.includes("触发器 claim_no_update（DB-I）"), matrix: "diff" },
 ];

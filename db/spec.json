@@ -3,7 +3,7 @@
  "inputs": {
   "checklist_s4_sha256": "c711f5979c82d3a745a35acdb0e73cb1b1d242a91967f111fe2d01dddcbc69af",
   "checklist_s5_sha256": "b9b69f481b8a1e9cf841fbbd0dc9c218528d9cfbd33ea96a10d86ec9136785df",
-  "sources_sha256": "4c3f08e5762ea24b7570807e32f3aace32cb63bbbbb44d6ac466a9c642383843"
+  "sources_sha256": "02bf07c5372ff4c96a4d51792fcbca9a79a2d12bb6ab118220a90d4813043124"
  },
  "tables": {
   "data_release": {
@@ -5216,7 +5216,10 @@
    "DB-U-07b": "清单 §5 DB-U-07（快照与输入、配置、档案、领域一致）按项拆分为 a～e【已批准（清单 / 契约）】",
    "DB-U-07c": "清单 §5 DB-U-07（快照与输入、配置、档案、领域一致）按项拆分为 a～e【已批准（清单 / 契约）】",
    "DB-U-07d": "清单 §5 DB-U-07（快照与输入、配置、档案、领域一致）按项拆分为 a～e【已批准（清单 / 契约）】",
-   "DB-U-07e": "清单 §5 DB-U-07（快照与输入、配置、档案、领域一致）按项拆分为 a～e【已批准（清单 / 契约）】"
+   "DB-U-07e": "清单 §5 DB-U-07（快照与输入、配置、档案、领域一致）按项拆分为 a～e【已批准（清单 / 契约）】",
+   "DB-G6-PV-check": "E2-FIX-2 P2-2 任务要求“PRIMARY_VERIFIED 写入路径检查相符人工核验记录”；未作为正式契约规则批准（E2-FIX-4 明确），待用户裁决【待批准（PRIMARY_VERIFIED 一律须人工核验记录，未获批准）】",
+   "DB-G6-checker-empty": "E2-FIX-4 F3-5 用户任务要求：拒绝空字符串与纯空白核对人【用户任务要求（E2-FIX-4），实现待审】",
+   "DB-G6-date": "E2-FIX-4 F3-5 用户任务要求：核验日期须为 YYYY-MM-DD 有效日期；不晚于对应数据版本日期（在 G-6 触发器与 v_manual_check_valid 使用处判定）【用户任务要求（E2-FIX-4），实现待审】"
   },
   "mapped": {
    "DB-C-01": "由查询 Q-C-01 与封存预检报出（清单本条定位写测试编号）",

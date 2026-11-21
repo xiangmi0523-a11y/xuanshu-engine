@@ -87,7 +87,7 @@ export function saveProfileInputConfig(db: DatabaseSync, profileId: string, inp:
 
 // ---------------------------------------------------------------- 计划（审核清单 §3.8；实际依赖按 P-42 / Q-17）
 interface StepDef { step: string; trace: string; reads: string[]; params: string[] }
-const BAZI_STEPS: StepDef[] = [
+export const BAZI_STEPS: StepDef[] = [
   { step: "BZ-01", trace: "bazi.tz_resolve", reads: [], params: ["CFG-14", "CFG-15"] },
   { step: "BZ-02", trace: "bazi.longitude_correction", reads: ["bazi.longitude_correction"], params: ["CFG-02"] },
   { step: "BZ-03", trace: "bazi.eot", reads: ["bazi.eot"], params: ["CFG-02"] },
@@ -102,7 +102,7 @@ const BAZI_STEPS: StepDef[] = [
   { step: "BZ-12", trace: "bazi.luck_cycle", reads: ["bazi.luck_cycle"], params: [] },
   { step: "BZ-13", trace: "bazi.siling", reads: ["bazi.siling"], params: [] },
 ];
-const LIUYAO_STEPS: StepDef[] = [
+export const LIUYAO_STEPS: StepDef[] = [
   { step: "LY-01", trace: "liuyao.cast", reads: ["liuyao.cast"], params: [] },
   { step: "LY-02", trace: "liuyao.palace", reads: ["liuyao.palace"], params: [] },
   { step: "LY-03", trace: "liuyao.najia", reads: ["liuyao.najia"], params: [] },
@@ -130,8 +130,10 @@ export function buildPlan(db: DatabaseSync, inp: PreparedInput, cfg: PreparedCon
     ({ step_code: d.step, status: "未执行", skip_kind: kind, reason, rule_functions: [], params: d.params, trace_function: d.trace });
   if (inp.domain === "BAZI") {
     // 输入路径（契约 §11.1 输入路径表）：出生地纬度为负即南半球出生
-    const lat = Number(inp.raw["latitude"]);
-    const input_paths = Number.isFinite(lat) && lat < 0 ? ["南半球"] : [];
+    // 三态（F3-1）：纬度 < 0 → 南半球；> 0 → 北半球（无标记）；缺失、无法解析或恰为 0 → 半球未知（不得当作北半球放行）
+    const rawLat = inp.raw["latitude"];
+    const lat = typeof rawLat === "string" && rawLat.trim() !== "" ? Number(rawLat) : typeof rawLat === "number" ? rawLat : NaN;
+    const input_paths = !Number.isFinite(lat) || lat === 0 ? ["南半球未知"] : lat < 0 ? ["南半球"] : [];
     return { module: "BAZI", config: cfg.params, input_paths, steps: BAZI_STEPS.map((d) => {
       if (d.step === "BZ-02" || d.step === "BZ-03") {
         if (val("CFG-02") === "false") return skip(d, "按规则跳过", "CFG-02 = false：钟表时间，不做经度换算与均时差（§9.4）");

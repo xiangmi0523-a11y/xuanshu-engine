@@ -417,7 +417,7 @@ test("DB-X-02：正式库无行引用用户库对象", () => {
   assert.deepEqual(snapshotChecks["Q-X-02"]!(r.w.db), []);
 });
 
-test("DB-X-05：§12.2 证据一致性查询（v1.0.6 九条）——各造一条违例恰查出 1 行或被写入门禁先行拦截，清除后 0 行", async () => {
+test("DB-X-05：§12.2 证据一致性查询（v1.0.6 九条 + E2-FIX-4 两条）——各造一条违例恰查出 1 行或被写入门禁先行拦截，清除后 0 行", async () => {
   const { ins } = await import("./helpers.js");
   const { openMemoryDb } = await import("../../db/connect.js");
   const keys = Object.keys(evidenceChecks) as (keyof typeof evidenceChecks)[];
@@ -444,6 +444,9 @@ test("DB-X-05：§12.2 证据一致性查询（v1.0.6 九条）——各造一�
       case "Q-X-05-8":
         ev({}); ins(db, "formal", "claim", { claim_id: "X-CL", component_id: "P-B-02", statement: "s", condition: null, branch_id: null });
         ins(db, "formal", "evidence_link", { evidence_id: "X-EV", claim_id: "X-CL", directness: "direct", scope_note: null, branch_id: null }); break;
+      // Q-X-05-10 / 11：写入路径由 G-6 触发器先行拦截；触发器缺失时的兜底见 fix4.test.ts（无触发器的隔离库）
+      case "Q-X-05-10": ev({}); ed("原刊本"); assert.throws(() => ins(db, "formal", "formal_status_history", { target_type: "Evidence", target_id: "X-EV", previous_value: null, new_value: "FORMAL", data_release: rel, sequence_no: 990 }), /DB-G6-FORMAL/); continue;
+      case "Q-X-05-11": ev({}); ed("原刊本"); assert.throws(() => st("PRIMARY_VERIFIED"), /DB-G6-PV/); continue;
       case "Q-X-05-9":
         ev({}); ed("原刊本"); ins(db, "formal", "variant_type", { type_code: "X-VT", applies_to_domain: "古籍文本异文", label: "字词" });
         ins(db, "formal", "text_variant", { variant_id: "X-TV", type_code: "X-VT", passage_a: "X-P", edition_a: "X-E", passage_b: null, edition_b: "X-E",

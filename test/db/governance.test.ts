@@ -93,5 +93,6 @@ test("复核 Q-16：P-D-06（节气查表，经 BZ-06 读取）不在 BLK-6 映�
   w.db.prepare("INSERT INTO formal.blocker_step_map (block_id, step_code, effect, condition_note, basis_ref, data_release) VALUES (?, 'BZ-06', 'BLOCKED-FORMAL', NULL, '复核 Q-16 构造', ?)").run(live.block_id, rel);
   const j = judge(w.db, buildPlan(w.db, inp, cfg));
   assert.equal(j.status, "BLOCKED");
-  if (j.status === "BLOCKED") assert.match(j.code, new RegExp(`:${live.block_id}:BZ-06$`));
+  // E2-FIX-4 起：未列入必备清单的映射本身即被拦（BLOCKER_MAP_UNLISTED），同样不放行
+  if (j.status === "BLOCKED") assert.match(j.code, new RegExp(`${live.block_id}`));
 });
